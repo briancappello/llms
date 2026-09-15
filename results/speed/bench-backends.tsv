@@ -1,0 +1,17 @@
+backend	model	depth	prompt_tok	pp_tok_s	tg_tok_s	pp_total_s	load_s	notes
+vulkan	ornith-mxfp4	4096	4178	2179.40	96.70	1.9	4	OK
+vulkan	ornith-mxfp4	16384	16466	2506.78	98.60	5.1	4	OK
+vulkan	ornith-mxfp4	32768	32850	1894.00	94.45	8.9	4	OK
+vulkan	ornith-mxfp4	65536	65617	1321.58	88.60	25.2	4	OK
+vulkan	fable-fusion-iq4nl	4096	4178	943.38	29.45	4.4	8	OK
+vulkan	fable-fusion-iq4nl	16384	16466	872.97	28.95	14.7	8	OK
+vulkan	fable-fusion-iq4nl	32768	32850	692.37	27.93	24.4	8	OK
+vulkan	fable-fusion-iq4nl	65536	65617	507.84	26.24	65.5	8	OK
+hip	ornith-mxfp4	4096	4178	2653.18	82.67	1.6	2	OK
+hip	ornith-mxfp4	16384	16466	2191.21	76.84	5.8	2	OK
+hip	ornith-mxfp4	32768	32850	1572.34	69.86	10.7	2	OK
+hip	ornith-mxfp4	65536	65617	1060.60	59.52	31.4	2	OK
+hip	fable-fusion-iq4nl	4096	4178	1175.65	28.34	3.6	2	OK
+hip	fable-fusion-iq4nl	16384	16466	923.60	26.57	13.9	2	OK
+hip	fable-fusion-iq4nl	32768	32850	654.21	24.47	25.8	2	OK
+hip	fable-fusion-iq4nl	65536	65617	436.55	21.19	76.2	2	OK

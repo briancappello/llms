@@ -1,0 +1,82 @@
+{
+  "tag": "turbo-735",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4220,
+      "n": 2,
+      "pp_med": 855.2,
+      "tg_med": 54.91,
+      "acc_med": 78.1
+    },
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 790.8,
+      "tg_med": 45.8,
+      "acc_med": 67.5
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 694.5,
+      "tg_med": 43.89,
+      "acc_med": 73.1
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4220,
+      "pp_tok_s": 855.6,
+      "tg_tok_s": 54.94,
+      "acc_pct": 78.1,
+      "wall_s": 7.4
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4220,
+      "pp_tok_s": 854.7,
+      "tg_tok_s": 54.89,
+      "acc_pct": 78.1,
+      "wall_s": 7.3
+    },
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 790.9,
+      "tg_tok_s": 45.75,
+      "acc_pct": 67.5,
+      "wall_s": 44.4
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 790.7,
+      "tg_tok_s": 45.85,
+      "acc_pct": 67.5,
+      "wall_s": 44.4
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 694.5,
+      "tg_tok_s": 43.35,
+      "acc_pct": 73.1,
+      "wall_s": 97.5
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 694.5,
+      "tg_tok_s": 44.43,
+      "acc_pct": 73.1,
+      "wall_s": 97.5
+    }
+  ]
+}

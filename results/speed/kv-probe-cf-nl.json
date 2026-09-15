@@ -1,0 +1,57 @@
+{
+  "tag": "cf-nl-f16-192k",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4219,
+      "n": 2,
+      "pp_med": 951.9,
+      "tg_med": 51.14,
+      "acc_med": 64.8
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 750.3,
+      "tg_med": 37.77,
+      "acc_med": 52.4
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4219,
+      "pp_tok_s": 953.7,
+      "tg_tok_s": 51.09,
+      "acc_pct": 64.8,
+      "wall_s": 8.9
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4219,
+      "pp_tok_s": 950.1,
+      "tg_tok_s": 51.18,
+      "acc_pct": 64.8,
+      "wall_s": 7.0
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 751.3,
+      "tg_tok_s": 37.79,
+      "acc_pct": 52.4,
+      "wall_s": 91.0
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 749.4,
+      "tg_tok_s": 37.75,
+      "acc_pct": 52.4,
+      "wall_s": 91.1
+    }
+  ]
+}

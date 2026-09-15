@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mostlygeek/llama-swap/refs/heads/main/config-schema.json
+#
+# llama-swap configuration for taichi (Radeon AI PRO R9700, 32624 MiB, gfx1201)
+#
+# DESIGN: on-demand model selection by real name.
+#
+#   Every chat model is listed in /v1/models under its real id (cold-fusion,
+#   bigbang-v1, ...). A client picks one by setting `model` in a normal OpenAI
+#   request, and llama-swap loads/swaps to it on demand. Single user, so a
+#   request triggering a swap is fine -- no virtual-id indirection, no profiles.
+#   The default model is preloaded at startup (hooks.on_startup.preload).
+#
+#   globalTTL is 0 so nothing unloads on a timer; a model stays resident until a
+#   request for a different one swaps it out.
+#
+# ACCESS: llama-swap binds 127.0.0.1 only (local tools are keyless). LAN access
+#   goes through the auth proxy on :4096, which requires a bearer API key. See
+#   MODELS.md "Network access".
+#
+# BACKEND: Vulkan, chosen on measured data. It beats HIP at every depth past
+# ~16k and the gap widens (TG +49% at 64k). See bench/bench-backends.sh.
+#
+# KV CACHE: f16, not q8_0. Measured f16 is both higher precision AND faster
+# here (PP 2174 vs 1322 tok/s at 64k), and it still fits the full window.
+
+healthCheckTimeout: 500      # 20GB weights need generous startup room
+logLevel: info
+startPort: 10001
+globalTTL: 0                 # never auto-unload on a timer; swap-on-request only
+metricsMaxInMemory: 2000
+
+# Show which box is driving which request in the Activity UI. opencode may not
+# send these, but other clients might.
+ui:
+  activity:
+    session_id: ["X-Session-ID", "X-Litellm-Session-Id"]
+
+# Persist activity/metrics across restarts.
+store:
+  path: /home/brian/.local/share/llama-swap/activity.sqlite
+
+performance:
+  enable: true
+  every: 5s
+
+macros:
+  # Vulkan build. GPU pinning is done OUT OF BAND via the env var
+  # MESA_VK_DEVICE_SELECT=1002:7551! (R9700, exclusive) in the llama-swap
+  # systemd unit -- it hides the Ryzen iGPU (gfx1036) entirely, so the dGPU is
+  # the only Vulkan device ggml can see. Do NOT add `-dev Vulkan0` here: the
+  # RADV enumeration order between iGPU and dGPU is not stable, and without the
+  # env pin `Vulkan0` can resolve to the iGPU (49GB shared RAM, accepts
+  # -ngl 999, then crawls). The env pin is the single source of truth.
+  server: >
+    /home/brian/opt/llama.cpp-vulkan/bin/llama-server
+    --port ${PORT} --host 127.0.0.1 -ngl 999
+
+  # Shared inference args. --jinja is required for tool calling.
+  common: >
+    -fa on
+    --cache-type-k f16 --cache-type-v f16
+    --jinja --metrics
+
+  hub: /home/brian/.cache/huggingface/hub

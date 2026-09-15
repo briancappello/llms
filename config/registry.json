@@ -1,0 +1,121 @@
+{
+  "apodex-apodex-1-1-mini": {
+    "arch": "qwen35moe",
+    "capability": "chat",
+    "ctx": 262144,
+    "description": "qwen35moe, 262144 trained ctx (scaffolded by 'llm add' -- set sampling, verify ctx). native MTP head -> --spec-type draft-mtp. template preserves reasoning -> --reasoning-preserve",
+    "display": "Apodex 1.1 Mini",
+    "extra_args": [
+      "--reasoning-preserve",
+      "--spec-type draft-mtp"
+    ],
+    "file": "apodex_Apodex-1.1-mini-Q4_K_M.gguf",
+    "kv_unified": true,
+    "parallel": 2,
+    "path": "/home/brian/.cache/huggingface/hub/models--bartowski--apodex_Apodex-1.1-mini-GGUF/snapshots/0942a4675189a49c065ddd2c4bc067eb7046c0f1/apodex_Apodex-1.1-mini-Q4_K_M.gguf",
+    "quant": "Q4_K_M",
+    "repo": "bartowski/apodex_Apodex-1.1-mini-GGUF",
+    "size_bytes": 21864082336,
+    "trained_ctx": 262144
+  },
+  "ds4": {
+    "arch": "deepseek-v4-flash-moe",
+    "capability": "chat",
+    "checkEndpoint": "/v1/models",
+    "cmd": [
+      "bash -c 'cd /home/brian/dev/ds4-hip && exec ./ds4-server --model ./ds4flash.gguf --host 127.0.0.1 --port ${PORT} --kv-disk-dir /tmp/ds4-kv --kv-disk-space-mb 8192'"
+    ],
+    "ctx": 262144,
+    "description": "DeepSeek V4 Flash MoE (MLA, huge ctx) served by the CUSTOM ds4-hip engine (~/dev/ds4-hip/ds4-server), NOT llama.cpp. Hybrid: ~7.4 GiB non-MoE resident on the R9700 + ~72.6 GiB routed experts streamed per-layer from host page cache (wants ~81 GiB RAM warm). Uses the WHOLE 32 GiB card + a global /tmp/ds4.lock => EXCLUSIVE: llama-swap swaps it in/out like any model. No /health, so checkEndpoint=/v1/models; ~10-70s load depending on page-cache warmth. bash -c + exec so SIGTERM hits ds4-server directly (clean shutdown releases the lock). Native id deepseek-v4-flash (useModelName), thinking mode by default. IMPORTANT: context is left to the engine's auto-sizer (~532480 tok / 14 GiB KV) -- do NOT pin a small --ctx, which lets the expert LRU pool eat the VRAM headroom and makes large-prefill 'prefill scratch allocation' fail. --tokens left at the 393216 default (pinning it low caps agent output).",
+    "display": "DeepSeek V4 Flash (ds4-hip, IQ2_XXS)",
+    "engine": "ds4-hip",
+    "params": "MoE IQ2_XXS (~81 GiB, host-streamed experts)",
+    "size_bytes": 86720111488,
+    "unloadTimeout": 30,
+    "useModelName": "deepseek-v4-flash"
+  },
+  "flash-next": {
+    "arch": "qwen4exp",
+    "capability": "chat",
+    "cmd": [
+      "bash -c 'exec /home/brian/opt/llama.cpp-hip/bin/llama-server -m /home/brian/.cache/huggingface/hub/models--unsloth--Qwen3.8-Flash-Next-GGUF/snapshots/83cadfda58d30be06c110518208d1bb918b33f10/UD-IQ3_XXS/Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf --host 127.0.0.1 --port ${PORT} -ngl 48 --n-cpu-moe 24 -fa on --cache-type-k q8_0 --cache-type-v q8_0 -c 131072 -np 1 --kv-unified --jinja --metrics --reasoning-preserve --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.01 --repeat-penalty 1.0'"
+    ],
+    "ctx": 131072,
+    "description": "Qwen3.8-Flash-Next (HF qwen4_exp / Qwen4Exp): 177B MoE, ~3B active (512 experts, top-10, gated shared expert), hyper-connections + PLE n-gram embeddings + QSA sparse attention. Served on the PR #27742 build (llama.cpp-hip @ 072f519); NOT mergeable via the shared Vulkan macros. CMD-OVERRIDE because this is the only >VRAM MoE here: 76 GiB weights, experts streamed from host RAM via --n-cpu-moe 24 (24 expert layers on GPU, 24 on CPU) with all attention/HC/KV on the R9700. BACKEND = HIP not Vulkan: measured HIP prefill +40% at 32k depth (225 vs 160 tok/s), decode tied ~15 tok/s; rocWMMA gave nothing (custom QSA path). CTX 131072 with q8_0 K/V => ~29.9/31.9 GiB VRAM, 2 GiB headroom; f16 KV will NOT fit at 128k. -np 1 is REQUIRED: the server's default 4 slots inflate the compute buffer and OOM at this expert budget. Full 262144 window also fits with --n-cpu-moe 26 + q8_0 KV if needed. Sampling = vendor GGUF preset (temp 1.0 / top_p 0.95 / top_k 20). Weights not public at time of build; runs from the unsloth GGUF. Perf notes: results/speed (flash-next).",
+    "display": "Qwen3.8 Flash-Next (qwen4exp, UD-IQ3_XXS)",
+    "engine": "llama.cpp-hip",
+    "file": "Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf",
+    "params": "MoE 177B (A3B, 512 experts top-10)",
+    "quant": "UD-IQ3_XXS",
+    "repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
+    "size_bytes": 81940000000,
+    "trained_ctx": 262144,
+    "unloadTimeout": 30
+  },
+  "flash-next-mtp": {
+    "arch": "qwen4exp",
+    "capability": "chat",
+    "cmd": [
+      "bash -c 'exec /home/brian/opt/llama.cpp-mtp/bin/llama-server -m /home/brian/.cache/huggingface/hub/models--unsloth--Qwen3.8-Flash-Next-GGUF/snapshots/83cadfda58d30be06c110518208d1bb918b33f10/UD-IQ3_XXS/Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf -md /home/brian/.cache/huggingface/hub/models--unsloth--Qwen3.8-Flash-Next-GGUF/snapshots/5d16c055a7c5cb276e721ee154f9c22420dde2a1/MTP/mtp-Qwen3.8-Flash-Next-Q4_K_M.gguf --spec-type draft-mtp --spec-draft-n-max 4 --host 127.0.0.1 --port ${PORT} -ngl 48 --n-cpu-moe 26 -fa on --cache-type-k q8_0 --cache-type-v q8_0 -c 65536 -np 1 --kv-unified --jinja --metrics --reasoning-preserve --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.01 --repeat-penalty 1.0'"
+    ],
+    "ctx": 65536,
+    "description": "Qwen3.8-Flash-Next with the NextN/MTP draft head (--spec-type draft-mtp). Same 177B MoE target as flash-next; adds a 1-block draft head that guesses ahead and is verified exactly, so output is unchanged. BUILD = llama.cpp-mtp @ 495726c: ggml-org master + PR #28097 (qwen4exp MTP graph, draft-head-only GGUF support, and the one-line fix for the draft loader using the TARGET path) + JayToltTech's 175b66c (server: request LLAMA_STATE_SEQ_FLAGS_ON_DEVICE at the speculative checkpoint sites). That last commit is not optional: qwen4exp is a recurrent hybrid, so the server takes a FULL recurrent-state checkpoint every speculative round, and through the host path that costs ~200 ms/token and makes MTP a large net loss. HEAD = the SELF-CONTAINED Q4_K_M (2.6 GiB), not the shared- variant: shared heads borrow tok_embd and the output projection from the running model, and this build has no cross-model borrowing (qwen4exp.cpp creates tok_embd required), so shared- dies with \"tensor 'token_embd.weight' not found\". CTX 65536 not 131072 and --n-cpu-moe 26 not 24: the head plus its draft context costs ~2.9 GiB, and flash-next at 131072 already ran with ~2 GiB headroom. At -c 65536/--n-cpu-moe 24 it loads but leaves 0.06 GiB free, which will not survive a deep prompt; 26 gives 1.86 GiB free at 30.0 GiB used. MEASURED on this box (R9700, 47631-token prompt, temp 1.0/top-p 0.95/top-k 20, A/B same build and flags): decode 17.40 -> 24.48 tok/s (1.41x), prefill 435.8 -> 330.2 tok/s (0.76x). Shallow prompts gain less (~1.15x); the decode win grows with depth, the prefill loss is flat, so this is worth it for long-context work and not for short turns. Acceptance is sampler-sensitive: 0.75 at temp 0 (mean len 3.98) vs 0.38-0.50 at temp 1.0 (mean len 2.5-3.0). Throughput barely moves between the two, so the production sampler is kept. NOTE: does NOT carry JayToltTech's 4b1f6f8 replay-livelock fix (that targets a different MTP implementation); watch for a slot spinning on one position.",
+    "display": "Qwen3.8 Flash-Next MTP (qwen4exp, UD-IQ3_XXS + Q4_K_M draft)",
+    "draft_file": "mtp-Qwen3.8-Flash-Next-Q4_K_M.gguf",
+    "engine": "llama.cpp-mtp",
+    "file": "Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf",
+    "params": "MoE 177B (A3B, 512 experts top-10) + 1-block MTP head",
+    "quant": "UD-IQ3_XXS",
+    "repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
+    "size_bytes": 84730000000,
+    "trained_ctx": 262144,
+    "unloadTimeout": 30
+  },
+  "muse-glimmer": {
+    "arch": "muse-glimmer",
+    "capability": "chat",
+    "ctx": 262144,
+    "description": "Meta Superintelligence Muse-Glimmer-30B (arch=muse-glimmer; needs llama.cpp >= b10353, have 169e4a7). Dense 30B causal transformer, GQA 32Q/2KV + sliding-window (2048) on 3 of 4 layers => cheap KV, so the full 131072 window is affordable. Purpose-built for local agentic tasks: tool use, multi-step reasoning, failure recovery. TUNED FOR AGENTIC CODING: Meta's sampling temp 1.0 / top_p 0.95 / top_k 64 (+ --min-p 0.0 to override llama.cpp's silent 0.05); reasoning is ALWAYS ON (default strength 'high', good for coding; control via reasoning_strength low/medium/high/xhigh or cap with --reasoning-budget) and routed to reasoning_content. DFlash drafter wired via -md/-ngld 99 for speculative decoding. --jinja is mandatory (common macro) and carries the embedded chat template + correct stop tokens (never stop on <|eom|>). Card warns -c is split across -np slots, so served -c 262144 with -np 2 --no-kv-unified = 131072 per request. Q4_K_XL Dynamic build (0.2% degradation, 32GB target). Vision mmproj not wired (text-only).",
+    "display": "Muse Glimmer 30B (Q4_K_XL Dynamic, DFlash spec)",
+    "extra_args": [
+      "-md /home/brian/.cache/huggingface/hub/models--meta-models--Muse-Glimmer-30B-GGUF/snapshots/70bf1b61ac09f91b24d39038091b41c582bc5d7a/dflash-Muse-Glimmer-30B-Q4_K_M.gguf",
+      "-ngld 99",
+      "--temp 1.0",
+      "--top-p 0.95",
+      "--top-k 64",
+      "--min-p 0.0"
+    ],
+    "file": "Muse-Glimmer-30B-KQuant-Dynamic-Q4_K_XL.gguf",
+    "kv_unified": false,
+    "parallel": 2,
+    "params": "30B-dense",
+    "path": "/home/brian/.cache/huggingface/hub/models--meta-models--Muse-Glimmer-30B-GGUF/snapshots/70bf1b61ac09f91b24d39038091b41c582bc5d7a/Muse-Glimmer-30B-KQuant-Dynamic-Q4_K_XL.gguf",
+    "quant": "Q4_K_XL",
+    "repo": "meta-models/Muse-Glimmer-30B-GGUF",
+    "size_bytes": 19653960832,
+    "trained_ctx": 131072
+  },
+  "qwen3-8-27b-turbo-fable-cold-fusion-735-882-heretic-uncensored-neo-coder-max-mtp": {
+    "arch": "qwen35",
+    "capability": "chat",
+    "ctx": 163840,
+    "description": "DavidAU Qwen3.8-27B TURBO Fable-Cold-Fusion 735/882 Heretic NEO-CODER-MAX, Q5_K_M NEO dual-imatrix (19.7 GiB, largest quant in the fleet); MTP tensors Q8_0, output tensor f16. Same qwen35 geometry as cold-fusion/qwen38-27b (64L, ~16 attention layers cache KV at 4 KV heads x 256 head_dim). TUNED FOR AGENTIC CODING: Qwen3.8 'precise coding' preset temp 0.6 / top_p 0.95 / top_k 20 / min_p 0.0; presence_penalty and repeat_penalty left at llama.cpp defaults (0.0 / 1.0) -- card warns rep-pen degrades MTP acceptance, keep off and temp <= 1. BENCHED: tool-calling 22/22 100% 0 FP; MTP acceptance 73.4% generation and 78/68/73% at 4k/32k/64k -- BEST IN FLEET and holds at depth (vs muse-glimmer 50%, cold-fusion-nl 52% @64k), so draft-mtp is clearly correct here. TG 53.2 / PP 199, bottom-tier speed as expected for Q5_K_M, ~tied with cold-fusion. CAVEAT: the card's '1/2 to 1/10 thinking tokens' TURBO claim does NOT hold -- only -14% median / -27% total vs stock qwen38-27b, and DavidAU's own non-TURBO cold-fusion uses LESS THAN HALF the thinking tokens of this model; think ratio 0.79 is the worst in the fleet. See results/quality/turbo-735.md. CTX MEASURED (results/context/turbo-735-ctx.tsv): 70.0 KiB/token f16 (measured delta, not derived), fixed footprint 20847 MiB, 11777 MiB for KV. Served at 163840 = the f16/f16 ceiling (32047 MiB peak, 577 MiB headroom). Alternatives verified to load: 196608 with f16 K + q8_0 V (31405/1219), and the FULL 262144 trained window with q8_0 K+V (31085/1539) -- both need NIAH before shipping. NB q8_0 is 57% of f16 per token (40.0 vs 70.0), not 50%. NB VRAM reads ~0 at idle on this Vulkan build (driver evicts to GTT); sample only during generation -- ctx-probe.sh/soak-ctx.sh are unreliable here. 'display' name below is wrong (scaffolded from bad GGUF general.name).",
+    "display": "Qwen3.8 27B Brainwaves NM HERETIC BR LOA1",
+    "extra_args": [
+      "--spec-type draft-mtp",
+      "--reasoning-preserve",
+      "--temp 0.6",
+      "--top-p 0.95",
+      "--top-k 20",
+      "--min-p 0.0"
+    ],
+    "file": "Qwen3.8-27B-TurboFCFusion-735-882-Here-Uncen-NEO-CODER-MAX-MTP-Q5_K_M.gguf",
+    "kv_unified": true,
+    "parallel": 2,
+    "path": "/home/brian/.cache/huggingface/hub/models--DavidAU--Qwen3.8-27B-TURBO-Fable-Cold-Fusion-735-882-Heretic-Uncensored-NEO-CODER-MAX-MTP-GGUF/snapshots/584aa2a75d9eb5bf6a22073181eff6492b0073d5/Qwen3.8-27B-TurboFCFusion-735-882-Here-Uncen-NEO-CODER-MAX-MTP-Q5_K_M.gguf",
+    "quant": "Q5_K_M",
+    "repo": "DavidAU/Qwen3.8-27B-TURBO-Fable-Cold-Fusion-735-882-Heretic-Uncensored-NEO-CODER-MAX-MTP-GGUF",
+    "size_bytes": 21182273056,
+    "trained_ctx": 262144
+  }
+}

@@ -1,0 +1,6 @@
+ctx	cache_k	cache_v	kib_per_tok	peak_vram_mib	headroom_mib	status
+65536	f16	f16	70.0	25327	7297	OK
+131072	f16	f16	70.0	29807	2817	OK
+163840	f16	f16	70.0	32047	577	OK
+196608	f16	q8_0	55.0	31405	1219	OK
+262144	q8_0	q8_0	40.0	31085	1539	OK

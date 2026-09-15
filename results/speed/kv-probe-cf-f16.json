@@ -1,0 +1,57 @@
+{
+  "tag": "cf-f16-192k",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4219,
+      "n": 2,
+      "pp_med": 894.1,
+      "tg_med": 50.61,
+      "acc_med": 63.6
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 713.4,
+      "tg_med": 43.5,
+      "acc_med": 64.3
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4219,
+      "pp_tok_s": 894.8,
+      "tg_tok_s": 50.48,
+      "acc_pct": 63.6,
+      "wall_s": 8.7
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4219,
+      "pp_tok_s": 893.5,
+      "tg_tok_s": 50.75,
+      "acc_pct": 63.6,
+      "wall_s": 7.3
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 714.3,
+      "tg_tok_s": 43.53,
+      "acc_pct": 64.3,
+      "wall_s": 95.1
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 712.5,
+      "tg_tok_s": 43.48,
+      "acc_pct": 64.3,
+      "wall_s": 95.2
+    }
+  ]
+}

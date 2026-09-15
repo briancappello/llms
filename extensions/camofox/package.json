@@ -1,0 +1,21 @@
+{
+  "name": "pi-extension-camofox",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Headless anti-detection browsing tools for the pi agent, driving Camoufox through playwright-core",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "fetch": "camoufox-js fetch",
+    "browser-path": "camoufox-js path",
+    "browser-version": "camoufox-js version"
+  },
+  "dependencies": {
+    "camoufox-js": "^0.12.0",
+    "playwright-core": "<1.61.0"
+  }
+}

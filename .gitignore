@@ -1,0 +1,15 @@
+# 500MB of pinned upstream deps -- recreate with `make swebench-venv`
+bench/swebench/.venv/
+__pycache__/
+*.pyc
+.venv/
+dist/
+.coverage
+
+# per-run agent trajectories and container scratch; the scored summaries in
+# results/swebench/ are what matter and ARE tracked
+results/swebench/*/
+
+# npm deps for the pi browser extension -- recreate with `make camofox`.
+# package-lock.json IS tracked, so the resolved versions are pinned.
+extensions/camofox/node_modules/

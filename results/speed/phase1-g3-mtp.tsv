@@ -1,0 +1,9 @@
+model	spec	workload	tg_tok_s	draft_n	draft_acc	acc_pct	vram_mib
+kat-apex	none	copy	107.60	-	-	-	26514
+kat-apex	none	prose	112.45	-	-	-	26514
+kat-apex	draft-mtp	copy	140.04	81	53	65.4	26847
+kat-apex	draft-mtp	prose	133.15	480	238	49.6	26847
+qwopus-mtp	none	copy	119.12	-	-	-	24713
+qwopus-mtp	none	prose	123.15	-	-	-	24713
+qwopus-mtp	draft-mtp	copy	197.06	123	113	91.9	25047
+qwopus-mtp	draft-mtp	prose	172.06	399	265	66.4	25047

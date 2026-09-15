@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-swap-manager"
+version = "0.1.0"
+description = "Portable registry and GGUF model management for llama-swap"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Brian Cappello" }]
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0.2,<7", "huggingface-hub>=0.27,<2"]
+
+[project.optional-dependencies]
+gguf = ["gguf>=0.14,<1"]
+
+[project.scripts]
+llm = "llama_swap_manager.cli:main"
+llama-swap-manager = "llama_swap_manager.cli:main"
+
+[project.urls]
+Repository = "https://github.com/briancappello/llms"
+Issues = "https://github.com/briancappello/llms/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llama_swap_manager"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/llama_swap_manager", "tests", "proxy", "bin/llm", "README.md", "LICENSE", "pyproject.toml"]

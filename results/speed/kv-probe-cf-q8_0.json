@@ -1,0 +1,57 @@
+{
+  "tag": "cf-q8_0-192k",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4219,
+      "n": 2,
+      "pp_med": 876.9,
+      "tg_med": 48.82,
+      "acc_med": 59.6
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 644.8,
+      "tg_med": 40.18,
+      "acc_med": 60.0
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4219,
+      "pp_tok_s": 877.6,
+      "tg_tok_s": 48.78,
+      "acc_pct": 59.6,
+      "wall_s": 8.8
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4219,
+      "pp_tok_s": 876.2,
+      "tg_tok_s": 48.86,
+      "acc_pct": 59.6,
+      "wall_s": 7.5
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 644.4,
+      "tg_tok_s": 40.2,
+      "acc_pct": 60.0,
+      "wall_s": 105.3
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 645.2,
+      "tg_tok_s": 40.16,
+      "acc_pct": 60.0,
+      "wall_s": 105.0
+    }
+  ]
+}

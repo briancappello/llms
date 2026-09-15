@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "tag": "muse-glimmer",
+    "n": 5,
+    "reasoning_tok_total": 3642,
+    "reasoning_tok_median": 640,
+    "answer_tok_total": 1476,
+    "completion_tok_total": 5168,
+    "think_ratio_median": 0.76,
+    "tg_tok_s_median": 64.51,
+    "pp_tok_s_median": 272.8,
+    "acc_pct_median": 66.3,
+    "wall_s_total": 84.8,
+    "hit_cap": 0
+  },
+  "records": [
+    {
+      "id": "merge_intervals",
+      "finish": "stop",
+      "prompt_tok": 89,
+      "completion_tok": 459,
+      "reasoning_tok": 353,
+      "answer_tok": 96,
+      "think_ratio": 0.786,
+      "pp_tok_s": 29.4,
+      "tg_tok_s": 65.8,
+      "draft_n": 453,
+      "draft_acc": 307,
+      "acc_pct": 67.8,
+      "wall_s": 8.2
+    },
+    {
+      "id": "fix_binsearch",
+      "finish": "stop",
+      "prompt_tok": 141,
+      "completion_tok": 1765,
+      "reasoning_tok": 1326,
+      "answer_tok": 429,
+      "think_ratio": 0.756,
+      "pp_tok_s": 386.5,
+      "tg_tok_s": 64.51,
+      "draft_n": 1770,
+      "draft_acc": 1174,
+      "acc_pct": 66.3,
+      "wall_s": 27.6
+    },
+    {
+      "id": "lru_cache",
+      "finish": "stop",
+      "prompt_tok": 91,
+      "completion_tok": 1236,
+      "reasoning_tok": 640,
+      "answer_tok": 586,
+      "think_ratio": 0.522,
+      "pp_tok_s": 272.8,
+      "tg_tok_s": 66.34,
+      "draft_n": 1203,
+      "draft_acc": 835,
+      "acc_pct": 69.4,
+      "wall_s": 18.8
+    },
+    {
+      "id": "async_refactor",
+      "finish": "stop",
+      "prompt_tok": 148,
+      "completion_tok": 1032,
+      "reasoning_tok": 721,
+      "answer_tok": 301,
+      "think_ratio": 0.705,
+      "pp_tok_s": 418.7,
+      "tg_tok_s": 59.63,
+      "draft_n": 1116,
+      "draft_acc": 659,
+      "acc_pct": 59.1,
+      "wall_s": 17.6
+    },
+    {
+      "id": "sql_second_salary",
+      "finish": "stop",
+      "prompt_tok": 97,
+      "completion_tok": 676,
+      "reasoning_tok": 602,
+      "answer_tok": 64,
+      "think_ratio": 0.904,
+      "pp_tok_s": 255.5,
+      "tg_tok_s": 54.41,
+      "draft_n": 801,
+      "draft_acc": 409,
+      "acc_pct": 51.1,
+      "wall_s": 12.6
+    }
+  ]
+}

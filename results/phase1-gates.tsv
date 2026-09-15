@@ -1,0 +1,4 @@
+model	g1_load	g2_mtp_detect	g3_mtp_engage	g4_toolcall	g5_reasoning	vram_mib	load_s	notes
+kat-apex	PASS	FAIL	NA	22/22	REASONS	26513	12
+kat-q5km	PASS	NA	NA	22/22	REASONS	24398	9
+qwopus-mtp	PASS	FAIL	NA	22/22	REASONS	24713	12

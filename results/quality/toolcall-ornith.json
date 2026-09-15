@@ -1,0 +1,219 @@
+{
+  "summary": {
+    "model": "ornith",
+    "total": 22,
+    "passed": 22,
+    "pass_rate": 100.0,
+    "positive_pass_rate": 100.0,
+    "false_positive_rate": 0.0,
+    "malformed_json": 0,
+    "breakdown": {
+      "pass": 22
+    },
+    "elapsed_s": 28.3
+  },
+  "results": [
+    {
+      "id": "read_simple",
+      "expected": "read_file",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "read_file"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "list_simple",
+      "expected": "list_directory",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "list_directory"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "weather_simple",
+      "expected": "get_weather",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "get_weather"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "run_simple",
+      "expected": "run_command",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "run_command"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "search_simple",
+      "expected": "search_code",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "search_code"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "read_not_list",
+      "expected": "read_file",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "read_file"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "list_not_read",
+      "expected": "list_directory",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "list_directory"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "search_not_run",
+      "expected": "search_code",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "search_code"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "run_not_search",
+      "expected": "run_command",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "run_command"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "write_not_read",
+      "expected": "write_file",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "write_file"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "weather_units",
+      "expected": "get_weather",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "get_weather"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "run_timeout",
+      "expected": "run_command",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "run_command"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "search_glob",
+      "expected": "search_code",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "search_code"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "issue_labels",
+      "expected": "create_issue",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "create_issue"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "write_multiline",
+      "expected": "write_file",
+      "status": "pass",
+      "n_calls": 1,
+      "called": [
+        "write_file"
+      ],
+      "json_ok": true
+    },
+    {
+      "id": "no_tool_greeting",
+      "expected": null,
+      "status": "pass",
+      "n_calls": 0,
+      "called": [],
+      "json_ok": true
+    },
+    {
+      "id": "no_tool_concept",
+      "expected": null,
+      "status": "pass",
+      "n_calls": 0,
+      "called": [],
+      "json_ok": true
+    },
+    {
+      "id": "no_tool_math",
+      "expected": null,
+      "status": "pass",
+      "n_calls": 0,
+      "called": [],
+      "json_ok": true
+    },
+    {
+      "id": "no_tool_opinion",
+      "expected": null,
+      "status": "pass",
+      "n_calls": 0,
+      "called": [],
+      "json_ok": true
+    },
+    {
+      "id": "no_tool_defn",
+      "expected": null,
+      "status": "pass",
+      "n_calls": 0,
+      "called": [],
+      "json_ok": true
+    },
+    {
+      "id": "multiturn_read",
+      "expected": "read_file",
+      "status": "pass",
+      "answer": "The value of the 'port' field is **8080**."
+    },
+    {
+      "id": "multiturn_weather",
+      "expected": "get_weather",
+      "status": "pass",
+      "answer": "It's currently **-3\u00b0C** in Oslo with **snow** conditions."
+    }
+  ]
+}

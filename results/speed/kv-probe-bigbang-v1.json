@@ -1,0 +1,57 @@
+{
+  "tag": "bigbang-v1",
+  "summary": {
+    "32768": {
+      "prompt_tok": 32850,
+      "n": 2,
+      "pp_med": 2222.9,
+      "tg_med": 128.09,
+      "acc_med": 51.0
+    },
+    "65536": {
+      "prompt_tok": 65618,
+      "n": 2,
+      "pp_med": 1871.3,
+      "tg_med": 132.95,
+      "acc_med": 63.1
+    }
+  },
+  "records": [
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32850,
+      "pp_tok_s": 2229.9,
+      "tg_tok_s": 128.02,
+      "acc_pct": 51.0,
+      "wall_s": 17.0
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32850,
+      "pp_tok_s": 2215.9,
+      "tg_tok_s": 128.17,
+      "acc_pct": 51.0,
+      "wall_s": 15.8
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65618,
+      "pp_tok_s": 1872.3,
+      "tg_tok_s": 133.53,
+      "acc_pct": 63.1,
+      "wall_s": 36.1
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65618,
+      "pp_tok_s": 1870.3,
+      "tg_tok_s": 132.38,
+      "acc_pct": 63.1,
+      "wall_s": 36.1
+    }
+  ]
+}

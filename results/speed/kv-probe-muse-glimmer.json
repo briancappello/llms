@@ -1,0 +1,82 @@
+{
+  "tag": "muse-glimmer",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4216,
+      "n": 2,
+      "pp_med": 831.5,
+      "tg_med": 64.22,
+      "acc_med": 68.5
+    },
+    "32768": {
+      "prompt_tok": 32889,
+      "n": 2,
+      "pp_med": 810.8,
+      "tg_med": 48.8,
+      "acc_med": 45.6
+    },
+    "65536": {
+      "prompt_tok": 65656,
+      "n": 2,
+      "pp_med": 749.5,
+      "tg_med": 50.49,
+      "acc_med": 50.3
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4216,
+      "pp_tok_s": 814.8,
+      "tg_tok_s": 64.04,
+      "acc_pct": 68.5,
+      "wall_s": 8.3
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4216,
+      "pp_tok_s": 848.1,
+      "tg_tok_s": 64.41,
+      "acc_pct": 68.5,
+      "wall_s": 7.0
+    },
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32889,
+      "pp_tok_s": 810.4,
+      "tg_tok_s": 48.82,
+      "acc_pct": 45.6,
+      "wall_s": 43.2
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32889,
+      "pp_tok_s": 811.3,
+      "tg_tok_s": 48.78,
+      "acc_pct": 45.6,
+      "wall_s": 43.2
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65656,
+      "pp_tok_s": 749.9,
+      "tg_tok_s": 50.54,
+      "acc_pct": 50.3,
+      "wall_s": 90.2
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65656,
+      "pp_tok_s": 749.2,
+      "tg_tok_s": 50.44,
+      "acc_pct": 50.3,
+      "wall_s": 90.3
+    }
+  ]
+}
