@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Build a llama.cpp variant and install it as a named engine under ~/opt.
+#
+#   build-engine <name> <backend> [--src DIR | --repo URL --ref REF] [cmake args...]
+#
+# Examples:
+#   build-engine vulkan  vulkan                      # upstream master, RADV
+#   build-engine hip     hip                         # upstream master, ROCm
+#   build-engine mtp     hip --ref pr/28097          # an upstream PR
+#   build-engine bonsai  hip --src ~/dev/bonsai-llama.cpp
+#   build-engine cuda    cuda --arch 90              # an NVIDIA host
+#
+# Installs to ~/opt/llama.cpp-<name>; point settings.json at
+# ~/opt/llama.cpp-<name>/bin/llama-server under engines.<name>.server.
+#
+# Replaces my-llama/build-backends.sh. Differences that matter:
+#   - one variant per invocation, so a failure cannot leave a half-built set
+#   - --src builds a fork in place instead of resetting ~/src/llama.cpp
+#   - backend is explicit, and CUDA is supported for non-AMD hosts
+set -uo pipefail
+
+log() { echo "[$(date +%H:%M:%S)] $*"; }
+die() { echo "error: $*" >&2; exit 1; }
+
+[[ $# -ge 2 ]] || die "usage: build-engine <name> <vulkan|hip|hip-wmma|cuda|cpu> [options] [-- cmake args]"
+NAME="$1"; BACKEND="$2"; shift 2
+
+OPT="${LLM_OPT_DIR:-$HOME/opt}"
+SRC=""
+REPO="https://github.com/ggml-org/llama.cpp"
+REF=""
+JOBS="$(nproc)"
+# AMD: gfx target. NVIDIA: compute capability, e.g. 90 for Hopper.
+ARCH="${LLM_GPU_ARCH:-}"
+EXTRA=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --src)  SRC="${2:?}"; shift 2 ;;
+        --repo) REPO="${2:?}"; shift 2 ;;
+        --ref)  REF="${2:?}"; shift 2 ;;
+        --arch) ARCH="${2:?}"; shift 2 ;;
+        --jobs) JOBS="${2:?}"; shift 2 ;;
+        --)     shift; EXTRA+=("$@"); break ;;
+        *)      EXTRA+=("$1"); shift ;;
+    esac
+done
+
+# --- source ---------------------------------------------------------------
+if [[ -n "$SRC" ]]; then
+    SRC="${SRC/#\~/$HOME}"
+    [[ -d "$SRC/.git" ]] || die "$SRC is not a git checkout"
+    [[ -z "$REF" ]] || die "--ref applies to --repo, not --src; check the fork out yourself"
+else
+    SRC="${LLM_SRC_DIR:-$HOME/src/llama.cpp}"
+    REF="${REF:-master}"
+    [[ -d "$SRC/.git" ]] || { log "cloning $REPO -> $SRC"; git clone --depth 1 "$REPO" "$SRC" || exit 1; }
+    case "$REF" in
+        pr/*|pull/*) fetch="refs/pull/${REF##*/}/head" ;;
+        *:*)         REPO="https://github.com/${REF%%:*}/llama.cpp"; fetch="refs/heads/${REF#*:}" ;;
+        *)           fetch="refs/heads/${REF}" ;;
+    esac
+    log "fetching $REF ($fetch) from $REPO"
+    git -C "$SRC" fetch --depth 1 "$REPO" "+${fetch}:refs/build-target" || die "fetch failed for $REF"
+    git -C "$SRC" checkout --quiet --detach refs/build-target \
+        && git -C "$SRC" reset --hard --quiet refs/build-target || die "checkout failed for $REF"
+fi
+
+COMMIT="$(git -C "$SRC" rev-parse --short HEAD)"
+PREFIX="$OPT/llama.cpp-$NAME"
+BUILD="$SRC/build-$NAME"
+log "engine '$NAME': $BACKEND from $SRC @ $COMMIT -> $PREFIX"
+
+# --- backend --------------------------------------------------------------
+ROCM_CLANG=/opt/rocm/llvm/bin/clang
+args=()
+case "$BACKEND" in
+    vulkan) args=(-DGGML_VULKAN=ON) ;;
+    cpu)    args=() ;;
+    hip|hip-wmma)
+        [[ -x "$ROCM_CLANG" ]] || die "ROCm clang not found at $ROCM_CLANG"
+        [[ -n "$ARCH" ]] || ARCH="$(rocminfo 2>/dev/null | awk '/gfx[0-9]/{print $2; exit}')"
+        [[ -n "$ARCH" ]] || die "set --arch (e.g. gfx1201); could not detect one"
+        args=(-DGGML_HIP=ON -DAMDGPU_TARGETS="$ARCH" -DGPU_TARGETS="$ARCH"
+              -DCMAKE_C_COMPILER="$ROCM_CLANG" -DCMAKE_CXX_COMPILER="${ROCM_CLANG}++")
+        [[ "$BACKEND" == hip-wmma ]] && args+=(-DGGML_HIP_ROCWMMA_FATTN=ON)
+        ;;
+    cuda)
+        [[ -n "$ARCH" ]] || die "set --arch to a compute capability, e.g. 90 for H100"
+        args=(-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="$ARCH")
+        ;;
+    *) die "unknown backend: $BACKEND" ;;
+esac
+
+# --- build ----------------------------------------------------------------
+# RPATH is mandatory. Without it these binaries resolve libggml-*.so from
+# /usr/lib or from whichever prefix happens to be first, which silently makes
+# every variant run the same library. That destroys backend comparisons, and
+# for a fork with its own quant types it produces a build that either refuses
+# the weights or, worse, misreads them.
+log "=== configure ==="
+rm -rf "$BUILD"
+cmake -B "$BUILD" -S "$SRC" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+    -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' \
+    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
+    -DCMAKE_SKIP_INSTALL_RPATH=OFF \
+    -DLLAMA_CURL=ON \
+    -DLLAMA_BUILD_TESTS=OFF \
+    "${args[@]}" "${EXTRA[@]}" || die "configure failed for $NAME"
+
+log "=== build (-j$JOBS) ==="
+cmake --build "$BUILD" -j"$JOBS" || die "build failed for $NAME"
+
+log "=== install ==="
+cmake --install "$BUILD" || die "install failed for $NAME"
+
+leaked="$(ldd "$PREFIX/bin/llama-server" 2>/dev/null \
+    | grep -E 'libggml|libllama' | grep -v "$PREFIX/" || true)"
+[[ -z "$leaked" ]] || { log "!!! ISOLATION FAILURE, libs outside $PREFIX:"; echo "$leaked" | sed 's/^/      /'; exit 1; }
+
+echo "$COMMIT  $(git -C "$SRC" describe --tags --always 2>/dev/null || echo "$COMMIT")  ${REF:-$SRC}  $(date -Is)" \
+    > "$PREFIX/COMMIT"
+log "    isolation OK (all ggml/llama libs from $PREFIX/lib)"
+log "=== $NAME OK -> $PREFIX/bin/llama-server ==="
+log "add to settings.json: engines.$NAME.server = $PREFIX/bin/llama-server"

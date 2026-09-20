@@ -1,7 +1,7 @@
 REPO := $(shell pwd)
 BIN := $(HOME)/.local/bin
 
-.PHONY: help install uninstall test build proxy check corpus swebench-venv
+.PHONY: help install uninstall test build proxy check corpus swebench-venv engine
 
 help:
 	@printf '%s\n' \
@@ -9,10 +9,19 @@ help:
 	  'uninstall      remove the Python CLI tool' \
 	  'test           run Python and Go tests' \
 	  'build          build the Python wheel and source archive' \
+	  'engine         build an inference engine, e.g.' \
+	  '               make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp' \
+	  '               make engine NAME=vulkan BACKEND=vulkan' \
 	  'proxy          build the optional authentication proxy' \
 	  'check          run package and configuration checks' \
 	  'corpus         build the benchmark code corpus' \
 	  'swebench-venv  create the optional SWE-bench environment'
+
+# Thin wrapper; bin/build-engine takes the full option set.
+engine:
+	@test -n "$(NAME)" -a -n "$(BACKEND)" || { echo "usage: make engine NAME=<n> BACKEND=<b> [SRC=<dir>] [REF=<ref>] [ARCH=<gfx|cc>]"; exit 1; }
+	$(REPO)/bin/build-engine $(NAME) $(BACKEND) \
+	  $(if $(SRC),--src $(SRC)) $(if $(REF),--ref $(REF)) $(if $(ARCH),--arch $(ARCH))
 
 install:
 	uv tool install --force --with gguf $(REPO)
