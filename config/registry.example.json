@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "Example only. The real registry lives at",
+    "$XDG_CONFIG_HOME/llama-swap-manager/registry.json and is never committed:",
+    "it holds absolute paths into this host's Hugging Face cache.",
+    "",
+    "A model is rendered one of three ways, checked in this order:",
+    "  1. cmd     verbatim string or line list; the escape hatch, host-specific",
+    "  2. engine  named in settings.json; the portable form, preferred",
+    "  3. neither fall back to the ${server} macro in config.header.yaml",
+    "Setting both cmd and engine is an error rather than a silent precedence rule.",
+    "",
+    "Keep tuning here and paths-to-binaries in settings.json. Then the only",
+    "per-host delta is settings.json, and sampling/context research travels.",
+    "",
+    "Sampling is deliberately never scaffolded. Vendor presets genuinely",
+    "disagree and copying one model's onto another is a real error."
+  ],
+
+  "example-vulkan-default": {
+    "_comment": "No engine and no cmd: uses the ${server} macro from the header.",
+    "path": "/home/you/.cache/huggingface/hub/models--owner--repo/snapshots/<sha>/model-Q4_K_M.gguf",
+    "repo": "owner/repo",
+    "file": "model-Q4_K_M.gguf",
+    "display": "Example 27B",
+    "description": "Why this context, why this sampling, and what was measured to justify them.",
+    "capability": "chat",
+    "arch": "qwen35",
+    "quant": "Q4_K_M",
+    "trained_ctx": 262144,
+    "ctx": 163840,
+    "parallel": 2,
+    "kv_unified": true,
+    "extra_args": ["--reasoning-preserve", "--temp 0.6", "--top-p 0.95", "--top-k 20", "--min-p 0.0"]
+  },
+
+  "example-engine": {
+    "_comment": [
+      "Named engine. The binary, its device pin and -ngl live in settings.json,",
+      "so this entry is identical on an AMD box and an NVIDIA one.",
+      "'common': false opts out of the ${common} header macro for a model whose",
+      "cache types or offload split contradict the shared defaults."
+    ],
+    "engine": "bonsai",
+    "path": "/home/you/.cache/huggingface/hub/models--prism-ml--Ternary-Bonsai-2-27B-gguf/snapshots/<sha>/Ternary-Bonsai-2-27B-PQ2_0.gguf",
+    "display": "Bonsai 2 27B (ternary PQ2_0)",
+    "description": "PQ2_0 is ggml type 142 and needs the PrismML fork; stock llama.cpp cannot load it.",
+    "capability": "chat",
+    "arch": "qwen35",
+    "quant": "PQ2_0",
+    "trained_ctx": 262144,
+    "ctx": 262144,
+    "parallel": 2,
+    "kv_unified": true,
+    "common": true,
+    "extra_args": ["--reasoning-preserve", "--temp 1.0", "--top-p 0.95", "--top-k 20", "--min-p 0.0", "--repeat-penalty 1.0"]
+  },
+
+  "example-custom-engine": {
+    "_comment": [
+      "kind 'custom' engine: not llama.cpp, so no -m/-c/-np are composed.",
+      "Only the engine args plus extra_args are passed."
+    ],
+    "engine": "ds4-hip",
+    "display": "DeepSeek V4 Flash (ds4-hip)",
+    "description": "Own server binary, own flags, exclusive on the GPU.",
+    "capability": "chat",
+    "arch": "deepseek-v4-flash-moe",
+    "extra_args": ["--kv-disk-dir /tmp/ds4-kv", "--kv-disk-space-mb 8192"]
+  },
+
+  "example-verbatim-cmd": {
+    "_comment": "Escape hatch: llama-swap runs this exactly, ${PORT} substituted.",
+    "cmd": ["bash -c 'exec /home/you/opt/llama.cpp-hip/bin/llama-server -m /path/model.gguf --host 127.0.0.1 --port ${PORT} -ngl 48 --n-cpu-moe 24'"],
+    "display": "Something unusual",
+    "description": "Prefer an engine; keep this for one-off builds not worth naming.",
+    "capability": "chat",
+    "unloadTimeout": 30
+  },
+
+  "example-not-served": {
+    "_comment": "Only capability 'chat' is rendered into llama-swap.",
+    "path": "/home/you/.cache/huggingface/hub/models--owner--embed/snapshots/<sha>/embed.gguf",
+    "capability": "embedding"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "_comment": [
+    "Example only. The real file lives at $XDG_CONFIG_HOME/llama-swap-manager/settings.json",
+    "and is never committed: it is host state (binary paths, device pins, VRAM budget).",
+    "Create it with `llm init --server <llama-server>`, then add engines as below.",
+    "Every key is optional except the ones llm init writes. LLM_* environment",
+    "variables override these; LLM_ENGINES takes a JSON object.",
+    "",
+    "An engine names a local server process. Registry entries refer to one by",
+    "logical name, so the same registry works on this host and on a CUDA box:",
+    "only this file changes.",
+    "",
+    "Engine keys:",
+    "  server          required; absolute path, or relative to cwd, or a name on PATH",
+    "  kind            'llama.cpp' (default) composes -m/-c/-np/--kv-unified and",
+    "                  ${common} from the registry entry; 'custom' passes only the",
+    "                  engine args plus the entry's extra_args, for servers that are",
+    "                  not llama.cpp and take none of those flags",
+    "  args            fixed arguments always passed to this engine",
+    "  env             injected into the process; llama-swap requires UPPER_CASE names.",
+    "                  This is where device pins belong: MESA_VK_DEVICE_SELECT only",
+    "                  affects Vulkan, HIP_VISIBLE_DEVICES only affects HIP, and",
+    "                  CUDA_VISIBLE_DEVICES only affects CUDA. A pin set on the systemd",
+    "                  unit applies to every backend indiscriminately, which is wrong.",
+    "  cwd             absolute; rendered with env --chdir so no shell is involved and",
+    "                  signals still reach the server process directly",
+    "  check_endpoint  health path, or 'none' to skip",
+    "  use_model_name  model id to send upstream when it differs from the registry id",
+    "  unload_timeout  graceful seconds before force-kill",
+    "",
+    "--host/--port ${PORT} are appended automatically for every engine."
+  ],
+
+  "server": "/home/you/opt/llama.cpp-vulkan/bin/llama-server",
+  "swap_url": "http://127.0.0.1:18080",
+  "client_url": "http://127.0.0.1:18080/v1",
+  "listen": "127.0.0.1:18080",
+  "unit": "llama-swap.service",
+  "preload": true,
+  "gpu_memory_mib": 32624,
+
+  "engines": {
+    "llama-vulkan": {
+      "server": "/home/you/opt/llama.cpp-vulkan/bin/llama-server",
+      "env": { "MESA_VK_DEVICE_SELECT": "1002:7551!" },
+      "args": ["-ngl", "999"]
+    },
+
+    "llama-hip": {
+      "server": "/home/you/opt/llama.cpp-hip/bin/llama-server",
+      "env": { "HIP_VISIBLE_DEVICES": "0" },
+      "args": ["-ngl", "999"]
+    },
+
+    "llama-cuda": {
+      "server": "/home/you/opt/llama.cpp-cuda/bin/llama-server",
+      "env": { "CUDA_VISIBLE_DEVICES": "0" },
+      "args": ["-ngl", "999"]
+    },
+
+    "bonsai": {
+      "server": "/home/you/opt/llama.cpp-bonsai/bin/llama-server",
+      "env": { "HIP_VISIBLE_DEVICES": "0" },
+      "args": ["-ngl", "999"]
+    },
+
+    "ds4-hip": {
+      "kind": "custom",
+      "server": "./ds4-server",
+      "cwd": "/home/you/dev/ds4-hip",
+      "args": ["--model", "./ds4flash.gguf"],
+      "env": { "HIP_VISIBLE_DEVICES": "0" },
+      "check_endpoint": "/v1/models",
+      "use_model_name": "deepseek-v4-flash",
+      "unload_timeout": 30
+    }
+  }
+}
