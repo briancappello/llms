@@ -21,9 +21,9 @@ For each prompt it records, from llama-server's OpenAI response:
 Run one model at a time (it targets whatever llama-swap has pinned to the
 virtual id), tagging each run:
 
-  llm use cold-fusion
+  llms use cold-fusion
   bench/quality/coding-profile.py --tag cold-fusion --out results/quality/cp-cold-fusion.json
-  llm use qwen38-27b
+  llms use qwen38-27b
   bench/quality/coding-profile.py --tag qwen38-27b  --out results/quality/cp-qwen38-27b.json
 """
 import argparse, json, re, statistics as st, sys, time, urllib.request

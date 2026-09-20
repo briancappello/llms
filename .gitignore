@@ -16,7 +16,7 @@ extensions/camofox/node_modules/
 
 # Host state, never committed: absolute paths into this machine's model cache,
 # its engine binaries and device pins. The real files live in
-# $XDG_CONFIG_HOME/llama-swap-manager/. config/*.example.* documents the schema.
+# $XDG_CONFIG_HOME/llms/. config/*.example.* documents the schema.
 config/registry.json
 config/settings.json
 config/config.header.yaml

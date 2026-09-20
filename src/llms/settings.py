@@ -124,7 +124,7 @@ class Settings:
 
     @classmethod
     def from_env(cls, config_dir=None, *, environ: Mapping[str, str] | None = None):
-        """Defaults < settings.json < LLM_* overrides; config_dir wins over env.
+        """Defaults < settings.json < LLMS_* overrides; config_dir wins over env.
 
         Direct Settings(config_dir=...) is isolated and does not read environment
         variables or settings.json. Relative file paths are config-dir relative.
@@ -133,8 +133,8 @@ class Settings:
         home = Path(env.get("HOME", str(Path.home())))
         xdg = Path(env.get("XDG_CONFIG_HOME", str(home / ".config")))
         cache = Path(env.get("XDG_CACHE_HOME", str(home / ".cache")))
-        explicit = config_dir or env.get("LLM_CONFIG_DIR")
-        root = Path(explicit or xdg / "llama-swap-manager").expanduser().absolute()
+        explicit = config_dir or env.get("LLMS_CONFIG_DIR")
+        root = Path(explicit or xdg / "llms").expanduser().absolute()
         values = {
             "hf_cache": env.get("HF_HUB_CACHE", str(Path(env.get("HF_HOME", str(cache / "huggingface"))) / "hub")),
             "hf_endpoint": env.get("HF_ENDPOINT", "https://huggingface.co"),
@@ -153,20 +153,20 @@ class Settings:
         for f in fields(cls):
             if f.name in ("config_dir", "hf_token"):
                 continue
-            key = "LLM_" + f.name.upper()
+            key = "LLMS_" + f.name.upper()
             if key in env:
                 if f.name == "preload":
                     if env[key].lower() not in ("true", "false", "1", "0"):
-                        raise ValueError("LLM_PRELOAD must be true, false, 1, or 0")
+                        raise ValueError("LLMS_PRELOAD must be true, false, 1, or 0")
                     values[f.name] = env[key].lower() in ("true", "1")
                 elif f.name == "engines":
                     try:
                         values[f.name] = json.loads(env[key])
                     except json.JSONDecodeError as exc:
-                        raise ValueError(f"LLM_ENGINES must be a JSON object: {exc}") from exc
+                        raise ValueError(f"LLMS_ENGINES must be a JSON object: {exc}") from exc
                 else:
                     values[f.name] = int(env[key]) if f.name == "gpu_memory_mib" else env[key]
-        if "LLAMASWAP_URL" in env and "LLM_SWAP_URL" not in env:
+        if "LLAMASWAP_URL" in env and "LLMS_SWAP_URL" not in env:
             values["swap_url"] = env["LLAMASWAP_URL"]
         if "client_url" not in values:
             values["client_url"] = values.get("swap_url", cls.swap_url).rstrip("/") + "/v1"

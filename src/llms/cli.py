@@ -13,7 +13,7 @@ from .settings import Settings
 
 
 def parser():
-    ap = argparse.ArgumentParser(prog="llm", description="Manage GGUF models and a llama-swap registry.")
+    ap = argparse.ArgumentParser(prog="llms", description="Manage GGUF models and a llama-swap registry.")
     ap.add_argument("--config-dir", help="settings/registry/header directory; default output is isolated here")
     sub = ap.add_subparsers(dest="command")
     init = sub.add_parser("init", help="create missing settings, empty registry, and header; never overwrite")

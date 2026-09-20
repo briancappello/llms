@@ -9,7 +9,7 @@ discovered via /running -> /upstream/{model}/tokenize (llama-swap does not proxy
 every rep -- see depth-sweep.sh's method note: llama.cpp reports PP over tokens
 actually evaluated, so this is the honest way to compare prefill cost at depth.
 
-  llm use cold-fusion   # (served f16 or q8_0 V per registry)
+  llms use cold-fusion   # (served f16 or q8_0 V per registry)
   bench/speed/kv-probe.py --tag cf-f16 --depths 4096,65536 --reps 2 \
       --out results/speed/kv-probe-cf-f16.json
 """

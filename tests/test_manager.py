@@ -16,12 +16,12 @@ import urllib.error
 
 import yaml
 
-from llama_swap_manager import (
+from llms import (
     ManagerError, ModelManager, Settings, collapse_shards, default_model,
     pick_model_file, probe_gguf, render_config, resolve_source, shard_group, suggest_ctx,
 )
-from llama_swap_manager.cli import main
-from llama_swap_manager.manager import atomic_write
+from llms.cli import main
+from llms.manager import atomic_write
 
 
 def entry(path="/models/example.gguf", **overrides):
@@ -56,7 +56,7 @@ class IsolatedTest(unittest.TestCase):
 
 class SettingsTests(IsolatedTest):
     def test_direct_instances_are_isolated(self):
-        with patch.dict(os.environ, {"LLM_SERVER": "wrong", "LLM_CONFIG_DIR": "/wrong"}):
+        with patch.dict(os.environ, {"LLMS_SERVER": "wrong", "LLMS_CONFIG_DIR": "/wrong"}):
             first, second = Settings(self.root / "one"), Settings(self.root / "two")
         self.assertEqual(first.server, "llama-server")
         self.assertNotEqual(first.registry, second.registry)
@@ -66,14 +66,14 @@ class SettingsTests(IsolatedTest):
     def test_xdg_and_hf_defaults(self):
         env = {"HOME": str(self.root), "XDG_CONFIG_HOME": str(self.root / "xdg"), "HF_HOME": str(self.root / "hf")}
         settings = Settings.from_env(environ=env)
-        self.assertEqual(settings.config_dir, self.root / "xdg" / "llama-swap-manager")
+        self.assertEqual(settings.config_dir, self.root / "xdg" / "llms")
         self.assertEqual(settings.output, self.root / "xdg" / "llama-swap" / "config.yaml")
         self.assertEqual(settings.hf_cache, self.root / "hf" / "hub")
 
     def test_settings_then_env_then_explicit_config_dir(self):
         self.manager.init()
         atomic_write(self.settings.config_dir / "settings.json", json.dumps({"server": "saved", "output": "nested/out.yaml", "gpu_memory_mib": 6000}))
-        settings = Settings.from_env(self.settings.config_dir, environ={"HOME": str(self.root), "LLM_SERVER": "override", "LLM_GPU_MEMORY_MIB": "8000", "LLM_CONFIG_DIR": "/unused"})
+        settings = Settings.from_env(self.settings.config_dir, environ={"HOME": str(self.root), "LLMS_SERVER": "override", "LLMS_GPU_MEMORY_MIB": "8000", "LLMS_CONFIG_DIR": "/unused"})
         self.assertEqual(settings.server, "override")
         self.assertEqual(settings.gpu_memory_mib, 8000)
         self.assertEqual(settings.output, self.settings.config_dir / "nested" / "out.yaml")
@@ -126,10 +126,10 @@ class SettingsTests(IsolatedTest):
         self.assertTrue(Settings.from_env(self.settings.config_dir, environ={}).preload)
         for value, expected in (("true", True), ("FALSE", False), ("1", True), ("0", False)):
             with self.subTest(value=value):
-                actual = Settings.from_env(self.settings.config_dir, environ={"LLM_PRELOAD": value})
+                actual = Settings.from_env(self.settings.config_dir, environ={"LLMS_PRELOAD": value})
                 self.assertIs(actual.preload, expected)
-        with self.assertRaisesRegex(ValueError, "LLM_PRELOAD"):
-            Settings.from_env(self.settings.config_dir, environ={"LLM_PRELOAD": "yes"})
+        with self.assertRaisesRegex(ValueError, "LLMS_PRELOAD"):
+            Settings.from_env(self.settings.config_dir, environ={"LLMS_PRELOAD": "yes"})
         for value in ("false", 0, 1, None):
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, "boolean"):
                 replace(self.settings, preload=value)
@@ -331,7 +331,7 @@ class MutationTests(IsolatedTest):
     def test_atomic_write_and_cleanup(self):
         path = self.root / "new" / "file"
         atomic_write(path, "old")
-        with patch("llama_swap_manager.manager.os.replace", side_effect=OSError("simulated")):
+        with patch("llms.manager.os.replace", side_effect=OSError("simulated")):
             with self.assertRaises(OSError):
                 atomic_write(path, "new")
         self.assertEqual(path.read_text(), "old")
@@ -390,7 +390,7 @@ class MutationTests(IsolatedTest):
         with self.assertRaisesRegex(ManagerError, "could not list"):
             self.manager.plan("owner/repo")
         manager = ModelManager(self.settings, hub=self.manager.hub)
-        with patch("llama_swap_manager.manager.importlib.util.find_spec", return_value=None):
+        with patch("llms.manager.importlib.util.find_spec", return_value=None):
             with self.assertRaisesRegex(ManagerError, "nothing downloaded"):
                 manager.add("owner/repo")
         self.manager.hub.hf_hub_download.assert_not_called()
@@ -748,7 +748,7 @@ class ServiceTests(IsolatedTest):
 class CLITests(IsolatedTest):
     @unittest.skipUnless(os.name == "posix", "checkout executable shim is POSIX-only")
     def test_checkout_shim_executable_help(self):
-        shim = Path(__file__).resolve().parents[1] / "bin" / "llm"
+        shim = Path(__file__).resolve().parents[1] / "bin" / "llms"
         if not shim.exists():
             self.skipTest("checkout shim not available")
         result = subprocess.run([str(shim), "--help"], capture_output=True, text=True,
@@ -792,7 +792,7 @@ class CLITests(IsolatedTest):
 
     def test_install_cli_prints_external_link_without_running_it(self):
         self.manager.init()
-        with patch("llama_swap_manager.manager.shutil.which", return_value="/opt/llama-swap"):
+        with patch("llms.manager.shutil.which", return_value="/opt/llama-swap"):
             code, output, error = self.invoke("install-service")
         self.assertEqual(code, 0, error)
         path = self.settings.service_dir / self.settings.unit
@@ -804,7 +804,7 @@ class CLITests(IsolatedTest):
         standard = self.root / ".config" / "systemd" / "user"
         settings = replace(self.settings, service_dir=standard)
         manager = ModelManager(settings, runner=self.runner)
-        with patch("llama_swap_manager.manager.shutil.which", return_value="/opt/llama-swap"), \
+        with patch("llms.manager.shutil.which", return_value="/opt/llama-swap"), \
              patch.dict(os.environ, {"HOME": str(self.root)}, clear=True), \
              contextlib.redirect_stdout(output := io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = main(["--config-dir", str(self.settings.config_dir), "install-service"],
@@ -840,11 +840,11 @@ class CLITests(IsolatedTest):
         bad_dir = self.root / "bad"
         bad_dir.mkdir()
         (bad_dir / "settings.json").write_text("INVALID")
-        env = {**os.environ, "HOME": str(self.root), "LLM_CONFIG_DIR": str(bad_dir), "PYTHONDONTWRITEBYTECODE": "1"}
-        code = "import os; from unittest.mock import patch; import pathlib;\nwith patch('pathlib.Path.read_text', side_effect=AssertionError('read')), patch('subprocess.run', side_effect=AssertionError('process')), patch('urllib.request.urlopen', side_effect=AssertionError('network')):\n import llama_swap_manager\n from llama_swap_manager.cli import main\n main(['--help'])\n"
+        env = {**os.environ, "HOME": str(self.root), "LLMS_CONFIG_DIR": str(bad_dir), "PYTHONDONTWRITEBYTECODE": "1"}
+        code = "import os; from unittest.mock import patch; import pathlib;\nwith patch('pathlib.Path.read_text', side_effect=AssertionError('read')), patch('subprocess.run', side_effect=AssertionError('process')), patch('urllib.request.urlopen', side_effect=AssertionError('network')):\n import llms\n from llms.cli import main\n main(['--help'])\n"
         result = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        result = subprocess.run([sys.executable, "-m", "llama_swap_manager", "--help"], env=env, capture_output=True, text=True)
+        result = subprocess.run([sys.executable, "-m", "llms", "--help"], env=env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--config-dir", result.stdout)
         self.assertFalse((self.root / ".config").exists())
@@ -870,7 +870,7 @@ class CLITests(IsolatedTest):
         self.assertEqual(probe_gguf(path)["llama.context_length"], 1024)
         env = {**os.environ, "HOME": str(self.root), "XDG_CONFIG_HOME": str(self.root / "xdg"), "PYTHONDONTWRITEBYTECODE": "1"}
         for command in (["init", "--server", "/nonexistent/llama-server"], ["add", "tiny", str(path), "--no-restart", "--no-mmproj"], ["render"], ["ls", "--offline"]):
-            result = subprocess.run([sys.executable, "-m", "llama_swap_manager", "--config-dir", str(self.settings.config_dir), *command], env=env, capture_output=True, text=True)
+            result = subprocess.run([sys.executable, "-m", "llms", "--config-dir", str(self.settings.config_dir), *command], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.manager.load_registry()["tiny"]["trained_ctx"], 1024)
         self.assertFalse((self.root / "xdg").exists())

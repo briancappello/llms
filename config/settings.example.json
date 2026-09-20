@@ -1,10 +1,10 @@
 {
   "_comment": [
-    "Example only. The real file lives at $XDG_CONFIG_HOME/llama-swap-manager/settings.json",
+    "Example only. The real file lives at $XDG_CONFIG_HOME/llms/settings.json",
     "and is never committed: it is host state (binary paths, device pins, VRAM budget).",
-    "Create it with `llm init --server <llama-server>`, then add engines as below.",
-    "Every key is optional except the ones llm init writes. LLM_* environment",
-    "variables override these; LLM_ENGINES takes a JSON object.",
+    "Create it with `llms init --server <llama-server>`, then add engines as below.",
+    "Every key is optional except the ones llms init writes. LLMS_* environment",
+    "variables override these; LLMS_ENGINES takes a JSON object.",
     "",
     "An engine names a local server process. Registry entries refer to one by",
     "logical name, so the same registry works on this host and on a CUDA box:",

@@ -8,7 +8,7 @@ every claim here is in `results/`.
 
 ```
 config/registry.json      <-- EDIT HERE, this is the only source
-        |  llm render (or: make render)
+        |  llms render (or: make render)
         v
 ~/.config/llama-swap/config.yaml           <-- GENERATED. Do not edit.
         |  systemd --user llama-swap.service  (binds 127.0.0.1:8080)
@@ -18,7 +18,7 @@ http://127.0.0.1:8080/v1    every model advertised by its real name
 
 `config.yaml` is regenerated wholesale from `registry.json` plus
 `config.header.yaml`. Any edit made directly to `config.yaml` is lost on the next
-`llm render (or: make render)`.
+`llms render (or: make render)`.
 
 **Model selection is on-demand by name.** Every chat model is listed in
 `/v1/models` under its real id (`cold-fusion`, `bigbang-v1`, ...); a client picks
@@ -30,7 +30,7 @@ virtual id and no profiles. The default model is preloaded at startup via
 ## Network access
 
 llama-swap binds **127.0.0.1:8080 only** and has **no auth** -- local tools (pi,
-opencode, `llm`, benches) use it directly and keyless.
+opencode, `llms`, benches) use it directly and keyless.
 
 LAN/remote access goes through **`llama-swap-auth`** (`proxy/main.go`, a
 std-lib Go reverse proxy) on **`0.0.0.0:4096`**, which requires a bearer key and
@@ -202,12 +202,12 @@ run. Keep it dedicated.
 ### After a reboot
 
 ```bash
-llm status            # is llama-swap up? what's loaded?
+llms status            # is llama-swap up? what's loaded?
 ```
 
 The default model is preloaded automatically (`hooks.on_startup.preload`), and
 any request for another model swaps to it on demand -- no manual load needed.
-`llm use <name>` only pre-warms.
+`llms use <name>` only pre-warms.
 
 Two caveats:
 
@@ -221,18 +221,18 @@ Two caveats:
 Just request a different model by name -- llama-swap swaps to it. To pre-warm:
 
 ```bash
-llm ls                # inventory (marks what's loaded)
-llm use qwopus-mtp    # optional: load it now (~11s)
-llm status            # confirm + VRAM
+llms ls                # inventory (marks what's loaded)
+llms use qwopus-mtp    # optional: load it now (~11s)
+llms status            # confirm + VRAM
 ```
 
 ### Changing settings
 
 ```bash
 $EDITOR config/registry.json    # edit extra_args / ctx
-llm render (or: make render)
+llms render (or: make render)
 systemctl --user restart llama-swap
-llm use <name>                                    # pre-warm to load it now
+llms use <name>                                    # pre-warm to load it now
 pgrep -a llama-server                             # ALWAYS verify flags took effect
 ```
 
@@ -282,7 +282,7 @@ bench/quality/niah.py      --url http://127.0.0.1:8080/v1 --tokenize http://127.
 ### SWE-bench
 
 ```bash
-llm use kat-apex
+llms use kat-apex
 bench/swebench/run-ordered.sh kat-apex 300 8080   # <model> <deadline-min> <port>
 # then score:
 cd bench/quality/sweresults/kat-apex

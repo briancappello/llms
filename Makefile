@@ -27,7 +27,7 @@ install:
 	uv tool install --force --with gguf $(REPO)
 
 uninstall:
-	uv tool uninstall llama-swap-manager
+	uv tool uninstall llms
 
 test:
 	uv run --extra gguf python -m unittest discover -s tests -v
@@ -42,8 +42,8 @@ proxy:
 	cd proxy && go build -o $(BIN)/llama-swap-auth .
 
 check:
-	uv run --extra gguf llm --help >/dev/null
-	uv run --extra gguf llm doctor
+	uv run --extra gguf llms --help >/dev/null
+	uv run --extra gguf llms doctor
 
 swebench-venv:
 	cd bench/swebench && uv venv .venv --python 3.12

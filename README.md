@@ -1,6 +1,6 @@
-# llama-swap-manager
+# llms
 
-`llama-swap-manager` is a Python library and command-line utility for GGUF model
+`llms` is a Python library and command-line utility for GGUF model
 registries. It downloads or adopts models, reads GGUF metadata, writes a
 `llama-swap` configuration, and controls one verified user service.
 
@@ -13,7 +13,7 @@ client files unless you use `ensure-clients` or `--sync-clients`.
 - `llama-swap`
 - A compatible `llama-server`
 - systemd user services for the service commands
-- The `gguf` package extra for `llm add`
+- The `gguf` package extra for `llms add`
 
 ## Install
 
@@ -26,18 +26,18 @@ uv tool install --with gguf .
 Create the configuration. The command does not overwrite files.
 
 ```bash
-llm init --server /path/to/llama-server
-llm render
-llm doctor
+llms init --server /path/to/llama-server
+llms render
+llms doctor
 ```
 
 Install the user service after you inspect the generated configuration:
 
 ```bash
-llm install-service
+llms install-service
 systemctl --user daemon-reload
-llm start
-llm doctor --live
+llms start
+llms doctor --live
 ```
 
 ## Model Commands
@@ -45,23 +45,23 @@ llm doctor --live
 Download and register a model:
 
 ```bash
-llm add owner/repository:Q4_K_M
+llms add owner/repository:Q4_K_M
 ```
 
 Register a GGUF file that is already on disk:
 
 ```bash
-llm add short-name /path/to/model.gguf
+llms add short-name /path/to/model.gguf
 ```
 
 Use `--no-restart` to change the registry without a service restart. Use
 `--no-load` to omit the explicit warm-up request after a restart.
 
 ```bash
-llm ls
-llm status
-llm use short-name
-llm rm short-name
+llms ls
+llms status
+llms use short-name
+llms rm short-name
 ```
 
 The package does not delete model weights. The `--purge` option fails before it
@@ -70,8 +70,8 @@ changes files because a shared Hugging Face cache can have unknown consumers.
 ## Configuration
 
 The default configuration directory is
-`$XDG_CONFIG_HOME/llama-swap-manager`. The fallback is
-`~/.config/llama-swap-manager`.
+`$XDG_CONFIG_HOME/llms`. The fallback is
+`~/.config/llms`.
 
 The directory contains these files:
 
@@ -144,7 +144,7 @@ types, produces a binary that either refuses the weights or misreads them.
 The generated file is `$XDG_CONFIG_HOME/llama-swap/config.yaml`.
 The default local endpoint is `http://127.0.0.1:18080`.
 
-Use `llm --config-dir DIR ...` for an isolated instance. `LLM_*` environment
+Use `llms --config-dir DIR ...` for an isolated instance. `LLMS_*` environment
 variables override fields from `settings.json`. `HF_TOKEN` is read from the
 environment and is never stored by this package.
 
@@ -159,10 +159,10 @@ The library has no import-time file, network, or service operations.
 ```python
 from pathlib import Path
 
-from llama_swap_manager import ModelManager, Settings
+from llms import ModelManager, Settings
 
 settings = Settings(
-    config_dir=Path("/srv/llama-swap-manager"),
+    config_dir=Path("/srv/llms"),
     server="/opt/llama.cpp/bin/llama-server",
     gpu_memory_mib=24_576,
 )

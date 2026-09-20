@@ -1,7 +1,7 @@
 {
   "_comment": [
     "Example only. The real registry lives at",
-    "$XDG_CONFIG_HOME/llama-swap-manager/registry.json and is never committed:",
+    "$XDG_CONFIG_HOME/llms/registry.json and is never committed:",
     "it holds absolute paths into this host's Hugging Face cache.",
     "",
     "A model is rendered one of three ways, checked in this order:",

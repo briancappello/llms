@@ -25,13 +25,13 @@ die() { echo "error: $*" >&2; exit 1; }
 [[ $# -ge 2 ]] || die "usage: build-engine <name> <vulkan|hip|hip-wmma|cuda|cpu> [options] [-- cmake args]"
 NAME="$1"; BACKEND="$2"; shift 2
 
-OPT="${LLM_OPT_DIR:-$HOME/opt}"
+OPT="${LLMS_OPT_DIR:-$HOME/opt}"
 SRC=""
 REPO="https://github.com/ggml-org/llama.cpp"
 REF=""
 JOBS="$(nproc)"
 # AMD: gfx target. NVIDIA: compute capability, e.g. 90 for Hopper.
-ARCH="${LLM_GPU_ARCH:-}"
+ARCH="${LLMS_GPU_ARCH:-}"
 EXTRA=()
 
 while [[ $# -gt 0 ]]; do
@@ -52,7 +52,7 @@ if [[ -n "$SRC" ]]; then
     [[ -d "$SRC/.git" ]] || die "$SRC is not a git checkout"
     [[ -z "$REF" ]] || die "--ref applies to --repo, not --src; check the fork out yourself"
 else
-    SRC="${LLM_SRC_DIR:-$HOME/src/llama.cpp}"
+    SRC="${LLMS_SRC_DIR:-$HOME/src/llama.cpp}"
     REF="${REF:-master}"
     [[ -d "$SRC/.git" ]] || { log "cloning $REPO -> $SRC"; git clone --depth 1 "$REPO" "$SRC" || exit 1; }
     case "$REF" in
