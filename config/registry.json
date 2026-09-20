@@ -18,6 +18,32 @@
     "size_bytes": 21864082336,
     "trained_ctx": 262144
   },
+  "cybertiel": {
+    "arch": "qwen35moe",
+    "capability": "chat",
+    "ctx": 262144,
+    "description": "CyberTiel Coder 35B-A3B: abliterated Ornith-1.5, cyber-weighted imatrix, Sharp chat template, grafted Ornith MTP head. TUNED FOR LONG-CONTEXT AGENTIC CODING. SAMPLING = the card's agentic-coding preset: temp 0.6 / top_p 0.95 / top_k 20 / min_p 0. For CTF/cyber work the card instead wants --top-k 40 --min-p 0.05 (looser, more exploratory; may not converge on lower quants). BUDGET: deliberately NO --predict / --reasoning-budget cap. The card is explicit that a low cap degrades results without converging any faster, and this build already spends fewer tokens than its peers. MTP SWEPT ON THIS BOX. Per-request speculative.* params are IGNORED by this build, so an in-process sweep measures nothing -- every config needs its own llama-server. At -c 65536 on a 6.9k-token agentic prompt, median of 3: spec-off 110.2 tok/s; n1/p0.0 133.4; n3/p0.0 134.1 (llama.cpp default); n1/p0.5 133.5; n4/p0.5 142.0; n8/p0.5 122.6; n2/p0.5 148.5 <-- CHOSEN, 1.35x over spec-off. This DISAGREES with the model card, which found n1/p0.0 best on their hardware; the card says to sweep, and it was right. Draft acceptance 0.866, mean draft len 2.89. PREFILL COST: PP falls 103 -> 90 tok/s (0.88x) with MTP on. Decode +35% wins easily for agentic work, where the prompt cache absorbs most prefill. NEVER pass --n-cpu-moe 41: the MTP head is block 40, so 41 pushes the draft head to CPU and it runs on every decode step. 40 is the max useful value. Not needed here -- the whole model fits VRAM (23.2 GiB at 64k). Vision: Ornith mmproj wired. Display name corrected; the GGUF general.name still reads 'Huihui Ornith 1.5 35B A3B Abliterated'.",
+    "display": "CyberTiel Coder 35B-A3B (MTP, UD-Q4_K_XL)",
+    "extra_args": [
+      "--reasoning-preserve",
+      "--spec-type draft-mtp",
+      "--spec-draft-n-max 2",
+      "--spec-draft-p-min 0.5",
+      "--temp 0.6",
+      "--top-p 0.95",
+      "--top-k 20",
+      "--min-p 0.0"
+    ],
+    "file": "Cyber-Tiel-Coder-35B-A3B-MTP-UD-Q4_K_XL.gguf",
+    "kv_unified": true,
+    "mmproj": "/home/brian/.cache/huggingface/hub/models--peculiar-ragdoll--Cyber-Tiel-Coder-35B-A3B-GGUF-MTP/snapshots/fa19d4f33561dc0d107c2a2f8943f1ca2e288109/mmproj-BF16.gguf",
+    "parallel": 2,
+    "path": "/home/brian/.cache/huggingface/hub/models--peculiar-ragdoll--Cyber-Tiel-Coder-35B-A3B-GGUF-MTP/snapshots/fa19d4f33561dc0d107c2a2f8943f1ca2e288109/Cyber-Tiel-Coder-35B-A3B-MTP-UD-Q4_K_XL.gguf",
+    "quant": "UD-Q4_K_XL",
+    "repo": "peculiar-ragdoll/Cyber-Tiel-Coder-35B-A3B-GGUF-MTP",
+    "size_bytes": 22749880640,
+    "trained_ctx": 262144
+  },
   "ds4": {
     "arch": "deepseek-v4-flash-moe",
     "capability": "chat",
