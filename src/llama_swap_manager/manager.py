@@ -211,6 +211,74 @@ def _quoted(value):
     return shlex.quote(value)
 
 
+def _extra_args(entry, name):
+    fragments = entry.get("extra_args", [])
+    if not isinstance(fragments, list) or not all(isinstance(f, str) for f in fragments):
+        raise ManagerError(f"extra_args must be a list of strings for {name}")
+    return [_quoted(token) for fragment in fragments for token in shlex.split(fragment)]
+
+
+def _llama_model_args(entry, name, macros):
+    """The llama.cpp-shaped part of a command: weights, context, slots, tuning.
+
+    Shared by the header-macro path and the engine path so both stay identical.
+    A model whose cache types or offload split contradict the shared macro sets
+    "common": false and carries the full set itself.
+    """
+    if not entry.get("path"):
+        raise ManagerError(f"{name} needs a path, or an engine of kind 'custom'")
+    args = ["-m", _quoted(entry["path"])]
+    if entry.get("mmproj"):
+        args += ["--mmproj", _quoted(entry["mmproj"])]
+    if entry.get("common", True) and "common" in macros:
+        args += ["${common}"]
+    ctx, parallel = int(entry["ctx"]), int(entry.get("parallel", 4))
+    if ctx < 1 or parallel < 1:
+        raise ManagerError(f"context and parallel must be positive for {name}")
+    # Preserve explicitly tuned split-slot registries. The trained bound
+    # applies per slot when KV is partitioned, to the pool otherwise.
+    trained = int(entry.get("trained_ctx") or 0)
+    if trained > 0:
+        ctx = min(ctx, trained * (parallel if entry.get("kv_unified") is False else 1))
+    args += ["-c", str(ctx), "-np", str(parallel),
+             "--no-kv-unified" if entry.get("kv_unified") is False else "--kv-unified"]
+    return args + _extra_args(entry, name)
+
+
+def _engine_command(entry, name, settings, macros):
+    """Build a command from a named engine in settings.
+
+    Only the engine knows the binary, its device pin, and its working
+    directory, so the registry entry stays portable between hosts.
+    """
+    engine_name = entry["engine"]
+    engine = settings.engines.get(engine_name)
+    if engine is None:
+        known = ", ".join(sorted(settings.engines)) or "none defined"
+        raise ManagerError(f"{name} refers to unknown engine {engine_name!r} (known: {known})")
+    command = []
+    if cwd := engine.get("cwd"):
+        # env(1) rather than a shell: no nested quoting, no extra process
+        # between llama-swap and the server it signals.
+        command += ["/usr/bin/env", _quoted(f"--chdir={cwd}")]
+    command.append(_quoted(engine["server"]))
+    command += [_quoted(a) for a in engine.get("args", [])]
+    command += ["--host", _quoted(engine.get("host", "127.0.0.1")), "--port", "${PORT}"]
+    if engine.get("kind", "llama.cpp") == "custom":
+        command += _extra_args(entry, name)
+    else:
+        command += _llama_model_args(entry, name, macros)
+    extras = {}
+    for source, target in (("check_endpoint", "checkEndpoint"),
+                           ("use_model_name", "useModelName"),
+                           ("unload_timeout", "unloadTimeout")):
+        if source in engine:
+            extras[target] = engine[source]
+    if env := engine.get("env"):
+        extras["env"] = [f"{key}={value}" for key, value in sorted(env.items())]
+    return " ".join(command), extras
+
+
 def render_config(registry, header, settings):
     """Pure safe YAML rendering, preserving header comments and trusted macros.
 
@@ -236,35 +304,23 @@ def render_config(registry, header, settings):
         if entry.get("capability") != "chat":
             continue
         model = {"name": entry.get("display", name), "description": entry.get("description", ""), "ttl": 0}
+        macros = base.get("macros", {})
+        engine_extras = {}
         if entry.get("cmd"):
+            if entry.get("engine"):
+                raise ManagerError(f"{name} sets both cmd and engine; pick one")
             cmd = entry["cmd"]
             model["cmd"] = "\n".join(cmd) if isinstance(cmd, list) else cmd
             if not isinstance(model["cmd"], str):
                 raise ManagerError(f"invalid custom command for {name}")
+        elif entry.get("engine"):
+            model["cmd"], engine_extras = _engine_command(entry, name, settings, macros)
         else:
-            macros = base.get("macros", {})
             server = "${server}" if "server" in macros else _quoted(settings.server) + " --host 127.0.0.1 --port ${PORT}"
-            command = [server, "-m", _quoted(entry["path"])]
-            if entry.get("mmproj"):
-                command += ["--mmproj", _quoted(entry["mmproj"])]
-            if "common" in macros:
-                command += ["${common}"]
-            ctx, parallel = int(entry["ctx"]), int(entry.get("parallel", 4))
-            if ctx < 1 or parallel < 1:
-                raise ManagerError(f"context and parallel must be positive for {name}")
-            # Preserve explicitly tuned split-slot registries. The trained bound
-            # applies per slot when KV is partitioned, to the pool otherwise.
-            trained = int(entry.get("trained_ctx") or 0)
-            if trained > 0:
-                ctx = min(ctx, trained * (parallel if entry.get("kv_unified") is False else 1))
-            command += ["-c", str(ctx), "-np", str(parallel), "--no-kv-unified" if entry.get("kv_unified") is False else "--kv-unified"]
-            fragments = entry.get("extra_args", [])
-            if not isinstance(fragments, list) or not all(isinstance(f, str) for f in fragments):
-                raise ManagerError(f"extra_args must be a list of strings for {name}")
-            for fragment in fragments:
-                command.extend(_quoted(token) for token in shlex.split(fragment))
-            model["cmd"] = " ".join(command)
-        for key in ("proxy", "checkEndpoint", "useModelName", "unloadTimeout", "aliases"):
+            model["cmd"] = " ".join([server] + _llama_model_args(entry, name, macros))
+        model.update(engine_extras)
+        # An explicit registry value always beats the engine default.
+        for key in ("proxy", "checkEndpoint", "useModelName", "unloadTimeout", "aliases", "env"):
             if key in entry:
                 model[key] = entry[key]
         model["metadata"] = {key: entry[key] for key in ("capability", "quant", "arch", "trained_ctx", "params") if entry.get(key) is not None}
@@ -692,6 +748,16 @@ class ModelManager:
             checks.append({"check": "config", "ok": True, "required": True, "detail": "registry and render valid"})
         except (OSError, ValueError, KeyError, TypeError, ManagerError) as exc:
             checks.append({"check": "config", "ok": False, "required": True, "detail": str(exc)})
+        # An engine binary is host state and moves independently of the
+        # registry, so report each one rather than failing the whole render.
+        for engine_name, engine in sorted(self.settings.engines.items()):
+            server = engine["server"]
+            cwd = engine.get("cwd")
+            candidate = Path(cwd) / server if cwd and server.startswith(".") else Path(server)
+            found = candidate.is_file() and os.access(candidate, os.X_OK) if (
+                "/" in server) else shutil.which(server) is not None
+            checks.append({"check": f"engine:{engine_name}", "ok": bool(found), "required": False,
+                           "detail": f"{server}{'' if not cwd else f' (cwd {cwd})'}"})
         if live:
             try:
                 self.status()

@@ -4,8 +4,61 @@ from dataclasses import asdict, dataclass, field, fields
 import json
 import os
 from pathlib import Path
+import re
 from typing import Mapping
 from urllib.parse import urlsplit
+
+# llama-swap requires ENV_NAME=value, uppercase name (see its config schema).
+ENV_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+ENGINE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+ENGINE_KEYS = {"kind", "server", "cwd", "env", "args", "host",
+               "check_endpoint", "use_model_name", "unload_timeout"}
+ENGINE_KINDS = ("llama.cpp", "custom")
+
+
+def _validate_engines(engines):
+    """Engines name a local server process: binary, environment, fixed args.
+
+    Host-specific by nature, so they live in settings.json and never in the
+    registry. A registry entry refers to one by logical name, which is what
+    keeps the same registry usable on a CUDA box and on an AMD one.
+    """
+    if not isinstance(engines, dict):
+        raise ValueError("engines must be a mapping of name to engine")
+    for name, spec in engines.items():
+        if not isinstance(name, str) or not ENGINE_NAME.match(name):
+            raise ValueError(f"invalid engine name: {name!r}")
+        if not isinstance(spec, dict) or spec.keys() - ENGINE_KEYS:
+            raise ValueError(f"engine {name} must be an object with known keys: {sorted(ENGINE_KEYS)}")
+        if spec.get("kind", "llama.cpp") not in ENGINE_KINDS:
+            raise ValueError(f"engine {name} kind must be one of {ENGINE_KINDS}")
+        for key in ("server", "cwd", "host", "check_endpoint", "use_model_name"):
+            value = spec.get(key)
+            if value is None:
+                continue
+            if not isinstance(value, str) or not value or any(c in value for c in "\x00\r\n"):
+                raise ValueError(f"engine {name} {key} must be a non-empty single-line string")
+        if not spec.get("server"):
+            raise ValueError(f"engine {name} requires a server command")
+        if (cwd := spec.get("cwd")) and not Path(cwd).expanduser().is_absolute():
+            raise ValueError(f"engine {name} cwd must be an absolute path")
+        if (check := spec.get("check_endpoint")) and not (check.startswith("/") or check == "none"):
+            raise ValueError(f"engine {name} check_endpoint must start with / or be 'none'")
+        args = spec.get("args", [])
+        if not isinstance(args, list) or not all(
+                isinstance(a, str) and not any(c in a for c in "\x00\r\n") for a in args):
+            raise ValueError(f"engine {name} args must be a list of single-line strings")
+        env = spec.get("env", {})
+        if not isinstance(env, dict):
+            raise ValueError(f"engine {name} env must be a mapping")
+        for key, value in env.items():
+            if not isinstance(key, str) or not ENV_NAME.match(key):
+                raise ValueError(f"engine {name} env name {key!r} must match {ENV_NAME.pattern}")
+            if not isinstance(value, str) or any(c in value for c in "\x00\r\n"):
+                raise ValueError(f"engine {name} env value for {key} must be a single-line string")
+        timeout = spec.get("unload_timeout")
+        if timeout is not None and (isinstance(timeout, bool) or not isinstance(timeout, int) or timeout < 0):
+            raise ValueError(f"engine {name} unload_timeout must be a non-negative integer")
 
 
 @dataclass(frozen=True)
@@ -28,6 +81,7 @@ class Settings:
     gpu_memory_mib: int | None = None
     hf_endpoint: str = "https://huggingface.co"
     hf_token: str | None = field(default=None, repr=False)
+    engines: dict = field(default_factory=dict)
 
     def __post_init__(self):
         root = Path(self.config_dir).expanduser().absolute()
@@ -66,6 +120,7 @@ class Settings:
             or self.gpu_memory_mib <= 0
         ):
             raise ValueError("gpu_memory_mib must be a positive integer or null")
+        _validate_engines(self.engines)
 
     @classmethod
     def from_env(cls, config_dir=None, *, environ: Mapping[str, str] | None = None):
@@ -104,6 +159,11 @@ class Settings:
                     if env[key].lower() not in ("true", "false", "1", "0"):
                         raise ValueError("LLM_PRELOAD must be true, false, 1, or 0")
                     values[f.name] = env[key].lower() in ("true", "1")
+                elif f.name == "engines":
+                    try:
+                        values[f.name] = json.loads(env[key])
+                    except json.JSONDecodeError as exc:
+                        raise ValueError(f"LLM_ENGINES must be a JSON object: {exc}") from exc
                 else:
                     values[f.name] = int(env[key]) if f.name == "gpu_memory_mib" else env[key]
         if "LLAMASWAP_URL" in env and "LLM_SWAP_URL" not in env:

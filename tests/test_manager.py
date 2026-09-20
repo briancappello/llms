@@ -170,6 +170,73 @@ class PureTests(IsolatedTest):
             self.assertEqual(model[key], custom[key])
         self.assertEqual(json.dumps(custom), before)
 
+    def engine_settings(self, **engines):
+        return replace(self.settings, engines=engines)
+
+    def test_engine_supplies_binary_env_and_fixed_args(self):
+        settings = self.engine_settings(bonsai={
+            "server": "/opt/llama.cpp-bonsai/bin/llama-server",
+            "env": {"HIP_VISIBLE_DEVICES": "0"},
+            "args": ["-ngl", "999"]})
+        model = yaml.safe_load(render_config(
+            {"x": entry(engine="bonsai")}, "macros:\n  common: -fa on\n", settings))["models"]["x"]
+        tokens = shlex.split(model["cmd"].replace("${PORT}", "1234"))
+        self.assertEqual(tokens[0], "/opt/llama.cpp-bonsai/bin/llama-server")
+        self.assertEqual(tokens[tokens.index("--port") + 1], "1234")
+        self.assertEqual(tokens[tokens.index("-ngl") + 1], "999")
+        self.assertEqual(tokens[tokens.index("-m") + 1], "/models/example.gguf")
+        self.assertEqual(model["env"], ["HIP_VISIBLE_DEVICES=0"])
+        self.assertIn("${common}", model["cmd"])
+
+    def test_custom_engine_skips_llama_arguments_and_needs_no_path(self):
+        settings = self.engine_settings(ds4={
+            "kind": "custom", "server": "./ds4-server", "cwd": "/srv/ds4",
+            "args": ["--model", "./w.gguf"], "check_endpoint": "/v1/models",
+            "use_model_name": "upstream", "unload_timeout": 30})
+        registry = {"ds4": {"capability": "chat", "engine": "ds4", "extra_args": ["--kv-disk-space-mb 8192"]}}
+        model = yaml.safe_load(render_config(registry, "macros:\n  common: -fa on\n", settings))["models"]["ds4"]
+        tokens = shlex.split(model["cmd"].replace("${PORT}", "1234"))
+        self.assertEqual(tokens[:2], ["/usr/bin/env", "--chdir=/srv/ds4"])
+        self.assertEqual(tokens[2], "./ds4-server")
+        self.assertNotIn("-c", tokens)
+        self.assertNotIn("${common}", model["cmd"])
+        self.assertEqual(tokens[tokens.index("--kv-disk-space-mb") + 1], "8192")
+        self.assertEqual(model["checkEndpoint"], "/v1/models")
+        self.assertEqual(model["useModelName"], "upstream")
+        self.assertEqual(model["unloadTimeout"], 30)
+
+    def test_registry_overrides_engine_defaults(self):
+        settings = self.engine_settings(e={"server": "/bin/srv", "env": {"A": "1"},
+                                           "check_endpoint": "/health"})
+        model = yaml.safe_load(render_config(
+            {"x": entry(engine="e", checkEndpoint="/v1/models", env=["B=2"])}, "{}", settings))["models"]["x"]
+        self.assertEqual(model["checkEndpoint"], "/v1/models")
+        self.assertEqual(model["env"], ["B=2"])
+
+    def test_engine_errors_are_actionable(self):
+        with self.assertRaises(ManagerError) as ctx:
+            render_config({"x": entry(engine="missing")}, "{}", self.engine_settings(
+                other={"server": "/bin/srv"}))
+        self.assertIn("other", str(ctx.exception))
+        with self.assertRaises(ManagerError):
+            render_config({"x": entry(engine="e", cmd="run")}, "{}",
+                          self.engine_settings(e={"server": "/bin/srv"}))
+        with self.assertRaises(ManagerError):
+            render_config({"x": {"capability": "chat", "engine": "e", "ctx": 8}}, "{}",
+                          self.engine_settings(e={"server": "/bin/srv"}))
+
+    def test_engine_arguments_cannot_smuggle_macros_or_newlines(self):
+        for spec in ({"server": "/bin/srv", "args": ["${PORT}"]},
+                     {"server": "/bin/srv", "env": {"A": "x\ny"}},
+                     {"server": "/bin/srv", "env": {"lower": "1"}},
+                     {"server": "/bin/srv", "cwd": "relative"},
+                     {"server": "/bin/srv", "kind": "wat"},
+                     {"server": "/bin/srv", "unknown": 1},
+                     {"args": ["-ngl"]}):
+            with self.subTest(spec=spec), self.assertRaises((ValueError, ManagerError)):
+                settings = self.engine_settings(e=spec)
+                render_config({"x": entry(engine="e")}, "{}", settings)
+
     def test_hooks_merged_empty_models_and_nonchat(self):
         text = render_config({"a": entry(), "b": entry(default=True), "e": entry(capability="embedding")}, "hooks:\n  other: retained\n", replace(self.settings, preload=True))
         result = yaml.safe_load(text)
