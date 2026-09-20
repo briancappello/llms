@@ -76,10 +76,70 @@ The default configuration directory is
 The directory contains these files:
 
 ```text
-settings.json       Host paths, endpoint, service, and GPU budget
+settings.json       Host paths, engines, endpoint, service, and GPU budget
 registry.json       Model IDs, files, contexts, and model arguments
 config.header.yaml  Shared llama-swap configuration and macros
 ```
+
+None of these are in this repository. They hold absolute paths into one
+machine's model cache and one machine's binaries. `config/` carries
+`settings.example.json`, `registry.example.json` and
+`config.header.example.yaml`, which document every field.
+
+## Engines
+
+An engine names a local server process: a binary, its environment, its
+working directory, and its fixed arguments. Engines are defined in
+`settings.json`; a registry entry selects one by logical name.
+
+```json
+"engines": {
+  "llama-hip": {
+    "server": "/home/you/opt/llama.cpp-hip/bin/llama-server",
+    "env": { "HIP_VISIBLE_DEVICES": "0" },
+    "args": ["-ngl", "999"]
+  }
+}
+```
+
+```json
+"my-model": { "engine": "llama-hip", "path": "...", "ctx": 65536 }
+```
+
+This is the split that makes one registry usable on several machines: the
+model tuning is portable and only `settings.json` changes per host. It is
+also where device pins belong, because they are backend-specific --
+`MESA_VK_DEVICE_SELECT` does nothing for a HIP build, and
+`HIP_VISIBLE_DEVICES` does nothing for a Vulkan one. A pin set on the
+systemd unit applies to every backend indiscriminately.
+
+`kind: "custom"` marks an engine that is not llama.cpp, so no
+`-m`/`-c`/`-np` are composed for it; it receives its own arguments plus the
+entry's `extra_args`. `cwd` is rendered with `env --chdir`, so no shell sits
+between llama-swap and the server it signals.
+
+A model is rendered by `cmd` if present, otherwise by `engine`, otherwise
+from the `${server}` macro in the header. Setting both `cmd` and `engine` is
+an error rather than a silent precedence rule.
+
+## Building engines
+
+`bin/build-engine` builds a llama.cpp variant and installs it under
+`~/opt/llama.cpp-<name>`:
+
+```bash
+make engine NAME=vulkan BACKEND=vulkan
+make engine NAME=hip    BACKEND=hip
+make engine NAME=mtp    BACKEND=hip REF=pr/28097
+make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp
+make engine NAME=cuda   BACKEND=cuda ARCH=90
+```
+
+Every build is installed with `RPATH=$ORIGIN/../lib` and then checked: if
+`llama-server` resolves any `libggml`/`libllama` outside its own prefix the
+build fails. Without that, variants silently share one library, which
+invalidates backend comparisons and, for a fork with its own quantization
+types, produces a binary that either refuses the weights or misreads them.
 
 The generated file is `$XDG_CONFIG_HOME/llama-swap/config.yaml`.
 The default local endpoint is `http://127.0.0.1:18080`.
