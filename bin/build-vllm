@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+# Build a pinned vLLM checkout for one AMD GPU architecture.
+set -euo pipefail
+
+log() { printf '[%(%H:%M:%S)T] %s\n' -1 "$*"; }
+die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG="${VLLM_BUILD_CONFIG:-$ROOT/config/vllm-build.env}"
+
+# Resolve --config before loading defaults; parse all options after loading it.
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+    if [[ "${args[$i]}" == --config ]]; then
+        ((i + 1 < ${#args[@]})) || die "--config requires a path"
+        CONFIG="${args[$((i + 1))]}"
+    fi
+done
+
+[[ -f "$CONFIG" ]] || die "build config not found: $CONFIG"
+# shellcheck source=../config/vllm-build.env
+source "$CONFIG"
+
+REF="$VLLM_REF"
+ARCH="$VLLM_GPU_ARCH"
+JOBS="$(nproc)"
+DRY_RUN=0
+PRINT_CONFIG=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --config) shift 2 ;;
+        --ref) REF="${2:?}"; shift 2 ;;
+        --arch) ARCH="${2:?}"; shift 2 ;;
+        --jobs) JOBS="${2:?}"; shift 2 ;;
+        --dry-run) DRY_RUN=1; shift ;;
+        --print-config) PRINT_CONFIG=1; shift ;;
+        -h|--help)
+            cat <<'EOF'
+usage: build-vllm [--config FILE] [--ref SHA_OR_TAG] [--arch gfxNNNN]
+                  [--jobs N] [--dry-run] [--print-config]
+EOF
+            exit 0
+            ;;
+        *) die "unknown option: $1" ;;
+    esac
+done
+
+MPI_PREFIX="$VLLM_PREFIX/deps/openmpi-$OPENMPI_VERSION"
+VENV="$VLLM_PREFIX/runtime"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/llms/vllm-build"
+
+print_config() {
+    cat <<EOF
+config=$CONFIG
+repo=$VLLM_REPO
+ref=$REF
+source=$VLLM_SOURCE_DIR
+prefix=$VLLM_PREFIX
+python=$VLLM_PYTHON
+arch=$ARCH
+jobs=$JOBS
+rocm_variant=$VLLM_ROCM_VARIANT
+openmpi=$OPENMPI_VERSION
+EOF
+}
+
+if ((PRINT_CONFIG)); then
+    print_config
+    exit 0
+fi
+
+run() {
+    if ((DRY_RUN)); then
+        printf '+'
+        printf ' %q' "$@"
+        printf '\n'
+    else
+        "$@"
+    fi
+}
+
+if ((DRY_RUN)); then
+    print_config
+else
+    for command in curl git make ninja rocminfo sha256sum tar uv; do
+        command -v "$command" >/dev/null || die "required command not found: $command"
+    done
+    [[ -x /opt/rocm/bin/hipcc ]] || die "ROCm compiler not found at /opt/rocm/bin/hipcc"
+    [[ -e /opt/rocm/lib/libhipsparselt.so.0 ]] || die "hipSPARSELt is missing; install the hipsparselt package"
+fi
+
+build_openmpi() {
+    [[ -e "$MPI_PREFIX/lib/libmpi_cxx.so.40" ]] && return
+
+    local archive="$CACHE/openmpi-$OPENMPI_VERSION.tar.gz"
+    local source="$CACHE/openmpi-$OPENMPI_VERSION"
+    local build="$CACHE/openmpi-$OPENMPI_VERSION-build"
+
+    log "building private OpenMPI $OPENMPI_VERSION"
+    run mkdir -p "$CACHE" "$VLLM_PREFIX/deps"
+    if [[ ! -f "$archive" ]]; then
+        run curl -fL "$OPENMPI_URL" -o "$archive.part"
+        run mv "$archive.part" "$archive"
+    fi
+    if ((!DRY_RUN)); then
+        printf '%s  %s\n' "$OPENMPI_SHA256" "$archive" | sha256sum -c -
+    fi
+    run rm -rf "$source" "$build"
+    run mkdir -p "$source" "$build"
+    run tar -xf "$archive" -C "$source" --strip-components=1
+    if ((DRY_RUN)); then
+        printf '+ configure OpenMPI %q -> %q\n' "$source" "$MPI_PREFIX"
+        printf '+ make -C %q -j%q install\n' "$build" "$JOBS"
+    else
+        (
+            cd "$build"
+            "$source/configure" --prefix="$MPI_PREFIX" \
+                --disable-mpi-fortran --enable-mpi-cxx \
+                --without-verbs --without-ofi --without-ucx
+            make -j"$JOBS"
+            make install
+        )
+    fi
+    ((!DRY_RUN)) && [[ -e "$MPI_PREFIX/lib/libmpi_cxx.so.40" ]] \
+        || ((DRY_RUN)) || die "OpenMPI build did not produce libmpi_cxx.so.40"
+}
+
+prepare_source() {
+    if [[ ! -d "$VLLM_SOURCE_DIR/.git" ]]; then
+        run mkdir -p "$(dirname "$VLLM_SOURCE_DIR")"
+        run git clone "$VLLM_REPO" "$VLLM_SOURCE_DIR"
+    elif ((!DRY_RUN)); then
+        git -C "$VLLM_SOURCE_DIR" diff --quiet \
+            && git -C "$VLLM_SOURCE_DIR" diff --cached --quiet \
+            || die "$VLLM_SOURCE_DIR has uncommitted changes"
+    fi
+
+    log "checking out vLLM $REF"
+    run git -C "$VLLM_SOURCE_DIR" fetch --depth 1 origin "$REF"
+    run git -C "$VLLM_SOURCE_DIR" checkout --detach FETCH_HEAD
+}
+
+prepare_python() {
+    log "creating Python $VLLM_PYTHON environment"
+    run mkdir -p "$VLLM_PREFIX"
+    run uv venv --clear "$VENV" --python "$VLLM_PYTHON" --seed --managed-python
+    run uv pip install --python "$VENV/bin/python" \
+        "$VLLM_BOOTSTRAP_WHEEL" \
+        --extra-index-url "$VLLM_WHEEL_INDEX" \
+        --index-strategy unsafe-best-match
+    run uv pip install --python "$VENV/bin/python" \
+        'cmake<4' ninja wheel 'setuptools<80' 'pybind11<3.1.0' Cython
+}
+
+build_vllm() {
+    local library_path="$MPI_PREFIX/lib:/opt/rocm/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    if ((DRY_RUN)); then
+        printf '+ validate ROCm PyTorch with LD_LIBRARY_PATH=%q\n' "$library_path"
+        printf '+ build vLLM from %q for %q\n' "$VLLM_SOURCE_DIR" "$ARCH"
+        return
+    fi
+
+    LD_LIBRARY_PATH="$library_path" "$VENV/bin/python" - <<'PY'
+import torch
+
+assert torch.version.hip, f"expected ROCm PyTorch, got {torch.__version__}"
+assert torch.cuda.is_available(), "ROCm PyTorch cannot access a GPU"
+print(f"PyTorch {torch.__version__}, HIP {torch.version.hip}, {torch.cuda.get_device_name(0)}")
+PY
+
+    log "building vLLM for $ARCH (-j$JOBS)"
+    rm -rf "$VLLM_SOURCE_DIR/build"
+    env \
+        LD_LIBRARY_PATH="$library_path" \
+        PATH="$MPI_PREFIX/bin:$VENV/bin:/opt/rocm/bin:$PATH" \
+        ROCM_PATH=/opt/rocm \
+        VLLM_TARGET_DEVICE=rocm \
+        PYTORCH_ROCM_ARCH="$ARCH" \
+        MAX_JOBS="$JOBS" \
+        uv pip install --python "$VENV/bin/python" \
+            --no-build-isolation --no-deps --editable "$VLLM_SOURCE_DIR"
+
+    LD_LIBRARY_PATH="$library_path" "$VENV/bin/python" - <<'PY'
+import torch
+import vllm
+
+assert torch.version.hip
+print(f"vLLM {vllm.__version__} on {torch.cuda.get_device_name(0)}")
+PY
+}
+
+write_build_info() {
+    ((DRY_RUN)) && return
+    local commit
+    commit="$(git -C "$VLLM_SOURCE_DIR" rev-parse HEAD)"
+    cat >"$VLLM_PREFIX/BUILD-INFO" <<EOF
+vllm_repo=$VLLM_REPO
+vllm_ref=$REF
+vllm_commit=$commit
+rocm=$(</opt/rocm/.info/version)
+rocm_variant=$VLLM_ROCM_VARIANT
+gpu_arch=$ARCH
+openmpi=$OPENMPI_VERSION
+python=$VLLM_PYTHON
+built_at=$(date -Is)
+EOF
+}
+
+build_openmpi
+prepare_source
+prepare_python
+build_vllm
+write_build_info
+log "vLLM build complete: $VENV/bin/vllm"

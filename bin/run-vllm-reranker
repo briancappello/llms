@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Serve the default BGE reranker using the repository-managed vLLM build.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG="${VLLM_BUILD_CONFIG:-$ROOT/config/vllm-build.env}"
+[[ -f "$CONFIG" ]] || { echo "error: build config not found: $CONFIG" >&2; exit 1; }
+# shellcheck source=../config/vllm-build.env
+source "$CONFIG"
+
+MODEL="${VLLM_RERANKER_MODEL:-BAAI/bge-reranker-v2-m3}"
+PORT="${VLLM_RERANKER_PORT:-8010}"
+MPI_PREFIX="$VLLM_PREFIX/deps/openmpi-$OPENMPI_VERSION"
+VLLM="$VLLM_PREFIX/runtime/bin/vllm"
+
+[[ -x "$VLLM" ]] || { echo "error: vLLM is not built; run make vllm" >&2; exit 1; }
+[[ -e "$MPI_PREFIX/lib/libmpi_cxx.so.40" ]] || { echo "error: private OpenMPI runtime is missing" >&2; exit 1; }
+
+export LD_LIBRARY_PATH="$MPI_PREFIX/lib:/opt/rocm/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH="$MPI_PREFIX/bin:$VLLM_PREFIX/runtime/bin:/opt/rocm/bin:$PATH"
+export HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}"
+
+exec "$VLLM" serve "$MODEL" \
+    --host 127.0.0.1 \
+    --port "$PORT" \
+    --runner pooling \
+    --convert classify \
+    --max-model-len 8192 \
+    --gpu-memory-utilization 0.20 \
+    "$@"

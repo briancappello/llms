@@ -1,7 +1,7 @@
 REPO := $(shell pwd)
 BIN := $(HOME)/.local/bin
 
-.PHONY: help install uninstall test build proxy check corpus swebench-venv engine
+.PHONY: help install uninstall test build proxy check corpus swebench-venv engine vllm vllm-reranker
 
 help:
 	@printf '%s\n' \
@@ -12,6 +12,8 @@ help:
 	  'engine         build an inference engine, e.g.' \
 	  '               make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp' \
 	  '               make engine NAME=vulkan BACKEND=vulkan' \
+	  'vllm           build pinned vLLM source for the configured ROCm GPU' \
+	  'vllm-reranker  serve BAAI/bge-reranker-v2-m3 on port 8010' \
 	  'proxy          build the optional authentication proxy' \
 	  'check          run package and configuration checks' \
 	  'corpus         build the benchmark code corpus' \
@@ -22,6 +24,12 @@ engine:
 	@test -n "$(NAME)" -a -n "$(BACKEND)" || { echo "usage: make engine NAME=<n> BACKEND=<b> [SRC=<dir>] [REF=<ref>] [ARCH=<gfx|cc>]"; exit 1; }
 	$(REPO)/bin/build-engine $(NAME) $(BACKEND) \
 	  $(if $(SRC),--src $(SRC)) $(if $(REF),--ref $(REF)) $(if $(ARCH),--arch $(ARCH))
+
+vllm:
+	$(REPO)/bin/build-vllm $(if $(REF),--ref $(REF)) $(if $(ARCH),--arch $(ARCH)) $(if $(JOBS),--jobs $(JOBS))
+
+vllm-reranker:
+	$(REPO)/bin/run-vllm-reranker
 
 install:
 	uv tool install --force --with gguf $(REPO)

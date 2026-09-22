@@ -141,6 +141,27 @@ build fails. Without that, variants silently share one library, which
 invalidates backend comparisons and, for a fork with its own quantization
 types, produces a binary that either refuses the weights or misreads them.
 
+### vLLM on ROCm
+
+The vLLM build is independently pinned in `config/vllm-build.env`. It clones
+the selected revision to `~/dev/vllm`, builds a private OpenMPI 4 compatibility
+runtime, and compiles vLLM for the configured AMD GPU architecture:
+
+```bash
+make vllm
+make vllm-reranker
+```
+
+The second command serves `BAAI/bge-reranker-v2-m3` at
+`http://127.0.0.1:8010`. Edit the pin file to upgrade the source revision or
+ROCm dependency set; the resolved build is recorded in `~/opt/vllm/BUILD-INFO`.
+
+```bash
+curl http://127.0.0.1:8010/rerank \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"BAAI/bge-reranker-v2-m3","query":"capital of France","documents":["Paris is in France.","Berlin is in Germany."]}'
+```
+
 The generated file is `$XDG_CONFIG_HOME/llama-swap/config.yaml`.
 The default local endpoint is `http://127.0.0.1:18080`.
 
