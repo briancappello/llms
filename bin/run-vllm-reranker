@@ -26,5 +26,6 @@ exec "$VLLM" serve "$MODEL" \
     --runner pooling \
     --convert classify \
     --max-model-len 8192 \
-    --gpu-memory-utilization 0.20 \
+    --gpu-memory-utilization 0.12 \
+    --enforce-eager \
     "$@"

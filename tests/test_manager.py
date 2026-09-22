@@ -70,6 +70,19 @@ class SettingsTests(IsolatedTest):
         self.assertEqual(settings.output, self.root / "xdg" / "llama-swap" / "config.yaml")
         self.assertEqual(settings.hf_cache, self.root / "hf" / "hub")
 
+    def test_companion_validation_and_env(self):
+        companion = {"embed": {"command": ["embed-server"], "url": "http://127.0.0.1:8011"}}
+        settings = Settings.from_env(self.root / "configured", environ={
+            "HOME": str(self.root), "LLMS_COMPANIONS": json.dumps(companion),
+        })
+        self.assertEqual(settings.companions, companion)
+        with self.assertRaisesRegex(ValueError, "command"):
+            Settings(self.root / "bad-command", companions={
+                "embed": {"command": [], "url": "http://localhost"}})
+        with self.assertRaisesRegex(ValueError, "HTTP"):
+            Settings(self.root / "bad-url", companions={
+                "embed": {"command": ["server"], "url": "unix:/tmp/api"}})
+
     def test_settings_then_env_then_explicit_config_dir(self):
         self.manager.init()
         atomic_write(self.settings.config_dir / "settings.json", json.dumps({"server": "saved", "output": "nested/out.yaml", "gpu_memory_mib": 6000}))
@@ -563,6 +576,7 @@ class ServiceTests(IsolatedTest):
             self.manager.install_service()
         self.runner.assert_not_called()
 
+
     def test_start_restart_stop_require_matching_loaded_unit(self):
         for action in ("start", "restart", "stop"):
             self.manager.service(action)
@@ -743,6 +757,60 @@ class ServiceTests(IsolatedTest):
             self.manager.remove("a/b", restart=True)
         self.manager.api.assert_called_once_with("/api/models/unload/a%2Fb", method="POST", allow_empty=True)
         self.assertEqual(self.manager.load_registry(), {})
+
+
+class CompanionServiceTests(IsolatedTest):
+    def setUp(self):
+        super().setUp()
+        self.server = self.weights("pooling-server", folder=self.root / "bin")
+        self.server.chmod(0o755)
+        companions = {
+            "embeddings": {
+                "command": [str(self.server), "--port", "8011"],
+                "unit": "llms-embeddings.service",
+                "url": "http://127.0.0.1:8011",
+                "check_endpoint": "/health",
+            }
+        }
+        self.settings = replace(self.settings, companions=companions)
+        self.manager = ModelManager(self.settings, probe=self.probe, opener=self.opener, runner=self.runner)
+        self.unit = self.manager.install_companions()[0]
+        self.argv = [str(self.server), "--port", "8011"]
+        self.properties = {
+            "Id": "llms-embeddings.service", "LoadState": "loaded", "FragmentPath": str(self.unit),
+            "ExecStart": f"{{ path={self.server} ; argv[]={' '.join(self.argv)} ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }}",
+            "ActiveState": "inactive", "MainPID": "0", "ControlPID": "0",
+            "NeedDaemonReload": "no", "DropInPaths": "", "Transient": "no", "Type": "simple",
+        }
+        self.actions = []
+        self.runner.side_effect = self.run_mock
+
+    def run_mock(self, command, **kwargs):
+        if command[2] == "show":
+            return SimpleNamespace(returncode=0, stderr="", stdout="\n".join(
+                f"{key}={value}" for key, value in self.properties.items()) + "\n")
+        self.actions.append(command)
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    def test_install_is_nonoverwriting(self):
+        self.assertIn(str(self.server), self.unit.read_text())
+        with self.assertRaises(FileExistsError):
+            self.manager.install_companions()
+
+    def test_start_and_status(self):
+        self.manager.companion_service("start")
+        self.assertEqual(self.actions, [["systemctl", "--user", "start", "llms-embeddings.service"]])
+        self.properties.update(ActiveState="active", MainPID="4321")
+        self.opener.side_effect = None
+        self.opener.return_value = MagicMock()
+        response = self.opener.return_value.__enter__.return_value
+        response.status = 200
+        self.assertEqual(self.manager.companion_status(), [{
+            "name": "embeddings", "unit": "llms-embeddings.service",
+            "url": "http://127.0.0.1:8011", "active": True, "healthy": True, "error": None,
+        }])
+        request = self.opener.call_args.args[0]
+        self.assertEqual(request.full_url, "http://127.0.0.1:8011/health")
 
 
 class CLITests(IsolatedTest):

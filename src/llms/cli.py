@@ -47,6 +47,11 @@ def parser():
         "status": "check loaded and advertised models",
         "ensure-clients": "explicitly update pi provider; does not install opencode plugins",
         "install-service": "write a non-overwriting user unit; do not enable/start/reload",
+        "install-companions": "write non-overwriting companion model units",
+        "companions-status": "check companion units and health endpoints",
+        "companions-start": "start configured companion model services",
+        "companions-stop": "stop configured companion model services",
+        "companions-restart": "restart configured companion model services",
         "start": "start the configured user service",
         "stop": "stop the configured user service",
         "restart": "restart the configured user service",
@@ -113,6 +118,23 @@ def main(argv=None, *, manager_factory=ModelManager):
                 print(shlex.join([settings.systemctl, "--user", "link", str(path)]))
             print("Then reload explicitly:")
             print(shlex.join([settings.systemctl, "--user", "daemon-reload"]))
+        elif args.command == "install-companions":
+            paths = manager.install_companions()
+            print(json.dumps({"written": [str(path) for path in paths]}, indent=2))
+            home = Path(os.environ.get("HOME", str(Path.home())))
+            standard = Path(os.environ.get("XDG_CONFIG_HOME", str(home / ".config"))) / "systemd" / "user"
+            for path in paths:
+                if path.parent.resolve() != standard.expanduser().absolute().resolve():
+                    print("Link the external unit explicitly:")
+                    print(shlex.join([settings.systemctl, "--user", "link", str(path)]))
+            print("Then reload explicitly:")
+            print(shlex.join([settings.systemctl, "--user", "daemon-reload"]))
+        elif args.command == "companions-status":
+            print(json.dumps(manager.companion_status(), indent=2))
+        elif args.command.startswith("companions-"):
+            action = args.command.removeprefix("companions-")
+            manager.companion_service(action)
+            print(f"companions-{action}: {', '.join(sorted(settings.companions))}")
         else:
             manager.service(args.command)
             if args.command in ("start", "restart"):

@@ -5,6 +5,7 @@
     "Create it with `llms init --server <llama-server>`, then add engines as below.",
     "Every key is optional except the ones llms init writes. LLMS_* environment",
     "variables override these; LLMS_ENGINES takes a JSON object.",
+    "LLMS_COMPANIONS takes a JSON object for persistent non-chat model services.",
     "",
     "An engine names a local server process. Registry entries refer to one by",
     "logical name, so the same registry works on this host and on a CUDA box:",
@@ -38,6 +39,23 @@
   "unit": "llama-swap.service",
   "preload": true,
   "gpu_memory_mib": 32624,
+
+  "companions": {
+    "reranker": {
+      "command": ["/home/you/dev/llms/bin/run-vllm-reranker"],
+      "unit": "llms-reranker.service",
+      "url": "http://127.0.0.1:8010",
+      "check_endpoint": "/health",
+      "description": "llms BGE reranker"
+    },
+    "embeddings": {
+      "command": ["/home/you/dev/llms/bin/run-vllm-embeddings"],
+      "unit": "llms-embeddings.service",
+      "url": "http://127.0.0.1:8011",
+      "check_endpoint": "/health",
+      "description": "llms Voyage embeddings"
+    }
+  },
 
   "engines": {
     "llama-vulkan": {

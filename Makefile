@@ -1,7 +1,7 @@
 REPO := $(shell pwd)
 BIN := $(HOME)/.local/bin
 
-.PHONY: help install uninstall test build proxy check corpus swebench-venv engine vllm vllm-reranker
+.PHONY: help install uninstall test build proxy check corpus swebench-venv engine vllm vllm-reranker vllm-embeddings
 
 help:
 	@printf '%s\n' \
@@ -14,6 +14,7 @@ help:
 	  '               make engine NAME=vulkan BACKEND=vulkan' \
 	  'vllm           build pinned vLLM source for the configured ROCm GPU' \
 	  'vllm-reranker  serve BAAI/bge-reranker-v2-m3 on port 8010' \
+	  'vllm-embeddings serve voyageai/voyage-4-nano on port 8011' \
 	  'proxy          build the optional authentication proxy' \
 	  'check          run package and configuration checks' \
 	  'corpus         build the benchmark code corpus' \
@@ -30,6 +31,9 @@ vllm:
 
 vllm-reranker:
 	$(REPO)/bin/run-vllm-reranker
+
+vllm-embeddings:
+	$(REPO)/bin/run-vllm-embeddings
 
 install:
 	uv tool install --force --with gguf $(REPO)

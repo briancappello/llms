@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Serve a supported embedding model using the repository-managed vLLM build.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG="${VLLM_BUILD_CONFIG:-$ROOT/config/vllm-build.env}"
+[[ -f "$CONFIG" ]] || { echo "error: build config not found: $CONFIG" >&2; exit 1; }
+# shellcheck source=../config/vllm-build.env
+source "$CONFIG"
+
+MODEL="${VLLM_EMBEDDING_MODEL:-voyageai/voyage-4-nano}"
+if [[ $# -gt 0 && "$1" != -* ]]; then
+    MODEL="$1"
+    shift
+fi
+PORT="${VLLM_EMBEDDING_PORT:-8011}"
+MPI_PREFIX="$VLLM_PREFIX/deps/openmpi-$OPENMPI_VERSION"
+VLLM="$VLLM_PREFIX/runtime/bin/vllm"
+
+[[ -x "$VLLM" ]] || { echo "error: vLLM is not built; run make vllm" >&2; exit 1; }
+[[ -e "$MPI_PREFIX/lib/libmpi_cxx.so.40" ]] || { echo "error: private OpenMPI runtime is missing" >&2; exit 1; }
+
+export LD_LIBRARY_PATH="$MPI_PREFIX/lib:/opt/rocm/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH="$MPI_PREFIX/bin:$VLLM_PREFIX/runtime/bin:/opt/rocm/bin:$PATH"
+export HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}"
+
+case "$MODEL" in
+    voyageai/voyage-4-nano)
+        GPU_MEMORY_UTILIZATION="${VLLM_EMBEDDING_GPU_MEMORY_UTILIZATION:-0.10}"
+        MODEL_ARGS=(
+            --trust-remote-code
+            --hf-overrides '{"architectures":["VoyageQwen3BidirectionalEmbedModel"],"matryoshka_dimensions":[2048,1024,512,256]}'
+            --pooler-config '{"pooling_type":"MEAN"}'
+        )
+        ;;
+    Qwen/Qwen3-Embedding-4B)
+        GPU_MEMORY_UTILIZATION="${VLLM_EMBEDDING_GPU_MEMORY_UTILIZATION:-0.42}"
+        MODEL_ARGS=(
+            --hf-overrides '{"is_matryoshka":true}'
+            --pooler-config '{"pooling_type":"LAST"}'
+        )
+        ;;
+    *)
+        echo "error: unsupported embedding model: $MODEL" >&2
+        exit 1
+        ;;
+esac
+
+exec "$VLLM" serve "$MODEL" \
+    --host 127.0.0.1 \
+    --port "$PORT" \
+    --runner pooling \
+    --convert embed \
+    --dtype bfloat16 \
+    --max-model-len 32768 \
+    --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION" \
+    --enforce-eager \
+    "${MODEL_ARGS[@]}" \
+    "$@"

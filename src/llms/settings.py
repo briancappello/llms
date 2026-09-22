@@ -14,6 +14,7 @@ ENGINE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 ENGINE_KEYS = {"kind", "server", "cwd", "env", "args", "host",
                "check_endpoint", "use_model_name", "unload_timeout"}
 ENGINE_KINDS = ("llama.cpp", "custom")
+COMPANION_KEYS = {"command", "unit", "url", "check_endpoint", "description"}
 
 
 def _validate_engines(engines):
@@ -61,6 +62,37 @@ def _validate_engines(engines):
             raise ValueError(f"engine {name} unload_timeout must be a non-negative integer")
 
 
+def _validate_companions(companions):
+    """Validate persistent non-chat model services managed beside llama-swap."""
+    if not isinstance(companions, dict):
+        raise ValueError("companions must be a mapping of name to service")
+    units = set()
+    for name, spec in companions.items():
+        if not isinstance(name, str) or not ENGINE_NAME.match(name):
+            raise ValueError(f"invalid companion name: {name!r}")
+        if not isinstance(spec, dict) or spec.keys() - COMPANION_KEYS:
+            raise ValueError(f"companion {name} must be an object with known keys: {sorted(COMPANION_KEYS)}")
+        command = spec.get("command")
+        if not isinstance(command, list) or not command or not all(
+                isinstance(a, str) and a and not any(c in a for c in "\x00\r\n") for a in command):
+            raise ValueError(f"companion {name} command must be a non-empty list of single-line strings")
+        unit = spec.get("unit", f"llms-{name}.service")
+        if (not isinstance(unit, str) or "/" in unit or not unit.endswith(".service")
+                or unit.startswith("-") or unit in units):
+            raise ValueError(f"invalid or duplicate companion unit: {unit!r}")
+        units.add(unit)
+        url = urlsplit(spec.get("url", ""))
+        if url.scheme not in ("http", "https") or not url.netloc:
+            raise ValueError(f"companion {name} url must be an HTTP(S) URL")
+        endpoint = spec.get("check_endpoint", "/health")
+        if not isinstance(endpoint, str) or not endpoint.startswith("/") or any(c in endpoint for c in "\x00\r\n"):
+            raise ValueError(f"companion {name} check_endpoint must start with /")
+        description = spec.get("description")
+        if description is not None and (
+                not isinstance(description, str) or not description or any(c in description for c in "\x00\r\n")):
+            raise ValueError(f"companion {name} description must be a non-empty single-line string")
+
+
 @dataclass(frozen=True)
 class Settings:
     config_dir: Path
@@ -82,6 +114,7 @@ class Settings:
     hf_endpoint: str = "https://huggingface.co"
     hf_token: str | None = field(default=None, repr=False)
     engines: dict = field(default_factory=dict)
+    companions: dict = field(default_factory=dict)
 
     def __post_init__(self):
         root = Path(self.config_dir).expanduser().absolute()
@@ -105,8 +138,11 @@ class Settings:
                 object.__setattr__(self, key, str(path if path.is_absolute() else root / path))
         if "/" in self.unit or not self.unit.endswith(".service") or self.unit.startswith("-"):
             raise ValueError("unit must be a .service basename")
+        _validate_companions(self.companions)
+        companion_units = [self.service_dir / spec.get("unit", f"llms-{name}.service")
+                           for name, spec in self.companions.items()]
         managed_paths = [root / "settings.json", self.registry, self.header, self.output,
-                         self.client_path, self.service_dir / self.unit]
+                         self.client_path, self.service_dir / self.unit, *companion_units]
         if len({p.resolve() for p in managed_paths}) != len(managed_paths):
             raise ValueError("managed settings, registry, header, output, client, and service unit paths must be distinct")
         if not isinstance(self.preload, bool):
@@ -159,11 +195,11 @@ class Settings:
                     if env[key].lower() not in ("true", "false", "1", "0"):
                         raise ValueError("LLMS_PRELOAD must be true, false, 1, or 0")
                     values[f.name] = env[key].lower() in ("true", "1")
-                elif f.name == "engines":
+                elif f.name in ("engines", "companions"):
                     try:
                         values[f.name] = json.loads(env[key])
                     except json.JSONDecodeError as exc:
-                        raise ValueError(f"LLMS_ENGINES must be a JSON object: {exc}") from exc
+                        raise ValueError(f"{key} must be a JSON object: {exc}") from exc
                 else:
                     values[f.name] = int(env[key]) if f.name == "gpu_memory_mib" else env[key]
         if "LLAMASWAP_URL" in env and "LLMS_SWAP_URL" not in env:

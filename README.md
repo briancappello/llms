@@ -150,11 +150,27 @@ runtime, and compiles vLLM for the configured AMD GPU architecture:
 ```bash
 make vllm
 make vllm-reranker
+make vllm-embeddings
 ```
 
 The second command serves `BAAI/bge-reranker-v2-m3` at
 `http://127.0.0.1:8010`. Edit the pin file to upgrade the source revision or
 ROCm dependency set; the resolved build is recorded in `~/opt/vllm/BUILD-INFO`.
+
+Persistent reranking and embedding servers can be configured as `companions`
+in `settings.json` (see `config/settings.example.json`) and managed with:
+
+```bash
+llms install-companions
+systemctl --user daemon-reload
+llms companions-start
+llms companions-status
+systemctl --user enable llms-reranker.service llms-embeddings.service
+```
+
+On the 32 GiB R9700, the verified resident stack is Bonsai 2 27B chat through
+llama-swap, BGE reranking on `:8010`, and Voyage embeddings on `:8011`. The two
+pooling models use eager execution to preserve VRAM for the chat context.
 
 ```bash
 curl http://127.0.0.1:8010/rerank \
