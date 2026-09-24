@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.10"   # requires-python floor
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: macos-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: proxy/go.mod
+
+      - name: Python tests
+        run: uv run --extra gguf python -m unittest discover -s tests -v
+
+      - name: Go tests
+        working-directory: proxy
+        run: |
+          go test ./...
+          go vet ./...
+
+      - name: vLLM pins print on every platform
+        run: bin/build-vllm --print-config
+
+      - name: Shell entry points parse under /bin/bash (3.2 on macOS)
+        run: |
+          for script in bin/build-engine bin/build-vllm bin/run-vllm-reranker bin/run-vllm-embeddings \
+                        bench/legacy/*/*.sh bench/swebench/*.sh; do
+            /bin/bash -n "$script" || { echo "syntax error: $script"; exit 1; }
+          done
+
+      - name: Rendered env -C prefix executes (macOS BSD env)
+        if: runner.os == 'macOS'
+        run: |
+          uv run python - <<'EOF'
+          import shlex, subprocess, tempfile, yaml
+          from pathlib import Path
+          from llms import Settings, render_config
+          work = Path(tempfile.mkdtemp())
+          settings = Settings(work / "cfg", service_manager="launchd",
+                              engines={"e": {"kind": "custom", "server": "/bin/pwd", "cwd": str(work)}})
+          cmd = yaml.safe_load(render_config({"m": {"capability": "chat", "engine": "e", "ctx": 8}},
+                                             "{}", settings))["models"]["m"]["cmd"]
+          argv = shlex.split(cmd)
+          # drop the llama-swap-only --host/--port arguments pwd would reject
+          argv = argv[:argv.index("--host")]
+          out = subprocess.run(argv, capture_output=True, text=True, check=True).stdout.strip()
+          assert Path(out).resolve() == work.resolve(), (argv, out)
+          print("env -C ok:", argv)
+          EOF

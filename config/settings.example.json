@@ -23,13 +23,32 @@
     "                  affects Vulkan, HIP_VISIBLE_DEVICES only affects HIP, and",
     "                  CUDA_VISIBLE_DEVICES only affects CUDA. A pin set on the systemd",
     "                  unit applies to every backend indiscriminately, which is wrong.",
-    "  cwd             absolute; rendered with env --chdir so no shell is involved and",
+    "  cwd             absolute; rendered with env -C so no shell is involved and",
     "                  signals still reach the server process directly",
     "  check_endpoint  health path, or 'none' to skip",
     "  use_model_name  model id to send upstream when it differs from the registry id",
     "  unload_timeout  graceful seconds before force-kill",
     "",
-    "--host/--port ${PORT} are appended automatically for every engine."
+    "  mtp_args        llama.cpp engines only: what a registry entry's \"mtp\": true",
+    "                  renders to on THIS host (default [\"--spec-type\", \"draft-mtp\"]).",
+    "                  The right draft length is host-specific, so it lives here, not",
+    "                  in the portable registry. Measure it with bench/speed/depth_sweep.py.",
+    "",
+    "--host/--port ${PORT} are appended automatically for every engine.",
+    "",
+    "Service keys:",
+    "  service_manager 'auto' (default: launchd on macOS, systemd on Linux), 'systemd', 'launchd'",
+    "  unit            logical service name; 'llama-swap.service' and 'llama-swap' are the same",
+    "                  systemd unit, and launchd label llms.llama-swap",
+    "  service_path    launchd only: the PATH llama-swap and its engines get. launchd gives",
+    "                  agents no login-shell PATH; this is fixed (not copied from your shell)",
+    "                  so the generated plist is deterministic. doctor checks bare names on it.",
+    "  service_dir     where definitions are written. launchd default is <config>/launchd, NOT",
+    "                  ~/Library/LaunchAgents (which would start at every login); copy the",
+    "                  plist there yourself to start at login.",
+    "",
+    "The engines below mix a Linux host (vulkan/hip/cuda/ds4) and a macOS host",
+    "(metal/omlx) to document both; a real settings.json holds one host's engines."
   ],
 
   "server": "/home/you/opt/llama.cpp-vulkan/bin/llama-server",
@@ -37,6 +56,8 @@
   "client_url": "http://127.0.0.1:18080/v1",
   "listen": "127.0.0.1:18080",
   "unit": "llama-swap.service",
+  "service_manager": "auto",
+  "service_path": "~/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
   "preload": true,
   "gpu_memory_mib": 32624,
 
@@ -58,6 +79,23 @@
   },
 
   "engines": {
+    "metal": {
+      "_comment": "macOS: bin/build-engine metal metal. mtp_args: provisional until measured on this host.",
+      "server": "/Users/you/opt/llama.cpp-metal/bin/llama-server",
+      "args": ["-ngl", "999"],
+      "mtp_args": ["--spec-type", "draft-mtp", "--spec-draft-n-max", "3"]
+    },
+
+    "omlx": {
+      "_comment": "macOS MLX via oMLX (install the .dmg: it ships the precompiled Qwen3.5 kernels). Private --base-path keeps its per-model settings (mtp_enabled, max_context_window) apart from the app's ~/.omlx; models are symlinks in --model-dir, selected with the entry's useModelName. kind custom: entries MUST declare a measured ctx.",
+      "kind": "custom",
+      "server": "/Applications/oMLX.app/Contents/MacOS/omlx-cli",
+      "check_endpoint": "/health",
+      "args": ["serve", "--base-path", "/Users/you/.config/llms/omlx",
+               "--model-dir", "/Users/you/.config/llms/omlx/models", "--no-hf-cache",
+               "--paged-ssd-cache-max-size", "10GB", "--max-concurrent-requests", "1"]
+    },
+
     "llama-vulkan": {
       "server": "/home/you/opt/llama.cpp-vulkan/bin/llama-server",
       "env": { "MESA_VK_DEVICE_SELECT": "1002:7551!" },

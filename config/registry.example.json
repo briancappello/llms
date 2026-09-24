@@ -39,9 +39,12 @@
       "Named engine. The binary, its device pin and -ngl live in settings.json,",
       "so this entry is identical on an AMD box and an NVIDIA one.",
       "'common': false opts out of the ${common} header macro for a model whose",
-      "cache types or offload split contradict the shared defaults."
+      "cache types or offload split contradict the shared defaults.",
+      "\"mtp\": true is intent, not flags: each host's engine renders its own",
+      "mtp_args. llms add writes it when the GGUF carries MTP layers."
     ],
     "engine": "bonsai",
+    "mtp": true,
     "path": "/home/you/.cache/huggingface/hub/models--prism-ml--Ternary-Bonsai-2-27B-gguf/snapshots/<sha>/Ternary-Bonsai-2-27B-PQ2_0.gguf",
     "display": "Bonsai 2 27B (ternary PQ2_0)",
     "description": "PQ2_0 is ggml type 142 and needs the PrismML fork; stock llama.cpp cannot load it.",
@@ -56,16 +59,36 @@
     "extra_args": ["--reasoning-preserve", "--temp 1.0", "--top-p 0.95", "--top-k 20", "--min-p 0.0", "--repeat-penalty 1.0"]
   },
 
+  "example-mlx": {
+    "_comment": [
+      "kind 'custom' engine (oMLX). No -m/-c/-np are composed. useModelName is the",
+      "oMLX model id: the name of the symlink in the engine's --model-dir. ctx is",
+      "REQUIRED and must be measured (bench/context/ctx_probe.py); keep oMLX's",
+      "max_context_window for this id equal to it."
+    ],
+    "engine": "omlx",
+    "display": "Example 35B-A3B (MLX 4-bit)",
+    "description": "Same model family served by MLX, for comparison with the GGUF build.",
+    "capability": "chat",
+    "arch": "qwen3_5_moe",
+    "trained_ctx": 262144,
+    "ctx": 65536,
+    "useModelName": "example-mlx"
+  },
+
   "example-custom-engine": {
     "_comment": [
       "kind 'custom' engine: not llama.cpp, so no -m/-c/-np are composed.",
-      "Only the engine args plus extra_args are passed."
+      "Only the engine args plus extra_args are passed. ctx is required for",
+      "custom engines: it is the context window clients are told, and such a",
+      "server may enforce none of its own."
     ],
     "engine": "ds4-hip",
     "display": "DeepSeek V4 Flash (ds4-hip)",
     "description": "Own server binary, own flags, exclusive on the GPU.",
     "capability": "chat",
     "arch": "deepseek-v4-flash-moe",
+    "ctx": 65536,
     "extra_args": ["--kv-disk-dir /tmp/ds4-kv", "--kv-disk-space-mb 8192"]
   },
 

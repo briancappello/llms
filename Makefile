@@ -1,5 +1,11 @@
 REPO := $(shell pwd)
 BIN := $(HOME)/.local/bin
+UNAME_S := $(shell uname -s)
+
+# The vLLM build and its servers are ROCm, so Linux-only.
+define linux_only
+	@test "$(UNAME_S)" = Linux || { echo "error: '$@' is Linux-only (vLLM ROCm); this host is $(UNAME_S)" >&2; exit 1; }
+endef
 
 .PHONY: help install uninstall test build proxy check corpus swebench-venv engine vllm vllm-reranker vllm-embeddings
 
@@ -27,12 +33,15 @@ engine:
 	  $(if $(SRC),--src $(SRC)) $(if $(REF),--ref $(REF)) $(if $(ARCH),--arch $(ARCH))
 
 vllm:
+	$(linux_only)
 	$(REPO)/bin/build-vllm $(if $(REF),--ref $(REF)) $(if $(ARCH),--arch $(ARCH)) $(if $(JOBS),--jobs $(JOBS))
 
 vllm-reranker:
+	$(linux_only)
 	$(REPO)/bin/run-vllm-reranker
 
 vllm-embeddings:
+	$(linux_only)
 	$(REPO)/bin/run-vllm-embeddings
 
 install:

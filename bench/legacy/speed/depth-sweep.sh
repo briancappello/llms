@@ -36,7 +36,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB="$HERE/../lib"
+LIB="$HERE/../../lib"
 HUB="$HOME/.cache/huggingface/hub"
 SERVER="$HOME/opt/llama.cpp-vulkan/bin/llama-server"
 

@@ -86,7 +86,8 @@ func TestUpstreamValidation(t *testing.T) {
 }
 
 func TestDefaultKeysFile(t *testing.T) {
-	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" || runtime.GOOS == "plan9" {
+	// Linux and macOS share one XDG layout; Windows is out of scope.
+	if runtime.GOOS == "windows" || runtime.GOOS == "plan9" {
 		t.Skip("XDG defaults are Unix-specific")
 	}
 	home := t.TempDir()

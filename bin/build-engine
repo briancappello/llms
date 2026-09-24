@@ -4,35 +4,45 @@
 #   build-engine <name> <backend> [--src DIR | --repo URL --ref REF] [cmake args...]
 #
 # Examples:
+#   build-engine metal   metal                       # macOS, Apple Silicon
+#   build-engine cpu     cpu                         # either OS; Metal explicitly off
 #   build-engine vulkan  vulkan                      # upstream master, RADV
 #   build-engine hip     hip                         # upstream master, ROCm
 #   build-engine mtp     hip --ref pr/28097          # an upstream PR
 #   build-engine bonsai  hip --src ~/dev/bonsai-llama.cpp
 #   build-engine cuda    cuda --arch 90              # an NVIDIA host
+#   build-engine metal   metal --check-only          # re-run the isolation check only
 #
 # Installs to ~/opt/llama.cpp-<name>; point settings.json at
 # ~/opt/llama.cpp-<name>/bin/llama-server under engines.<name>.server.
 #
-# Replaces my-llama/build-backends.sh. Differences that matter:
-#   - one variant per invocation, so a failure cannot leave a half-built set
-#   - --src builds a fork in place instead of resetting ~/src/llama.cpp
-#   - backend is explicit, and CUDA is supported for non-AMD hosts
+# Portable to macOS's stock /bin/bash 3.2 and BSD userland: no bash-4
+# features, no nproc, no GNU-only date flags, and empty arrays are expanded
+# with ${a[@]+"${a[@]}"} so `set -u` does not abort on them.
 set -uo pipefail
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 die() { echo "error: $*" >&2; exit 1; }
 
-[[ $# -ge 2 ]] || die "usage: build-engine <name> <vulkan|hip|hip-wmma|cuda|cpu> [options] [-- cmake args]"
+OS="$(uname -s)"
+case "$OS" in
+    Darwin) BACKENDS="metal cpu" ;;
+    Linux)  BACKENDS="vulkan hip hip-wmma cuda cpu" ;;
+    *)      die "unsupported platform: $OS (Linux and macOS only)" ;;
+esac
+
+[[ $# -ge 2 ]] || die "usage: build-engine <name> <${BACKENDS// /|}> [options] [-- cmake args]"
 NAME="$1"; BACKEND="$2"; shift 2
 
 OPT="${LLMS_OPT_DIR:-$HOME/opt}"
 SRC=""
 REPO="https://github.com/ggml-org/llama.cpp"
 REF=""
-JOBS="$(nproc)"
+JOBS="$(getconf _NPROCESSORS_ONLN)"
 # AMD: gfx target. NVIDIA: compute capability, e.g. 90 for Hopper.
 ARCH="${LLMS_GPU_ARCH:-}"
 EXTRA=()
+CHECK_ONLY=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -41,10 +51,113 @@ while [[ $# -gt 0 ]]; do
         --ref)  REF="${2:?}"; shift 2 ;;
         --arch) ARCH="${2:?}"; shift 2 ;;
         --jobs) JOBS="${2:?}"; shift 2 ;;
+        --check-only) CHECK_ONLY=1; shift ;;
         --)     shift; EXTRA+=("$@"); break ;;
         *)      EXTRA+=("$1"); shift ;;
     esac
 done
+
+# --- preflight: nothing below touches a source tree until these pass ---------
+case " $BACKENDS " in
+    *" $BACKEND "*) ;;
+    *) die "backend '$BACKEND' is unsupported on $OS (supported: $BACKENDS)" ;;
+esac
+for tool in git cmake ninja; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        [[ "$OS" == Darwin ]] && die "required tool not found: $tool (brew install $tool)"
+        die "required tool not found: $tool"
+    fi
+done
+if [[ "$OS" == Darwin ]]; then
+    command -v otool >/dev/null 2>&1 || die "required tool not found: otool (xcode-select --install)"
+fi
+
+ROCM_CLANG=/opt/rocm/llvm/bin/clang
+args=()
+case "$BACKEND" in
+    metal)
+        # Embed the shader library so the binary never looks for a .metallib
+        # outside its own prefix.
+        args=(-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON) ;;
+    vulkan) args=(-DGGML_VULKAN=ON) ;;
+    cpu)
+        # Metal is on by default on Apple platforms; a cpu engine must not use it.
+        [[ "$OS" == Darwin ]] && args=(-DGGML_METAL=OFF) ;;
+    hip|hip-wmma)
+        [[ -x "$ROCM_CLANG" ]] || die "ROCm clang not found at $ROCM_CLANG"
+        [[ -n "$ARCH" ]] || ARCH="$(rocminfo 2>/dev/null | awk '/gfx[0-9]/{print $2; exit}')"
+        [[ -n "$ARCH" ]] || die "set --arch (e.g. gfx1201); could not detect one"
+        args=(-DGGML_HIP=ON -DAMDGPU_TARGETS="$ARCH" -DGPU_TARGETS="$ARCH"
+              -DCMAKE_C_COMPILER="$ROCM_CLANG" -DCMAKE_CXX_COMPILER="${ROCM_CLANG}++")
+        [[ "$BACKEND" == hip-wmma ]] && args+=(-DGGML_HIP_ROCWMMA_FATTN=ON)
+        ;;
+    cuda)
+        [[ -n "$ARCH" ]] || die "set --arch to a compute capability, e.g. 90 for H100"
+        args=(-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="$ARCH")
+        ;;
+esac
+
+# --- isolation --------------------------------------------------------------
+# Every libggml*/libllama* the server loads must come from $PREFIX.
+leaked_linux() {
+    ldd "$PREFIX/bin/llama-server" 2>/dev/null \
+        | grep -E 'libggml|libllama' | grep -v "$PREFIX/" || true
+}
+
+# dyld has no ldd: resolve each image's load commands against its own
+# LC_RPATHs, in order, the way dyld does (@loader_path = the image's dir).
+# The binary and every dylib in the prefix are checked, so a prefix library
+# that reaches outside is caught as well.
+resolve_darwin() {  # <image> <install-name>  -> resolved path, or empty
+    local image="$1" name="$2" dir rp candidate
+    dir="$(cd "$(dirname "$image")" && pwd -P)"
+    case "$name" in
+        @rpath/*)
+            while IFS= read -r rp; do
+                rp="${rp//@loader_path/$dir}"; rp="${rp//@executable_path/$PREFIX_REAL/bin}"
+                candidate="$rp/${name#@rpath/}"
+                if [[ -e "$candidate" ]]; then
+                    echo "$(cd "$(dirname "$candidate")" && pwd -P)/$(basename "$candidate")"
+                    return
+                fi
+            done < <(otool -l "$image" | awk '/cmd LC_RPATH/{getline; getline; print $2}')
+            ;;
+        @loader_path/*|@executable_path/*)
+            candidate="${name/#@loader_path/$dir}"; candidate="${candidate/#@executable_path/$PREFIX_REAL/bin}"
+            [[ -e "$candidate" ]] && echo "$(cd "$(dirname "$candidate")" && pwd -P)/$(basename "$candidate")"
+            ;;
+        /*) [[ -e "$name" ]] && echo "$name" ;;
+    esac
+}
+
+leaked_darwin() {
+    local image name resolved
+    for image in "$PREFIX/bin/llama-server" "$PREFIX"/lib/*.dylib; do
+        [[ -e "$image" && ! -L "$image" ]] || continue
+        # first line is the image itself; the rest are dependencies
+        while IFS= read -r name; do
+            resolved="$(resolve_darwin "$image" "$name")"
+            case "$resolved" in
+                "$PREFIX_REAL"/*) ;;
+                *) echo "$(basename "$image"): $name -> ${resolved:-UNRESOLVED}" ;;
+            esac
+        done < <(otool -L "$image" | tail -n +2 | awk '{print $1}' | grep -E 'libggml|libllama')
+    done
+}
+
+check_isolation() {
+    [[ -x "$PREFIX/bin/llama-server" ]] || die "no llama-server under $PREFIX"
+    PREFIX_REAL="$(cd "$PREFIX" && pwd -P)"
+    if [[ "$OS" == Darwin ]]; then leaked="$(leaked_darwin)"; else leaked="$(leaked_linux)"; fi
+    [[ -z "$leaked" ]] || { log "!!! ISOLATION FAILURE, libs outside $PREFIX:"; echo "$leaked" | sed 's/^/      /'; exit 1; }
+}
+
+PREFIX="$OPT/llama.cpp-$NAME"
+if ((CHECK_ONLY)); then
+    check_isolation
+    log "    isolation OK (all ggml/llama libs from $PREFIX/lib)"
+    exit 0
+fi
 
 # --- source ---------------------------------------------------------------
 if [[ -n "$SRC" ]]; then
@@ -67,49 +180,33 @@ else
 fi
 
 COMMIT="$(git -C "$SRC" rev-parse --short HEAD)"
-PREFIX="$OPT/llama.cpp-$NAME"
 BUILD="$SRC/build-$NAME"
 log "engine '$NAME': $BACKEND from $SRC @ $COMMIT -> $PREFIX"
 
-# --- backend --------------------------------------------------------------
-ROCM_CLANG=/opt/rocm/llvm/bin/clang
-args=()
-case "$BACKEND" in
-    vulkan) args=(-DGGML_VULKAN=ON) ;;
-    cpu)    args=() ;;
-    hip|hip-wmma)
-        [[ -x "$ROCM_CLANG" ]] || die "ROCm clang not found at $ROCM_CLANG"
-        [[ -n "$ARCH" ]] || ARCH="$(rocminfo 2>/dev/null | awk '/gfx[0-9]/{print $2; exit}')"
-        [[ -n "$ARCH" ]] || die "set --arch (e.g. gfx1201); could not detect one"
-        args=(-DGGML_HIP=ON -DAMDGPU_TARGETS="$ARCH" -DGPU_TARGETS="$ARCH"
-              -DCMAKE_C_COMPILER="$ROCM_CLANG" -DCMAKE_CXX_COMPILER="${ROCM_CLANG}++")
-        [[ "$BACKEND" == hip-wmma ]] && args+=(-DGGML_HIP_ROCWMMA_FATTN=ON)
-        ;;
-    cuda)
-        [[ -n "$ARCH" ]] || die "set --arch to a compute capability, e.g. 90 for H100"
-        args=(-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="$ARCH")
-        ;;
-    *) die "unknown backend: $BACKEND" ;;
-esac
-
 # --- build ----------------------------------------------------------------
-# RPATH is mandatory. Without it these binaries resolve libggml-*.so from
-# /usr/lib or from whichever prefix happens to be first, which silently makes
+# RPATH is mandatory. Without it these binaries resolve libggml from a system
+# prefix or from whichever prefix happens to be first, which silently makes
 # every variant run the same library. That destroys backend comparisons, and
 # for a fork with its own quant types it produces a build that either refuses
 # the weights or, worse, misreads them.
+if [[ "$OS" == Darwin ]]; then
+    RPATH='@loader_path/../lib'
+else
+    RPATH='$ORIGIN/../lib'
+fi
+
 log "=== configure ==="
 rm -rf "$BUILD"
 cmake -B "$BUILD" -S "$SRC" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-    -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' \
+    -DCMAKE_INSTALL_RPATH="$RPATH" \
     -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
     -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
     -DCMAKE_SKIP_INSTALL_RPATH=OFF \
     -DLLAMA_CURL=ON \
     -DLLAMA_BUILD_TESTS=OFF \
-    "${args[@]}" "${EXTRA[@]}" || die "configure failed for $NAME"
+    ${args[@]+"${args[@]}"} ${EXTRA[@]+"${EXTRA[@]}"} || die "configure failed for $NAME"
 
 log "=== build (-j$JOBS) ==="
 cmake --build "$BUILD" -j"$JOBS" || die "build failed for $NAME"
@@ -117,11 +214,9 @@ cmake --build "$BUILD" -j"$JOBS" || die "build failed for $NAME"
 log "=== install ==="
 cmake --install "$BUILD" || die "install failed for $NAME"
 
-leaked="$(ldd "$PREFIX/bin/llama-server" 2>/dev/null \
-    | grep -E 'libggml|libllama' | grep -v "$PREFIX/" || true)"
-[[ -z "$leaked" ]] || { log "!!! ISOLATION FAILURE, libs outside $PREFIX:"; echo "$leaked" | sed 's/^/      /'; exit 1; }
+check_isolation
 
-echo "$COMMIT  $(git -C "$SRC" describe --tags --always 2>/dev/null || echo "$COMMIT")  ${REF:-$SRC}  $(date -Is)" \
+echo "$COMMIT  $(git -C "$SRC" describe --tags --always 2>/dev/null || echo "$COMMIT")  ${REF:-$SRC}  $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     > "$PREFIX/COMMIT"
 log "    isolation OK (all ggml/llama libs from $PREFIX/lib)"
 log "=== $NAME OK -> $PREFIX/bin/llama-server ==="

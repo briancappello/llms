@@ -2,6 +2,9 @@
 # Serve the default BGE reranker using the repository-managed vLLM build.
 set -euo pipefail
 
+# The repository-managed vLLM build is ROCm, so serving from it is Linux-only.
+[[ "$(uname -s)" == Linux ]] || { echo "error: the vLLM ROCm runtime is Linux-only (this host is $(uname -s))" >&2; exit 1; }
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="${VLLM_BUILD_CONFIG:-$ROOT/config/vllm-build.env}"
 [[ -f "$CONFIG" ]] || { echo "error: build config not found: $CONFIG" >&2; exit 1; }
