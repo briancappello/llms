@@ -7,14 +7,16 @@ measures every model the same way from the client, over llama-swap:
   prefill tok/s = prompt tokens / time to first streamed token
   decode  tok/s = (completion tokens - 1) / (time from first to last token)
 
-Prompts are the code corpus trimmed to each depth ONCE, with the first
-model's /tokenize, then sent verbatim to every model. Models of the same
-family share a tokenizer, so this keeps the input identical and also works
-for servers without /tokenize (oMLX). cache_prompt is off, and a
-different nonce leads every request so no server can reuse a cached prefix.
+Prompts are the code corpus trimmed to each depth ONCE, then sent verbatim
+to every model: with --tokenizer (a snapshot dir or tokenizer.json; needs
+`uv run --with tokenizers`), or else with the first model's /tokenize. The
+first way works when no model runs on llama.cpp (oMLX has no /tokenize).
+cache_prompt is off, and a unique random nonce leads every request, so no
+server can reuse a cached prefix. oMLX ignores cache_prompt and caches
+prefixes itself, so check its log for "reused" after a run.
 
-    bench/speed/engine_compare.py --model cyber-tiel --model cyber-tiel-mlx \\
-        --variant production --variant no-mtp='{"entries": {"cyber-tiel": {"mtp": false}}}'
+    uv run --with tokenizers python bench/speed/engine_compare.py \\
+        --model ornith-9b --model cyber-tiel --tokenizer <snapshot dir>
 """
 
 import json
@@ -22,11 +24,12 @@ from pathlib import Path
 import sys
 import time
 import urllib.request
+import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
-from common import (PROVENANCE, TSV, StackError, arg_parser, depth_prompt, load_corpus, log,  # noqa: E402
-                    median_cells, mem, read_tsv, served_memory, stack_for, tokenize, variants)
+from common import (PROVENANCE, TSV, LocalTokenizer, StackError, arg_parser, depth_prompt,  # noqa: E402
+                    load_corpus, log, median_cells, mem, read_tsv, served_memory, stack_for, tokenize, variants)
 
 COLUMNS = ["model", "variant", "depth", "rep", "prompt_tok", "compl_tok", "ttft_s", "prefill_tok_s", "decode_tok_s",
            "server_pp_tok_s", "server_tg_tok_s", "acc_pct", "mem_mib", "mem_kind", "status", *PROVENANCE]
@@ -65,7 +68,9 @@ def main():
     parser.add_argument("--reps", type=int, default=2)
     parser.add_argument("--gen", type=int, default=256)
     parser.add_argument("--corpus", default=None)
+    parser.add_argument("--tokenizer", help="snapshot dir or tokenizer.json used to build prompts locally")
     args = parser.parse_args()
+    local = LocalTokenizer(args.tokenizer) if args.tokenizer else None
     corpus = load_corpus(args.corpus) if args.corpus else load_corpus()
     depths = [int(d) for d in args.depths.split(",")]
     out = TSV(args.out, COLUMNS)
@@ -86,13 +91,17 @@ def main():
                     continue
                 for depth in depths:
                     if depth not in prompts:
-                        url = stack.upstream(model, "/tokenize")
+                        url = local or stack.upstream(model, "/tokenize")
                         built = depth_prompt(url, corpus, depth, args.gen)
                         prompts[depth] = (built, len(tokenize(url, built["messages"][0]["content"])))
                     for rep in range(1, args.reps + 1):
                         payload = json.loads(json.dumps(prompts[depth][0]))
                         payload["model"] = model
-                        payload["messages"][0]["content"] = f"[run {variant.name}/{model}/{rep}]\n" + payload["messages"][0]["content"]
+                        # Unique per request: oMLX keeps its own prefix cache and ignores
+                        # cache_prompt, so a nonce shared across depths let it reuse the
+                        # shallower prompt (seen in its log as "reused 4096").
+                        nonce = f"[run {uuid.uuid4().hex} {variant.name}/{model}/d{depth}/r{rep}]"
+                        payload["messages"][0]["content"] = nonce + "\n" + payload["messages"][0]["content"]
                         try:
                             ttft, decode_s, tokens, usage, timings = stream(stack.base + "/v1/chat/completions", payload)
                         except (OSError, ValueError) as error:

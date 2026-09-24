@@ -16,7 +16,7 @@ sys.path.insert(0, str(HERE))
 from stack import Stack, StackError, Variant  # noqa: E402
 import mem  # noqa: E402
 
-__all__ = ["Stack", "StackError", "Variant", "mem", "log", "tokenize", "depth_prompt", "load_corpus", "timings",
+__all__ = ["Stack", "StackError", "Variant", "mem", "log", "tokenize", "LocalTokenizer", "depth_prompt", "load_corpus", "timings",
            "TSV", "median_cells", "read_tsv", "arg_parser", "variants", "stack_for", "served_memory", "chat_with_peak",
            "metal_budget", "PROVENANCE"]
 
@@ -36,7 +36,27 @@ def log(message):
     print(f"[{time.strftime('%H:%M:%S')}] {message}", flush=True)
 
 
+class LocalTokenizer:
+    """Tokenize with a model's own tokenizer.json, for servers without /tokenize.
+
+    Needs the `tokenizers` package: `uv run --with tokenizers python bench/...`.
+    """
+
+    def __init__(self, path):
+        from tokenizers import Tokenizer
+
+        path = Path(path).expanduser()
+        self.path = path / "tokenizer.json" if path.is_dir() else path
+        self._tokenizer = Tokenizer.from_file(str(self.path))
+
+    def __call__(self, text):
+        return self._tokenizer.encode(text, add_special_tokens=False).ids
+
+
 def tokenize(url, text):
+    """Token ids for text: url is a llama.cpp-style /tokenize URL or a LocalTokenizer."""
+    if callable(url):
+        return url(text)
     body = json.dumps({"content": text, "add_special": False}).encode()
     request = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=300) as response:

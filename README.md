@@ -196,7 +196,7 @@ differs by hardware, so it belongs to the engine:
 MLX models are served by [oMLX](https://github.com/jundot/omlx) as a custom
 engine. Install the app from its `.dmg`, which ships precompiled Qwen3.5
 kernels; source and Homebrew builds need full Xcode for them. On an M3 Max,
-oMLX matched llama.cpp on decode and was 1.85x faster at 16k prefill, while
+oMLX matched llama.cpp on decode and was about 1.4x faster at 16k prefill (cold), while
 `mlx_vlm` serving the same weights was 3-5x slower
 (`results/speed/mac-engine-compare.md`). `mlx_lm` mis-loads vision-language
 checkpoints and emits garbage for them.
