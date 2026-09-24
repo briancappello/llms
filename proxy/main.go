@@ -16,7 +16,7 @@
 //	LSA_LISTEN     default "127.0.0.1:4096"; set explicitly for LAN access
 //	LSA_UPSTREAM   default "http://127.0.0.1:18080"
 //	LSA_KEYS_FILE  default "$XDG_CONFIG_HOME/llama-swap/api-keys"
-//	               falls back to "$HOME/.config/llama-swap/api-keys" on Unix
+//	               falls back to "$HOME/.config/llama-swap/api-keys" (Linux and macOS)
 //	               one key per line; blank lines and #comments ignored
 package main
 
@@ -110,10 +110,17 @@ func newHandler(upstream string, keys map[string]struct{}) (http.Handler, error)
 	}), nil
 }
 
+// defaultKeysFile follows XDG on every supported platform. os.UserConfigDir is
+// deliberately not used: on macOS it returns ~/Library/Application Support,
+// which would split the proxy's config from the rest of llms and llama-swap.
 func defaultKeysFile() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" {
+		home := os.Getenv("HOME")
+		if home == "" {
+			return "", fmt.Errorf("neither $XDG_CONFIG_HOME nor $HOME is set")
+		}
+		configDir = filepath.Join(home, ".config")
 	}
 	return filepath.Join(configDir, "llama-swap", "api-keys"), nil
 }

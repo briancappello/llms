@@ -11,10 +11,21 @@ from urllib.parse import urlsplit
 # llama-swap requires ENV_NAME=value, uppercase name (see its config schema).
 ENV_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 ENGINE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-ENGINE_KEYS = {"kind", "server", "cwd", "env", "args", "host",
+ENGINE_KEYS = {"kind", "server", "cwd", "env", "args", "host", "mtp_args",
                "check_endpoint", "use_model_name", "unload_timeout"}
 ENGINE_KINDS = ("llama.cpp", "custom")
 COMPANION_KEYS = {"command", "unit", "url", "check_endpoint", "description"}
+# A logical service name; backends map it to "<name>.service" or "llms.<name>".
+# A legacy ".service" suffix is accepted and means the same systemd unit.
+SERVICE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@-]*$")
+# launchd jobs get no login-shell PATH, so theirs is fixed and explicit: a PATH
+# copied from whichever shell ran `install` would change the regenerated plist
+# and make every later verification fail.
+DEFAULT_SERVICE_PATH = "~/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+
+def _valid_service_name(value):
+    return isinstance(value, str) and bool(SERVICE_NAME.match(value)) and value not in (".service",)
 
 
 def _validate_engines(engines):
@@ -45,10 +56,13 @@ def _validate_engines(engines):
             raise ValueError(f"engine {name} cwd must be an absolute path")
         if (check := spec.get("check_endpoint")) and not (check.startswith("/") or check == "none"):
             raise ValueError(f"engine {name} check_endpoint must start with / or be 'none'")
-        args = spec.get("args", [])
-        if not isinstance(args, list) or not all(
-                isinstance(a, str) and not any(c in a for c in "\x00\r\n") for a in args):
-            raise ValueError(f"engine {name} args must be a list of single-line strings")
+        for key in ("args", "mtp_args"):
+            args = spec.get(key, [])
+            if not isinstance(args, list) or not all(
+                    isinstance(a, str) and not any(c in a for c in "\x00\r\n") for a in args):
+                raise ValueError(f"engine {name} {key} must be a list of single-line strings")
+        if "mtp_args" in spec and spec.get("kind") == "custom":
+            raise ValueError(f"engine {name}: mtp_args applies to llama.cpp engines, not kind 'custom'")
         env = spec.get("env", {})
         if not isinstance(env, dict):
             raise ValueError(f"engine {name} env must be a mapping")
@@ -77,10 +91,9 @@ def _validate_companions(companions):
                 isinstance(a, str) and a and not any(c in a for c in "\x00\r\n") for a in command):
             raise ValueError(f"companion {name} command must be a non-empty list of single-line strings")
         unit = spec.get("unit", f"llms-{name}.service")
-        if (not isinstance(unit, str) or "/" in unit or not unit.endswith(".service")
-                or unit.startswith("-") or unit in units):
+        if not _valid_service_name(unit) or unit.removesuffix(".service") in units:
             raise ValueError(f"invalid or duplicate companion unit: {unit!r}")
-        units.add(unit)
+        units.add(unit.removesuffix(".service"))
         url = urlsplit(spec.get("url", ""))
         if url.scheme not in ("http", "https") or not url.netloc:
             raise ValueError(f"companion {name} url must be an HTTP(S) URL")
@@ -105,6 +118,9 @@ class Settings:
     server: str = "llama-server"
     swap_binary: str = "llama-swap"
     systemctl: str = "systemctl"
+    launchctl: str = "launchctl"
+    service_manager: str = "auto"
+    service_path: str = DEFAULT_SERVICE_PATH
     swap_url: str = "http://127.0.0.1:18080"
     client_url: str = "http://127.0.0.1:18080/v1"
     listen: str = "127.0.0.1:18080"
@@ -117,32 +133,39 @@ class Settings:
     companions: dict = field(default_factory=dict)
 
     def __post_init__(self):
+        from .services import resolve_service_manager
+
         root = Path(self.config_dir).expanduser().absolute()
         object.__setattr__(self, "config_dir", root)
+        if not isinstance(self.service_manager, str):
+            raise ValueError("service_manager must be a string")
+        manager = resolve_service_manager(self.service_manager)
         for key, fallback in {
             "registry": root / "registry.json",
             "header": root / "config.header.yaml",
             "output": root / "llama-swap.yaml",
             "hf_cache": root / "cache" / "huggingface" / "hub",
             "client_path": root / "clients" / "pi-models.json",
-            "service_dir": root / "systemd",
+            "service_dir": root / ("systemd" if manager == "systemd" else "launchd"),
         }.items():
             path = Path(getattr(self, key) or fallback).expanduser()
             object.__setattr__(self, key, path if path.is_absolute() else root / path)
-        for key in ("server", "swap_binary", "systemctl", "listen", "unit"):
+        for key in ("server", "swap_binary", "systemctl", "launchctl", "listen", "unit", "service_path"):
             value = getattr(self, key)
             if not isinstance(value, str) or not value or any(c in value for c in "\x00\r\n"):
                 raise ValueError(f"invalid {key}")
-            if key in ("server", "swap_binary", "systemctl") and ("/" in value or value.startswith("~")):
+            if key in ("server", "swap_binary", "systemctl", "launchctl") and ("/" in value or value.startswith("~")):
                 path = Path(value).expanduser()
                 object.__setattr__(self, key, str(path if path.is_absolute() else root / path))
-        if "/" in self.unit or not self.unit.endswith(".service") or self.unit.startswith("-"):
-            raise ValueError("unit must be a .service basename")
+        if not _valid_service_name(self.unit):
+            raise ValueError("unit must be a service name (letters, digits, . _ @ -), optionally ending in .service")
+        if any(not Path(part).expanduser().is_absolute() for part in self.service_path.split(":")):
+            raise ValueError("service_path must be a colon-separated list of absolute directories")
         _validate_companions(self.companions)
-        companion_units = [self.service_dir / spec.get("unit", f"llms-{name}.service")
+        companion_units = [self.service_dir / self.definition_name(spec.get("unit", f"llms-{name}.service"))
                            for name, spec in self.companions.items()]
         managed_paths = [root / "settings.json", self.registry, self.header, self.output,
-                         self.client_path, self.service_dir / self.unit, *companion_units]
+                         self.client_path, self.service_dir / self.definition_name(self.unit), *companion_units]
         if len({p.resolve() for p in managed_paths}) != len(managed_paths):
             raise ValueError("managed settings, registry, header, output, client, and service unit paths must be distinct")
         if not isinstance(self.preload, bool):
@@ -157,6 +180,19 @@ class Settings:
         ):
             raise ValueError("gpu_memory_mib must be a positive integer or null")
         _validate_engines(self.engines)
+
+    @property
+    def resolved_service_manager(self):
+        """The concrete backend ("systemd" or "launchd") for this host."""
+        from .services import resolve_service_manager
+
+        return resolve_service_manager(self.service_manager)
+
+    def definition_name(self, logical):
+        """File name of a service definition for a logical service name."""
+        from .services import definition_filename
+
+        return definition_filename(self.resolved_service_manager, logical)
 
     @classmethod
     def from_env(cls, config_dir=None, *, environ: Mapping[str, str] | None = None):
@@ -177,7 +213,6 @@ class Settings:
             "hf_token": env.get("HF_TOKEN"),
             "output": root / "llama-swap.yaml" if explicit else xdg / "llama-swap" / "config.yaml",
             "client_path": home / ".pi" / "agent" / "models.json",
-            "service_dir": xdg / "systemd" / "user",
         }
         settings_file = root / "settings.json"
         if settings_file.exists():
@@ -204,6 +239,14 @@ class Settings:
                     values[f.name] = int(env[key]) if f.name == "gpu_memory_mib" else env[key]
         if "LLAMASWAP_URL" in env and "LLMS_SWAP_URL" not in env:
             values["swap_url"] = env["LLAMASWAP_URL"]
+        if "service_dir" not in values:
+            # systemd discovers units in its standard directory without enabling
+            # them. A plist in ~/Library/LaunchAgents would start at every login,
+            # so launchd definitions stay in the config dir until copied there.
+            from .services import resolve_service_manager
+
+            manager = resolve_service_manager(values.get("service_manager", cls.service_manager))
+            values["service_dir"] = xdg / "systemd" / "user" if manager == "systemd" else root / "launchd"
         if "client_url" not in values:
             values["client_url"] = values.get("swap_url", cls.swap_url).rstrip("/") + "/v1"
         return cls(config_dir=root, **values)

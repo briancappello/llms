@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import tempfile
 import time
@@ -20,11 +21,9 @@ import urllib.error
 import urllib.request
 from urllib.parse import quote, urlsplit
 
+from .errors import ManagerError
+from .services import backend_for
 from .settings import Settings
-
-
-class ManagerError(RuntimeError):
-    """An operation failed without a successful service/configuration outcome."""
 
 
 SHARD_RE = re.compile(r"^(?P<base>.+)-(?P<idx>\d{4,5})-of-(?P<tot>\d{4,5})\.gguf$", re.I)
@@ -204,6 +203,15 @@ def probe_gguf(path):
         raise ManagerError(f"cannot probe GGUF {path}: {exc}") from exc
 
 
+def embedded_sampling(metadata):
+    """general.sampling.* keys a GGUF ships; llama.cpp applies them by default."""
+    prefix = "general.sampling."
+    # GGUF stores these as float32; 0.6 would otherwise read back as 0.6000000238.
+    return {key[len(prefix):]: float(f"{value:.6g}") if isinstance(value, float) else value
+            for key, value in sorted(metadata.items())
+            if key.startswith(prefix) and isinstance(value, (int, float, str, bool))}
+
+
 def _quoted(value):
     value = str(value)
     if any(c in value for c in ("\x00", "\n", "\r")) or "${" in value:
@@ -218,7 +226,30 @@ def _extra_args(entry, name):
     return [_quoted(token) for fragment in fragments for token in shlex.split(fragment)]
 
 
-def _llama_model_args(entry, name, macros):
+# Rendered for `"mtp": true` when the engine sets no mtp_args of its own. The
+# right speculative arguments are host-specific (a draft length that pays on a
+# ROCm dGPU can lose on Apple unified memory), so engines may override them.
+DEFAULT_MTP_ARGS = ("--spec-type", "draft-mtp")
+
+
+def _mtp_flag(entry, name):
+    value = entry.get("mtp", False)
+    if not isinstance(value, bool):
+        raise ManagerError(f"mtp must be true or false for {name}")
+    return value
+
+
+def _custom_ctx(entry, name):
+    """A custom server (e.g. an MLX server) may enforce no context limit of its
+    own, so the measured ctx a client is told is the only safeguard: required."""
+    ctx = entry.get("ctx")
+    if isinstance(ctx, bool) or not isinstance(ctx, int) or ctx < 1:
+        raise ManagerError(f"{name} uses a custom engine and must declare a measured positive integer ctx; "
+                           "the client context window is the only limit such servers get")
+    return ctx
+
+
+def _llama_model_args(entry, name, macros, mtp_args=DEFAULT_MTP_ARGS):
     """The llama.cpp-shaped part of a command: weights, context, slots, tuning.
 
     Shared by the header-macro path and the engine path so both stay identical.
@@ -242,6 +273,8 @@ def _llama_model_args(entry, name, macros):
         ctx = min(ctx, trained * (parallel if entry.get("kv_unified") is False else 1))
     args += ["-c", str(ctx), "-np", str(parallel),
              "--no-kv-unified" if entry.get("kv_unified") is False else "--kv-unified"]
+    if _mtp_flag(entry, name):
+        args += [_quoted(a) for a in mtp_args]
     return args + _extra_args(entry, name)
 
 
@@ -259,15 +292,20 @@ def _engine_command(entry, name, settings, macros):
     command = []
     if cwd := engine.get("cwd"):
         # env(1) rather than a shell: no nested quoting, no extra process
-        # between llama-swap and the server it signals.
-        command += ["/usr/bin/env", _quoted(f"--chdir={cwd}")]
+        # between llama-swap and the server it signals. `-C DIR` is the one
+        # spelling both BSD (macOS) and GNU (coreutils >= 8.28) env accept;
+        # GNU-only `--chdir=` is rejected by macOS env.
+        command += ["/usr/bin/env", "-C", _quoted(cwd)]
     command.append(_quoted(engine["server"]))
     command += [_quoted(a) for a in engine.get("args", [])]
     command += ["--host", _quoted(engine.get("host", "127.0.0.1")), "--port", "${PORT}"]
     if engine.get("kind", "llama.cpp") == "custom":
+        _custom_ctx(entry, name)
+        if _mtp_flag(entry, name):
+            raise ManagerError(f"{name} sets mtp on custom engine {engine_name!r}; put that server's own speculative flags in extra_args")
         command += _extra_args(entry, name)
     else:
-        command += _llama_model_args(entry, name, macros)
+        command += _llama_model_args(entry, name, macros, engine.get("mtp_args", DEFAULT_MTP_ARGS))
     extras = {}
     for source, target in (("check_endpoint", "checkEndpoint"),
                            ("use_model_name", "useModelName"),
@@ -309,6 +347,8 @@ def render_config(registry, header, settings):
         if entry.get("cmd"):
             if entry.get("engine"):
                 raise ManagerError(f"{name} sets both cmd and engine; pick one")
+            if _mtp_flag(entry, name):
+                raise ManagerError(f"{name} sets both cmd and mtp; a verbatim cmd carries its own flags")
             cmd = entry["cmd"]
             model["cmd"] = "\n".join(cmd) if isinstance(cmd, list) else cmd
             if not isinstance(model["cmd"], str):
@@ -361,6 +401,7 @@ class ModelManager:
         self.opener = opener or urllib.request.urlopen
         self.runner = runner or subprocess.run
         self.hub = hub
+        self._backend = None
 
     def load_registry(self):
         if not self.settings.registry.exists():
@@ -486,8 +527,6 @@ class ModelManager:
         if not name or name in registry:
             raise ManagerError(f"model ID already exists or is empty: {name!r}")
         extra = []
-        if metadata.get("_has_mtp"):
-            extra.append("--spec-type draft-mtp")
         if metadata.get("_reasoning_preserve"):
             extra.append("--reasoning-preserve")
         entry = {
@@ -499,6 +538,14 @@ class ModelManager:
             "parallel": 1, "size_bytes": size, "quant": quant or detect_quant(filename),
             "extra_args": extra,
         }
+        if metadata.get("_has_mtp"):
+            # Intent, not flags: each host's engine renders its own mtp_args.
+            entry["mtp"] = True
+        sampling = embedded_sampling(metadata)
+        if sampling:
+            # Recorded, never rendered: llama.cpp applies these silently unless a
+            # flag overrides them, so the operator needs to see them.
+            entry["embedded_sampling"] = sampling
         if mmproj and capability == "chat":
             entry["mmproj"] = str(mmproj)
         registry[name] = entry
@@ -514,6 +561,59 @@ class ModelManager:
                     raise ManagerError("explicit warm-up refused: managed service is not active")
             self.use(name)
         return name, entry
+
+    def unregistered(self):
+        """Complete cached models that no registry entry references; offline, read-only.
+
+        GGUF: target files (projectors/drafts excluded, shard groups collapsed,
+        incomplete groups skipped). MLX: snapshot dirs with config.json and
+        safetensors, and every shard an index names. Partial downloads never show.
+        """
+        registry = self.load_registry()
+        referenced = set()
+        for entry in registry.values():
+            for key in ("path", "mmproj", "repo"):
+                if entry.get(key):
+                    referenced.add(str(entry[key]))
+            for fragment in entry.get("extra_args", []) if isinstance(entry.get("extra_args"), list) else []:
+                referenced.update(shlex.split(fragment))
+        resolved = {str(Path(r).resolve()) for r in referenced if r.startswith("/")}
+        found = []
+        for snapshot in sorted(self.settings.hf_cache.glob("models--*/snapshots/*")):
+            if not snapshot.is_dir():
+                continue
+            match = re.fullmatch(r"models--(.+?)--(.+)", snapshot.parent.parent.name)
+            repo = f"{match[1]}/{match[2]}" if match else None
+            ggufs = [str(p.relative_to(snapshot)) for p in snapshot.rglob("*.gguf") if p.is_file()]
+            targets = [f for f in ggufs if not any(w in f.lower() for w in ("mmproj", "draft", "dflash"))
+                       and not Path(f).name.lower().startswith(("mtp-", "mtp_"))]
+            for first in sorted({f for f in targets}):
+                try:
+                    group = shard_group(first, targets)
+                except ManagerError:
+                    continue  # incomplete or conflicting shard group
+                if group[0] != first:
+                    continue
+                path = snapshot / first
+                if str(path) in referenced or str(path.resolve()) in resolved:
+                    continue
+                size = sum((snapshot / f).stat().st_size for f in group)
+                found.append({"kind": "gguf", "repo": repo, "path": str(path), "files": len(group), "size_bytes": size})
+            shards = [p for p in snapshot.glob("*.safetensors") if p.is_file()]
+            if (snapshot / "config.json").is_file() and shards:
+                index = snapshot / "model.safetensors.index.json"
+                if index.is_file():
+                    try:
+                        needed = set(json.loads(index.read_text()).get("weight_map", {}).values())
+                    except (OSError, ValueError):
+                        continue
+                    if not all((snapshot / name).is_file() for name in needed):
+                        continue
+                if repo in referenced or str(snapshot) in referenced or str(snapshot.resolve()) in resolved:
+                    continue
+                found.append({"kind": "mlx", "repo": repo, "path": str(snapshot), "files": len(shards),
+                              "size_bytes": sum(p.stat().st_size for p in shards)})
+        return found
 
     def api(self, path, *, method="GET", payload=None, timeout=10, allow_empty=False):
         request = urllib.request.Request(self.settings.swap_url.rstrip("/") + path,
@@ -569,6 +669,7 @@ class ModelManager:
             and c["message"].get("role") == "assistant"
             and (isinstance(c["message"].get("content"), str)
                  or isinstance(c["message"].get("reasoning_content"), str)
+                 or isinstance(c["message"].get("reasoning"), str)  # MLX servers
                  or (isinstance(c["message"].get("tool_calls"), list) and c["message"]["tool_calls"]
                      and all(isinstance(t, dict) and t.get("type") == "function"
                              and isinstance(t.get("function"), dict)
@@ -577,6 +678,38 @@ class ModelManager:
                              for t in c["message"]["tool_calls"]))) for c in choices
         ):
             raise ManagerError("malformed chat completion; model did not return a valid answer")
+        return data
+
+    def unload(self, name=None):
+        """Unload one registered model, or every running model; llama-swap stays up."""
+        if name is None:
+            self.api("/api/models/unload", method="POST", allow_empty=True)
+            return
+        if name not in self.load_registry():
+            raise ManagerError(f"unknown model: {name}")
+        self.api("/api/models/unload/" + quote(name, safe=""), method="POST", allow_empty=True)
+
+    @property
+    def pi_settings_path(self):
+        """pi's settings.json sits beside its models.json (the client_path)."""
+        return self.settings.client_path.parent / "settings.json"
+
+    def set_client_default(self, name):
+        """Point pi's default provider/model at name; other keys are kept."""
+        path = self.pi_settings_path
+        data = json.loads(path.read_text()) if path.exists() else {}
+        if not isinstance(data, dict):
+            raise ManagerError(f"{path} must contain a JSON object")
+        data["defaultProvider"] = "llama-swap"
+        data["defaultModel"] = name
+        atomic_write(path, json.dumps(data, indent=2) + "\n")
+        return path
+
+    def use_and_sync(self, name, *, timeout=240):
+        """Warm name; only after a valid answer, sync pi's models and default."""
+        data = self.use(name, timeout=timeout)
+        self.ensure_clients()
+        self.set_client_default(name)
         return data
 
     def remove(self, name, *, purge=False, restart=False, sync_clients=False):
@@ -619,10 +752,14 @@ class ModelManager:
         for name, entry in sorted(self.load_registry().items()):
             if entry.get("capability") != "chat":
                 continue
-            context = int(entry.get("ctx") or entry.get("trained_ctx") or 4096)
-            if entry.get("kv_unified") is False:
-                context //= int(entry.get("parallel", 4))
-            context = min(context, int(entry.get("trained_ctx") or context))
+            engine = self.settings.engines.get(entry.get("engine") or "", {})
+            if engine.get("kind") == "custom" and not entry.get("cmd"):
+                context = _custom_ctx(entry, name)
+            else:
+                context = int(entry.get("ctx") or entry.get("trained_ctx") or 4096)
+                if entry.get("kv_unified") is False:
+                    context //= int(entry.get("parallel", 4))
+                context = min(context, int(entry.get("trained_ctx") or context))
             block["models"].append({"id": name, "name": entry.get("display", name), "reasoning": True,
                                     "input": ["text", "image"] if entry.get("mmproj") else ["text"],
                                     "contextWindow": context, "maxTokens": min(context, 65536),
@@ -630,27 +767,42 @@ class ModelManager:
         atomic_write(path, json.dumps(data, indent=2) + "\n")
         return path
 
+    @property
+    def backend(self):
+        """The host's user-service backend; built lazily so pure use never needs one."""
+        if self._backend is None:
+            self._backend = backend_for(self.settings, self.runner)
+        return self._backend
+
     def service(self, action):
         if action not in ("start", "stop", "restart"):
             raise ManagerError(f"unsupported service action: {action}")
-        self._verify_service()
-        result = self.runner([self.settings.systemctl, "--user", action, self.settings.unit], capture_output=True, text=True)
-        if result.returncode:
-            raise ManagerError(f"{action} failed: {result.stderr.strip()}")
+        active = self._verify_service()
+        if action in ("start", "restart") and not active:
+            self._require_free_listen_address()
+        self.backend.act(action, [self.settings.unit])
 
-    @staticmethod
-    def _systemd_quote(value):
-        if any(c in str(value) for c in "\x00\r\n"):
-            raise ManagerError("service arguments cannot contain control characters")
-        return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%").replace("$", "$$") + '"'
+    def _require_free_listen_address(self):
+        """Refuse to start when something else already answers on our listen address."""
+        listen = urlsplit("http://" + self.settings.listen)
+        host = {"0.0.0.0": "127.0.0.1", "::": "::1", "": "127.0.0.1"}.get(listen.hostname or "", listen.hostname)
+        try:
+            with socket.create_connection((host, listen.port), timeout=1):
+                pass
+        except OSError:
+            return
+        raise ManagerError(f"listen address {self.settings.listen} is in use by a process other than the managed "
+                           f"service; stop it or change listen before starting")
 
     def _service_definition(self):
         executable = shutil.which(self.settings.swap_binary)
         if executable is None:
             raise ManagerError(f"binary not executable: {self.settings.swap_binary}")
         args = [str(Path(executable).absolute()), "-config", str(self.settings.output), "-listen", self.settings.listen]
-        text = "[Unit]\nDescription=llama-swap model server\n\n[Service]\nType=simple\nExecStart=" + " ".join(self._systemd_quote(a) for a in args) + "\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n"
-        return args, text
+        return args, self.backend.render(self.settings.unit, "llama-swap model server", args)
+
+    def _companion_unit(self, name):
+        return self.settings.companions[name].get("unit", f"llms-{name}.service")
 
     def _companion_definition(self, name):
         spec = self.settings.companions[name]
@@ -659,73 +811,19 @@ class ModelManager:
         if executable is None:
             raise ManagerError(f"companion {name} binary not executable: {command[0]}")
         args = [str(Path(executable).absolute()), *command[1:]]
-        unit = spec.get("unit", f"llms-{name}.service")
+        unit = self._companion_unit(name)
         description = spec.get("description", f"llms companion: {name}")
-        text = "[Unit]\nDescription=" + description + "\n\n[Service]\nType=simple\nExecStart=" + " ".join(
-            self._systemd_quote(a) for a in args
-        ) + "\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n"
-        return unit, args, text
-
-    def _verify_unit(self, unit, path, args, text, *, verify_process=True):
-        link = shlex.join([self.settings.systemctl, "--user", "link", str(path)])
-        properties = ("Id", "LoadState", "FragmentPath", "ExecStart", "ActiveState", "MainPID",
-                      "ControlPID", "NeedDaemonReload", "DropInPaths", "Transient", "Type")
-        try:
-            if path.read_text() != text:
-                raise ManagerError(f"service refused: {path} is not the unmodified unit generated by llms")
-            result = self.runner([self.settings.systemctl, "--user", "show", unit,
-                                  "--no-pager", "--all", "--property=" + ",".join(properties)],
-                                 capture_output=True, text=True, timeout=10)
-            if result.returncode:
-                raise ManagerError(f"cannot inspect user service: {result.stderr.strip()}")
-            loaded = {}
-            for line in result.stdout.splitlines():
-                key, separator, value = line.partition("=")
-                if not separator or key in loaded or key not in properties:
-                    raise ManagerError("service refused: malformed systemctl show response")
-                loaded[key] = value
-            if loaded.keys() != set(properties):
-                raise ManagerError("service refused: incomplete systemctl show response")
-            if loaded["LoadState"] != "loaded" or not loaded["FragmentPath"]:
-                raise ManagerError(f"unit is not discoverable by the user manager; for an external unit run {link}, then systemctl --user daemon-reload")
-            if (loaded["Id"] != unit or not Path(loaded["FragmentPath"]).is_absolute()
-                    or Path(loaded["FragmentPath"]).resolve(strict=True) != path.resolve(strict=True)):
-                raise ManagerError("service refused: loaded FragmentPath/Id belongs to a different unit source")
-            if (loaded["NeedDaemonReload"] != "no" or loaded["DropInPaths"]
-                    or loaded["Transient"] != "no" or loaded["Type"] != "simple"):
-                raise ManagerError("service refused: stale, overridden, transient, or unsupported unit; reconcile it explicitly")
-            prefix = f"{{ path={args[0]} ; argv[]={' '.join(args)} ; ignore_errors=no ; "
-            metadata = r"start_time=\[[^\]\n]*\] ; stop_time=\[[^\]\n]*\] ; pid=\d+ ; code=[^;{}\n]* ; status=[^;{}\n]* }"
-            if not re.fullmatch(re.escape(prefix) + metadata, loaded["ExecStart"]):
-                raise ManagerError("service refused: loaded ExecStart does not match generated command")
-            state, pid = loaded["ActiveState"], loaded["MainPID"]
-            if state not in ("active", "inactive", "failed") or not pid.isdecimal() or loaded["ControlPID"] != "0":
-                raise ManagerError("service refused: unstable or unknown process state")
-            if state == "active":
-                if int(pid) <= 0:
-                    raise ManagerError("service refused: active unit has no verifiable main process")
-                if verify_process:
-                    process = Path("/proc") / pid
-                    command = (process / "cmdline").read_bytes()
-                    if (not command.endswith(b"\0") or command[:-1].split(b"\0") != [os.fsencode(a) for a in args]
-                            or (process / "exe").resolve(strict=True) != Path(args[0]).resolve(strict=True)):
-                        raise ManagerError("service refused: live process binding differs from generated command")
-            elif pid != "0":
-                raise ManagerError("service refused: inactive unit still has a main process")
-            return state == "active"
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            raise ManagerError(f"cannot verify installed/live service binding: {exc}; install the unit first and link external units with {link}") from exc
+        return unit, args, self.backend.render(unit, description, args)
 
     def _verify_service(self, *, check_api=False):
-        """Fail closed unless source, loaded unit, and live process match.
+        """Fail closed unless source, loaded definition, and live process match.
 
-        v0.1 manages only its unmodified generated unit, without drop-ins. The
-        systemctl ExecStart display loses argv boundaries, so source equality
-        and the live NUL-separated argv are also checked. No daemon reload or
-        link is performed here. Operators must serialize unit/config changes.
+        Only the unmodified generated definition is managed. Service-manager
+        displays lose argv boundaries, so source equality and the live exact
+        argv are also checked. No reload, link, or load is performed here.
+        Operators must serialize unit/config changes.
         """
         args, text = self._service_definition()
-        path = self.settings.service_dir / self.settings.unit
         if check_api:
             api, listen = urlsplit(self.settings.swap_url), urlsplit("http://" + self.settings.listen)
             host = {"0.0.0.0": "127.0.0.1", "::": "::1"}.get(listen.hostname, listen.hostname)
@@ -733,12 +831,12 @@ class ModelManager:
                     or api.port != listen.port or not listen.port
                     or api.path not in ("", "/") or api.query or api.fragment or api.username or api.password):
                 raise ManagerError("managed API operation refused: swap_url must address the configured listen endpoint directly over HTTP")
-        return self._verify_unit(self.settings.unit, path, args, text)
+        return self.backend.verify(self.settings.unit, args, text)
 
     def install_service(self):
-        """Write a user unit only; external paths require an explicit user link."""
+        """Write a service definition only; never load, enable, or start it."""
         _, text = self._service_definition()
-        path = self.settings.service_dir / self.settings.unit
+        path = self.backend.definition_path(self.settings.unit)
         atomic_write(path, text, overwrite=False)
         return path
 
@@ -746,8 +844,7 @@ class ModelManager:
         definitions = []
         for name in sorted(self.settings.companions):
             unit, _, text = self._companion_definition(name)
-            path = self.settings.service_dir / unit
-            definitions.append((path, text))
+            definitions.append((self.backend.definition_path(unit), text))
         if not definitions:
             raise ManagerError("no companion services configured")
         existing = [str(path) for path, _ in definitions if path.exists()]
@@ -766,18 +863,16 @@ class ModelManager:
         units = []
         for name in names:
             unit, args, text = self._companion_definition(name)
-            self._verify_unit(unit, self.settings.service_dir / unit, args, text, verify_process=False)
+            self.backend.verify(unit, args, text, verify_process=False)
             units.append(unit)
-        result = self.runner([self.settings.systemctl, "--user", action, *units], capture_output=True, text=True)
-        if result.returncode:
-            raise ManagerError(f"companion {action} failed: {result.stderr.strip()}")
+        self.backend.act(action, units, prefix="companion ")
 
     def companion_status(self):
         rows = []
         for name in sorted(self.settings.companions):
             spec = self.settings.companions[name]
             unit, args, text = self._companion_definition(name)
-            active = self._verify_unit(unit, self.settings.service_dir / unit, args, text, verify_process=False)
+            active = self.backend.verify(unit, args, text, verify_process=False)
             healthy = False
             error = None
             if active:
@@ -787,7 +882,7 @@ class ModelManager:
                         healthy = 200 <= getattr(response, "status", 200) < 300
                 except (OSError, urllib.error.URLError) as exc:
                     error = str(exc)
-            rows.append({"name": name, "unit": unit, "url": spec["url"],
+            rows.append({"name": name, "unit": self.backend.unit_name(unit), "url": spec["url"],
                          "active": active, "healthy": healthy, "error": error})
         return rows
 
@@ -797,9 +892,41 @@ class ModelManager:
         for module in ("yaml", "huggingface_hub", "gguf"):
             checks.append({"check": module, "ok": importlib.util.find_spec(module) is not None,
                            "required": module != "gguf", "detail": "gguf extra required for add" if module == "gguf" else "Python dependency"})
-        for key in ("server", "swap_binary", "systemctl"):
+        # The top-level server is only rendered for chat entries with neither an
+        # engine nor a cmd; a host whose models all name engines does not need it.
+        try:
+            uses_server = any(e.get("capability") == "chat" and not e.get("engine") and not e.get("cmd")
+                              for e in self.load_registry().values())
+        except (OSError, ValueError, ManagerError):
+            uses_server = True
+        for key in ("server", "swap_binary"):
             value = getattr(self.settings, key)
-            checks.append({"check": key, "ok": shutil.which(value) is not None, "required": key != "systemctl", "detail": value})
+            required = key == "swap_binary" or uses_server
+            detail = value if required else f"{value} (unused: every chat entry names an engine or cmd)"
+            checks.append({"check": key, "ok": shutil.which(value) is not None, "required": required, "detail": detail})
+        manager = self.settings.resolved_service_manager
+        tool = self.settings.systemctl if manager == "systemd" else self.settings.launchctl
+        checks.append({"check": "service_manager", "ok": shutil.which(tool) is not None, "required": False,
+                       "detail": f"{manager} via {tool} (setting: {self.settings.service_manager})"})
+        if manager == "launchd" and shutil.which(tool):
+            try:
+                available = self.backend.domain_available()
+            except (OSError, subprocess.TimeoutExpired):
+                available = False
+            checks.append({"check": "launchd-domain", "ok": available, "required": False,
+                           "detail": f"{self.backend.domain()} " + ("is available" if available else
+                                     "is missing; agents need a console (GUI) login session, not SSH-only")})
+        if manager == "launchd":
+            # launchd agents get only service_path; a bare name that resolves in
+            # this shell may not resolve for llama-swap under launchd.
+            search = self.backend.service_path()
+            bare = {"server": self.settings.server} if uses_server and "/" not in self.settings.server else {}
+            bare.update({f"engine:{name}": spec["server"] for name, spec in self.settings.engines.items()
+                         if "/" not in spec["server"] and not spec.get("cwd")})
+            for check, name in sorted(bare.items()):
+                found = shutil.which(name, path=search)
+                checks.append({"check": f"service-path:{check}", "ok": found is not None, "required": True,
+                               "detail": f"{name} -> {found}" if found else f"{name} not found on launchd PATH {search}"})
         for key in ("registry", "header", "output"):
             path = getattr(self.settings, key)
             checks.append({"check": key, "ok": path.is_file(), "required": key != "output", "detail": str(path)})
@@ -827,6 +954,14 @@ class ModelManager:
                 "/" in server) else shutil.which(server) is not None
             checks.append({"check": f"engine:{engine_name}", "ok": bool(found), "required": False,
                            "detail": f"{server}{'' if not cwd else f' (cwd {cwd})'}"})
+        if any(engine.get("cwd") for engine in self.settings.engines.values()):
+            # Rendered cwd commands rely on `env -C`; GNU coreutils < 8.28 lacks it.
+            try:
+                result = self.runner(["/usr/bin/env", "-C", "/", "true"], capture_output=True, text=True, timeout=5)
+                ok, detail = result.returncode == 0, (result.stderr or "").strip() or "/usr/bin/env -C supported"
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                ok, detail = False, str(exc)
+            checks.append({"check": "env-chdir", "ok": ok, "required": True, "detail": detail})
         for name, companion in sorted(self.settings.companions.items()):
             executable = companion["command"][0]
             found = Path(executable).is_file() and os.access(executable, os.X_OK) if (

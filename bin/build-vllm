@@ -2,7 +2,8 @@
 # Build a pinned vLLM checkout for one AMD GPU architecture.
 set -euo pipefail
 
-log() { printf '[%(%H:%M:%S)T] %s\n' -1 "$*"; }
+# date(1) rather than printf %()T, which needs bash >= 4.2 (macOS ships 3.2).
+log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,7 +24,7 @@ source "$CONFIG"
 
 REF="$VLLM_REF"
 ARCH="$VLLM_GPU_ARCH"
-JOBS="$(nproc)"
+JOBS="$(getconf _NPROCESSORS_ONLN)"
 DRY_RUN=0
 PRINT_CONFIG=0
 
@@ -68,6 +69,12 @@ EOF
 if ((PRINT_CONFIG)); then
     print_config
     exit 0
+fi
+
+# The build targets ROCm, so it is Linux-only. Inspecting the pins
+# (--print-config, --dry-run) stays available everywhere.
+if [[ "$(uname -s)" != Linux ]] && ((!DRY_RUN)); then
+    die "the vLLM ROCm build is Linux-only (this host is $(uname -s)); --print-config and --dry-run work anywhere"
 fi
 
 run() {

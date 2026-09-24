@@ -80,8 +80,8 @@ works); re-point them to switch the PATH default.
 **Backend choice is measured, not assumed** (`results/speed/backend-sweep.md`, all
 three at commit 169e4a7 on cold-fusion): **vulkan wins** -- TG ~27-31% faster than
 hip at every depth, and PP faster at any depth >=32k (hip only leads PP at a
-trivial 4k). hip-wmma is within noise of hip. Re-run `bench/speed/backend-sweep.sh`
-(with `llama-swap` stopped) after a major llama.cpp bump to re-confirm.
+trivial 4k). hip-wmma is within noise of hip. Re-run `bench/speed/backend_sweep.py`
+after a major llama.cpp bump to re-confirm (produced by `bench/legacy/speed/backend-sweep.sh`).
 
 ## Inventory
 
@@ -259,25 +259,36 @@ serve. This exact mismatch invalidated the first KAT SWE-bench run.
 
 ## Running the benchmarks
 
-All under `bench/`. Results land in `results/`.
+All under `bench/`; results land in `results/`. Every driver serves the model
+the way production does. `bench/lib/stack.py` copies this host's settings,
+registry and header into an isolated llms instance, applies one declared
+`--variant` merge-patch, renders the config, and runs llama-swap on its own
+port. The production service is stopped and restored around the run. Rows
+record the variant, its patch, and the rendered command. Stop a backgrounded
+run with `kill -TERM` (background jobs ignore SIGINT).
 
 ```bash
-# throughput vs depth, model x spec matrix
-bench/speed/depth-sweep.sh          # 3 models x {none,draft-mtp} x 3 depths x 3 reps
-bench/speed/kv-sweep.sh            # f16 vs q8_0-V arms for fable
+# throughput vs depth; variants are patches to the production entry/engine
+bench/speed/depth_sweep.py --model kat-apex \
+    --variant no-mtp='{"entries": {"kat-apex": {"mtp": false}}}' --variant production
+bench/speed/kv_sweep.py --model fable-fusion --variant A-q8V='{"entries": {...}}' --variant B-f16='{...}'
+bench/speed/backend_sweep.py --model cold-fusion --engine llama-vulkan --engine llama-hip
 
-# capability gates before spending hours on a model
-bench/gates/gates.sh              # load / toolcall(22) / reasoning detection
-bench/gates/mtp-engage.sh             # does --spec-type draft-mtp actually draft?
+# capability gates before spending hours on a model (load / reasoning / toolcall(22) / spec engage)
+bench/gates/gates.py --model kat-apex
 
-# context ceilings
-bench/context/ctx-probe.sh          # KiB/token via VRAM delta, then verify+stretch
-bench/context/soak-ctx.sh # peak VRAM at depth, fragmentation probe
+# context ceilings (memory sampled while generating, never idle)
+bench/context/ctx_probe.py --model kat-apex --budget-mib 30824   # macOS reads the Metal budget itself
+bench/context/soak_ctx.py  --model kat-apex --ctx 262144,253952 --budget-mib 32624
 
-# quality
-bench/quality/toolcall.py  --url http://127.0.0.1:8080/v1 --model cold-fusion
-bench/quality/niah.py      --url http://127.0.0.1:8080/v1 --tokenize http://127.0.0.1:8080/tokenize
+# quality (plain OpenAI clients; point them at a stack or the production endpoint)
+bench/quality/coding-profile.py --model cold-fusion --tag cold-fusion
+bench/quality/toolcall.py  --url http://127.0.0.1:18080/v1 --model cold-fusion
+bench/quality/niah.py      --url http://127.0.0.1:18080/v1 --tokenize http://127.0.0.1:18080/upstream/cold-fusion/tokenize
 ```
+
+The shell drivers that produced the existing Linux results are kept in
+`bench/legacy/`, with a README that maps each one to its results and successor.
 
 ### SWE-bench
 

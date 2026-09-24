@@ -22,7 +22,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="$(cd "$HERE/../.." && pwd)"
+REPO="$(cd "$HERE/../../.." && pwd)"
 LIB="$REPO/bench/lib"
 HUB="$HOME/.cache/huggingface/hub"
 CORPUS=/tmp/cf-corpus.txt

@@ -83,7 +83,7 @@ Measured by VRAM delta across two contexts, then verified by loading each config
 
 `mem_info_vram_used` (and `rocm-smi`) report **57 MiB** while a 20 GiB model is loaded and healthy -- the amdgpu driver evicts the whole allocation to GTT when the model is idle (`gtt_used` 30274 MiB, and per-process `drm-total-vram` still shows the 29.1 GiB *allocation*). Under active generation it snaps back to 29807 MiB.
 
-**Every VRAM number in this file was sampled during sustained generation.** This invalidates idle sampling in `bench/context/ctx-probe.sh` and `bench/context/soak-ctx.sh`, which read `rocm-smi --showmeminfo vram` and would silently record near-zero on the Vulkan build. Those scripts need a load-generating thread before they can be trusted here.
+**Every VRAM number in this file was sampled during sustained generation.** This invalidates idle sampling in `bench/legacy/context/ctx-probe.sh` and `bench/legacy/context/soak-ctx.sh` (their successors in `bench/context/` sample during generation), which read `rocm-smi --showmeminfo vram` and would silently record near-zero on the Vulkan build. Those scripts need a load-generating thread before they can be trusted here.
 
 ## Outstanding
 

@@ -2,26 +2,35 @@
 
 `llms` is a Python library and command-line utility for GGUF model
 registries. It downloads or adopts models, reads GGUF metadata, writes a
-`llama-swap` configuration, and controls one verified user service.
+`llama-swap` configuration, and controls one verified user service: a
+systemd user unit on Linux, a launchd agent on macOS. Windows is not
+supported.
 
 The package does not start a service during installation. It does not change
 client files unless you use `ensure-clients` or `--sync-clients`.
 
 ## Requirements
 
-- Python 3.10 or newer
-- `llama-swap`
-- A compatible `llama-server`
-- systemd user services for the service commands
+- Python 3.10 or newer, and `uv`
+- `llama-swap` and a compatible `llama-server` (or another engine, see below)
 - The `gguf` package extra for `llms add`
+- Linux: systemd user services; GNU coreutils 8.28 or newer (for `env -C`)
+- macOS (Apple Silicon): launchd, which is always present. To build engines:
+  `xcode-select --install` and `brew install cmake ninja`.
 
 ## Install
 
 Install the package from a checkout:
 
 ```bash
-uv tool install --with gguf .
+make install            # uv tool install --force --with gguf .
 ```
+
+Install `llama-swap` on either platform from its
+[releases](https://github.com/mostlygeek/llama-swap/releases) and put it on
+`PATH`, e.g. `~/.local/bin`, which is on the launchd agent's default
+`service_path`. Upstream also documents a Homebrew tap
+(`mostlygeek/llama-swap`); it is not a core formula.
 
 Create the configuration. The command does not overwrite files.
 
@@ -31,14 +40,57 @@ llms render
 llms doctor
 ```
 
-Install the user service after you inspect the generated configuration:
+### Service on Linux (systemd)
 
 ```bash
-llms install-service
+llms install-service                # writes the unit; never enables or starts it
 systemctl --user daemon-reload
 llms start
 llms doctor --live
 ```
+
+### Service on macOS (launchd)
+
+```bash
+llms install-service                # writes <config>/launchd/llms.llama-swap.plist; loads nothing
+llms start                          # launchctl bootstrap gui/<uid> <plist>
+llms doctor --live
+```
+
+`llms stop` unloads the job (`launchctl bootout`), so it stays down.
+`llms restart` replaces the process (`launchctl kickstart -k`). launchd
+restarts it after a crash, but not after a clean exit. Installing never starts
+anything at login. To start at login, copy the plist into
+`~/Library/LaunchAgents/`, as `install-service` prints.
+
+launchd agents get no login-shell `PATH`, so the plist carries a fixed one
+from `service_path` in `settings.json`. `llms doctor` checks every engine
+binary given by bare name against it.
+
+Output goes to `~/Library/Logs/llms/<name>.log`. launchd does not rotate it.
+To rotate it with the system's `newsyslog`, add a file to `/etc/newsyslog.d/`,
+for example:
+
+```text
+# /etc/newsyslog.d/llms.conf
+/Users/you/Library/Logs/llms/*.log  you:staff  644  5  10240  *  NJ
+```
+
+### Both platforms
+
+```bash
+llms logs [-f] [-n N] [--companion NAME]   # journal on systemd, log file on launchd
+llms status
+```
+
+Every start, stop, and restart first verifies three things. The definition on
+disk must be the unmodified one `llms` generated. The loaded unit or job must
+come from that file. The live process's exact argv and executable must match
+the generated command: `/proc` is read on Linux, `KERN_PROCARGS2` and
+`proc_pidpath` on macOS. If anything differs, or cannot be read, the command
+refuses and changes nothing. A crash-looping launchd job in `spawn scheduled`
+also counts as an unstable state; recover it with
+`launchctl bootout gui/$(id -u)/llms.llama-swap`.
 
 ## Model Commands
 
@@ -59,10 +111,19 @@ Use `--no-restart` to change the registry without a service restart. Use
 
 ```bash
 llms ls
+llms ls --unregistered        # complete cached GGUF/MLX models no entry references
 llms status
 llms use short-name
+llms use short-name --sync-clients   # also make it pi's default model
+llms unload [short-name]      # free memory; llama-swap stays up
 llms rm short-name
 ```
+
+`llms add` records two things from the GGUF metadata. If the GGUF carries MTP
+layers, the entry gets `"mtp": true`: an intent, not a flag. Each host's engine
+renders it (see `mtp_args` below). Any embedded `general.sampling.*` values are
+reported and stored as `embedded_sampling`. llama.cpp applies those unless a
+flag overrides them, so `add` shows them, but it never turns them into flags.
 
 The package does not delete model weights. The `--purge` option fails before it
 changes files because a shared Hugging Face cache can have unknown consumers.
@@ -115,8 +176,53 @@ systemd unit applies to every backend indiscriminately.
 
 `kind: "custom"` marks an engine that is not llama.cpp, so no
 `-m`/`-c`/`-np` are composed for it; it receives its own arguments plus the
-entry's `extra_args`. `cwd` is rendered with `env --chdir`, so no shell sits
-between llama-swap and the server it signals.
+entry's `extra_args`. A custom-engine entry must declare a measured `ctx`.
+Such servers may enforce no context limit of their own, so the
+context window clients are told is the only limit. `cwd` is rendered with
+`env -C`, so no shell sits between llama-swap and the server it signals.
+
+`mtp_args` (llama.cpp engines) is what an entry's `"mtp": true` renders to on
+this host. The default is `--spec-type draft-mtp`. The best draft length
+differs by hardware, so it belongs to the engine:
+
+```json
+"metal": {
+  "server": "/Users/you/opt/llama.cpp-metal/bin/llama-server",
+  "args": ["-ngl", "999"],
+  "mtp_args": ["--spec-type", "draft-mtp", "--spec-draft-n-max", "3"]
+}
+```
+
+MLX models are served by [oMLX](https://github.com/jundot/omlx) as a custom
+engine. Install the app from its `.dmg`, which ships precompiled Qwen3.5
+kernels; source and Homebrew builds need full Xcode for them. On an M3 Max,
+oMLX matched llama.cpp on decode and was 1.85x faster at 16k prefill, while
+`mlx_vlm` serving the same weights was 3-5x slower
+(`results/speed/mac-engine-compare.md`). `mlx_lm` mis-loads vision-language
+checkpoints and emits garbage for them.
+
+oMLX gets a private data directory, so its per-model settings are separate
+from the menu-bar app's `~/.omlx`:
+
+```json
+"omlx": {"kind": "custom", "server": "/Applications/oMLX.app/Contents/MacOS/omlx-cli",
+         "check_endpoint": "/health",
+         "args": ["serve", "--base-path", "/Users/you/.config/llms/omlx",
+                  "--model-dir", "/Users/you/.config/llms/omlx/models", "--no-hf-cache",
+                  "--paged-ssd-cache-max-size", "10GB", "--max-concurrent-requests", "1"]}
+```
+
+```json
+"my-mlx-model": {"engine": "omlx", "capability": "chat", "ctx": 131072, "useModelName": "my-mlx-model"}
+```
+
+oMLX names models after the subdirectories of `--model-dir`. Make each one a
+symlink to its HF snapshot, e.g. `~/.config/llms/omlx/models/my-mlx-model ->
+~/.cache/huggingface/hub/models--o--r/snapshots/<sha>`. `useModelName` sends
+that name upstream. Per-model settings live in
+`<base-path>/model_settings.json`:
+`{"version": 1, "models": {"my-mlx-model": {"mtp_enabled": false, "max_context_window": 131072}}}`.
+Keep `max_context_window` equal to the entry's `ctx`.
 
 A model is rendered by `cmd` if present, otherwise by `engine`, otherwise
 from the `${server}` macro in the header. Setting both `cmd` and `engine` is
@@ -125,9 +231,13 @@ an error rather than a silent precedence rule.
 ## Building engines
 
 `bin/build-engine` builds a llama.cpp variant and installs it under
-`~/opt/llama.cpp-<name>`:
+`~/opt/llama.cpp-<name>`. Backends are `metal` and `cpu` on macOS, and
+`vulkan`, `hip`, `hip-wmma`, `cuda` and `cpu` on Linux. An unsupported one
+fails before any source is touched. The script runs under macOS's stock
+`/bin/bash` 3.2.
 
 ```bash
+make engine NAME=metal  BACKEND=metal
 make engine NAME=vulkan BACKEND=vulkan
 make engine NAME=hip    BACKEND=hip
 make engine NAME=mtp    BACKEND=hip REF=pr/28097
@@ -135,15 +245,20 @@ make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp
 make engine NAME=cuda   BACKEND=cuda ARCH=90
 ```
 
-Every build is installed with `RPATH=$ORIGIN/../lib` and then checked: if
-`llama-server` resolves any `libggml`/`libllama` outside its own prefix the
-build fails. Without that, variants silently share one library, which
+Every build is installed with an rpath relative to the binary
+(`$ORIGIN/../lib` on Linux, `@loader_path/../lib` on macOS) and then checked.
+Linux uses `ldd`. macOS resolves each image's load commands against its
+`LC_RPATH`s with `otool`. If `llama-server` or any library in the prefix
+resolves a `libggml`/`libllama` outside the prefix, the build fails.
+`build-engine NAME BACKEND --check-only` re-runs just that check. Without that, variants silently share one library, which
 invalidates backend comparisons and, for a fork with its own quantization
 types, produces a binary that either refuses the weights or misreads them.
 
-### vLLM on ROCm
+### vLLM on ROCm (Linux only)
 
-The vLLM build is independently pinned in `config/vllm-build.env`. It clones
+The vLLM build and its reranker/embedding servers are ROCm-only. On other
+hosts they exit immediately, except `bin/build-vllm --print-config` and
+`--dry-run`. The vLLM build is independently pinned in `config/vllm-build.env`. It clones
 the selected revision to `~/dev/vllm`, builds a private OpenMPI 4 compatibility
 runtime, and compiles vLLM for the configured AMD GPU architecture:
 
@@ -158,14 +273,17 @@ The second command serves `BAAI/bge-reranker-v2-m3` at
 ROCm dependency set; the resolved build is recorded in `~/opt/vllm/BUILD-INFO`.
 
 Persistent reranking and embedding servers can be configured as `companions`
-in `settings.json` (see `config/settings.example.json`) and managed with:
+in `settings.json` (see `config/settings.example.json`). Companions are plain
+commands, so on macOS they can be, for example, `llama-server --embeddings`.
+They are managed through the same backend as llama-swap:
 
 ```bash
-llms install-companions
-systemctl --user daemon-reload
+llms install-companions            # prints the systemd reload / launchd load steps
 llms companions-start
 llms companions-status
+# Linux, start at login:
 systemctl --user enable llms-reranker.service llms-embeddings.service
+# macOS, start at login: copy the printed plists into ~/Library/LaunchAgents/
 ```
 
 On the 32 GiB R9700, the verified resident stack is Bonsai 2 27B chat through
@@ -224,7 +342,9 @@ LSA_LISTEN=0.0.0.0:4096 ~/.local/bin/llama-swap-auth
 ```
 
 The proxy binds to `127.0.0.1:4096` by default. Keys come from
-`$XDG_CONFIG_HOME/llama-swap/api-keys`, with one key on each line.
+`$XDG_CONFIG_HOME/llama-swap/api-keys`, falling back to
+`~/.config/llama-swap/api-keys` on both Linux and macOS, with one key on each
+line. `LSA_KEYS_FILE` overrides the path.
 
 ## Reference Data
 
@@ -236,9 +356,27 @@ repository configuration by default.
 The reference registry contains absolute paths and host-specific backend
 commands. Do not deploy it on another host without an explicit migration.
 
+## Benchmarks
+
+Benchmarks measure the model as it is served. `bench/lib/stack.py` runs an
+isolated `llms` instance built from this host's real settings, engines, header
+and registry. It applies one declared `--variant` merge-patch and runs
+llama-swap on its own port. Everything is measured over HTTP: completion
+`timings`, `/upstream/<model>/tokenize`, and the served process's memory.
+
+- Memory is device VRAM on Linux. On macOS it is the process footprint, which
+  excludes the mmap'd weights; see `results/context/mac-footprint-validation.md`.
+- Memory is always sampled while the server generates.
+- The production service is stopped and restored around each run. Production
+  files are checksummed and must be unchanged afterwards.
+- `llama-bench` and `llama-fit-params` are not result sources.
+
+See `MODELS.md`, "Running the benchmarks". Stop a backgrounded run with
+`kill -TERM`, because shells start background jobs with SIGINT ignored.
+
 ## Development
 
-Run the Python and Go checks:
+CI runs the checks on Ubuntu and macOS. Locally:
 
 ```bash
 make test

@@ -1,0 +1,65 @@
+gui/@UID@/@LABEL@ = {
+	active count = 0
+	path = @PLIST@
+	type = LaunchAgent
+	state = not running
+
+	program = @PROGRAM@
+	arguments = {
+@ARGUMENTS@
+	}
+
+	stdout path = @LOG@
+	stderr path = @LOG@
+	inherited environment = {
+		SSH_AUTH_SOCK => /var/run/listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		OSLogRateLimit => 64
+		PATH => /usr/bin:/bin
+		XPC_SERVICE_NAME => @LABEL@
+	}
+
+	domain = gui/@UID@ [100015]
+	asid = 100015
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	last exit code = 0
+
+	semaphores = {
+		successful exit => 0
+	}
+
+	resource coalition = {
+		ID = 106958
+		type = resource
+		state = active
+		active count = 1
+		name = @LABEL@
+	}
+
+	jetsam coalition = {
+		ID = 106959
+		type = jetsam
+		state = active
+		active count = 1
+		name = @LABEL@
+	}
+
+	spawn type = interactive (4)
+	jetsam priority = 40
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+	sanitizer flags = 0x0
+
+	properties = inferred program
+}

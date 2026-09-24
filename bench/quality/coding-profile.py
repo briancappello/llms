@@ -18,15 +18,17 @@ For each prompt it records, from llama-server's OpenAI response:
   - timings.draft_n / draft_n_accepted -> MTP acceptance %
   - wall seconds, finish_reason
 
-Run one model at a time (it targets whatever llama-swap has pinned to the
-virtual id), tagging each run:
+Each model is served as production serves it, by an isolated llms instance
+(bench/lib/stack.py); an optional --variant is a declared change to that
+entry. The production registry is never edited:
 
-  llms use cold-fusion
-  bench/quality/coding-profile.py --tag cold-fusion --out results/quality/cp-cold-fusion.json
-  llms use qwen38-27b
-  bench/quality/coding-profile.py --tag qwen38-27b  --out results/quality/cp-qwen38-27b.json
+  bench/quality/coding-profile.py --model cold-fusion --tag cold-fusion \
+      --out results/quality/cp-cold-fusion.json
 """
-import argparse, json, re, statistics as st, sys, time, urllib.request
+import json, os, re, statistics as st, sys, time, urllib.request
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+from common import arg_parser, stack_for, variants  # noqa: E402
 
 # Bounded agentic-coding tasks: each induces some reasoning but has a short,
 # well-defined answer, so runtime stays sane while thinking-length differences
@@ -77,24 +79,6 @@ def post(url, payload, timeout=1200):
         return json.loads(r.read())
 
 
-def running_model(swap_base):
-    """The model id llama-swap currently has loaded (first ready), or None."""
-    try:
-        with urllib.request.urlopen(swap_base.rstrip("/") + "/running", timeout=10) as r:
-            running = (json.loads(r.read()) or {}).get("running", [])
-    except Exception:
-        return None
-    ready = [m for m in running if m.get("state") == "ready"] or running
-    return ready[0]["model"] if ready else None
-
-
-def resolve_tokenize(swap_base):
-    """llama-swap does not proxy /tokenize, but it does expose the backend at
-    /upstream/{model}/tokenize. Discover the active backend from /running."""
-    m = running_model(swap_base)
-    return f"{swap_base.rstrip('/')}/upstream/{m}/tokenize" if m else None
-
-
 def ntokens(tokenize_url, text):
     """Token count via llama-server /tokenize; 0 for empty text."""
     if not text:
@@ -125,15 +109,8 @@ def split_reasoning(msg):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--url", default="http://127.0.0.1:18080/v1")
-    ap.add_argument("--swap-url", default="http://127.0.0.1:18080")
-    ap.add_argument("--tokenize", default="auto",
-                    help="/tokenize endpoint, or 'auto' to discover the backend")
-    ap.add_argument("--model", default="auto",
-                    help="model id to request, or 'auto' for whatever is loaded")
+    ap = arg_parser(__doc__, default_out="/tmp/coding-profile.json")
     ap.add_argument("--tag", required=True, help="label for this model/run")
-    ap.add_argument("--out", default="/tmp/coding-profile.json")
     # Qwen3.8 "precise coding" preset; identical for every model under test.
     ap.add_argument("--temperature", type=float, default=0.6)
     ap.add_argument("--top-p", type=float, default=0.95)
@@ -141,19 +118,17 @@ def main():
     ap.add_argument("--min-p", type=float, default=0.0)
     ap.add_argument("--max-tokens", type=int, default=3000)
     args = ap.parse_args()
+    if len(args.model) != 1 or len(variants(args)) != 1:
+        ap.error("coding-profile runs exactly one --model and at most one --variant (use --tag)")
+    with stack_for(args, variants(args)[0]) as stack:
+        args.model = args.model[0]
+        stack.load(args.model)
+        args.url = stack.base + "/v1"
+        args.tokenize = stack.upstream(args.model, "/tokenize")
+        profile(args, stack.record(args.model))
 
-    if args.model == "auto":
-        args.model = running_model(args.swap_url)
-        if not args.model:
-            print("error: no ready model in /running (pass --model)", file=sys.stderr)
-            sys.exit(1)
-        print(f"model (auto): {args.model}")
-    if args.tokenize == "auto":
-        args.tokenize = resolve_tokenize(args.swap_url)
-        if not args.tokenize:
-            print("error: could not resolve /tokenize backend from /running", file=sys.stderr)
-            sys.exit(1)
-        print(f"tokenize endpoint: {args.tokenize}")
+
+def profile(args, provenance):
 
     print(f"== {args.tag} == sampling temp={args.temperature} top_p={args.top_p} "
           f"top_k={args.top_k} min_p={args.min_p} max_tokens={args.max_tokens}\n")
@@ -221,7 +196,7 @@ def main():
     for k, v in summary.items():
         print(f"  {k:22s} {v}")
     with open(args.out, "w") as f:
-        json.dump({"summary": summary, "records": recs}, f, indent=2)
+        json.dump({"provenance": provenance, "summary": summary, "records": recs}, f, indent=2)
     print(f"\nwrote {args.out}")
 
 

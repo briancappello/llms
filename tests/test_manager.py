@@ -23,6 +23,9 @@ from llms import (
 from llms.cli import main
 from llms.manager import atomic_write
 
+import socket as _socket
+real_create_connection = _socket.create_connection
+
 
 def entry(path="/models/example.gguf", **overrides):
     return {"path": str(path), "capability": "chat", "ctx": 1024, "trained_ctx": 2048,
@@ -34,11 +37,17 @@ class IsolatedTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.settings = Settings(self.root / "manager")
+        # Pinned so the systemd suite runs identically on Linux and macOS;
+        # launchd has its own suite in test_launchd.py.
+        self.settings = Settings(self.root / "manager", service_manager="systemd")
         self.opener = Mock(side_effect=AssertionError("unexpected network"))
         self.runner = Mock(side_effect=AssertionError("unexpected service operation"))
         self.probe = Mock(return_value={"general.architecture": "llama", "llama.context_length": 1024})
         self.manager = ModelManager(self.settings, probe=self.probe, opener=self.opener, runner=self.runner)
+        # Hermetic: whatever really listens on this host's ports must not matter.
+        port_probe = patch("llms.manager.socket.create_connection", side_effect=ConnectionRefusedError)
+        self.port_probe = port_probe.start()
+        self.addCleanup(port_probe.stop)
 
     def registry(self, registry):
         self.manager.init()
@@ -206,17 +215,69 @@ class PureTests(IsolatedTest):
             "kind": "custom", "server": "./ds4-server", "cwd": "/srv/ds4",
             "args": ["--model", "./w.gguf"], "check_endpoint": "/v1/models",
             "use_model_name": "upstream", "unload_timeout": 30})
-        registry = {"ds4": {"capability": "chat", "engine": "ds4", "extra_args": ["--kv-disk-space-mb 8192"]}}
+        registry = {"ds4": {"capability": "chat", "engine": "ds4", "ctx": 65536, "extra_args": ["--kv-disk-space-mb 8192"]}}
         model = yaml.safe_load(render_config(registry, "macros:\n  common: -fa on\n", settings))["models"]["ds4"]
         tokens = shlex.split(model["cmd"].replace("${PORT}", "1234"))
-        self.assertEqual(tokens[:2], ["/usr/bin/env", "--chdir=/srv/ds4"])
-        self.assertEqual(tokens[2], "./ds4-server")
+        self.assertEqual(tokens[:3], ["/usr/bin/env", "-C", "/srv/ds4"])
+        self.assertEqual(tokens[3], "./ds4-server")
         self.assertNotIn("-c", tokens)
         self.assertNotIn("${common}", model["cmd"])
         self.assertEqual(tokens[tokens.index("--kv-disk-space-mb") + 1], "8192")
         self.assertEqual(model["checkEndpoint"], "/v1/models")
         self.assertEqual(model["useModelName"], "upstream")
         self.assertEqual(model["unloadTimeout"], 30)
+
+    def test_mtp_intent_rendered_by_each_engine(self):
+        settings = self.engine_settings(
+            linux={"server": "/opt/hip/llama-server"},
+            mac={"server": "/opt/metal/llama-server",
+                 "mtp_args": ["--spec-type", "draft-mtp", "--spec-draft-n-max", "1"]})
+        registry = {"a": entry(engine="linux", mtp=True), "b": entry(engine="mac", mtp=True),
+                    "c": entry(mtp=True), "d": entry(engine="linux", mtp=False)}
+        models = yaml.safe_load(render_config(registry, "{}", settings))["models"]
+        tokens = {name: shlex.split(m["cmd"].replace("${PORT}", "1")) for name, m in models.items()}
+        self.assertEqual(tokens["a"][-2:], ["--spec-type", "draft-mtp"])
+        self.assertEqual(tokens["b"][-4:], ["--spec-type", "draft-mtp", "--spec-draft-n-max", "1"])
+        self.assertEqual(tokens["c"][-2:], ["--spec-type", "draft-mtp"])  # header-macro path: default
+        self.assertNotIn("--spec-type", tokens["d"])
+        # The same registry entry, two hosts: only settings differ.
+        self.assertEqual(registry["a"], {**registry["b"], "engine": "linux"})
+
+    def test_mtp_errors_and_legacy_extra_args_unchanged(self):
+        settings = self.engine_settings(e={"server": "/bin/srv"}, c={"kind": "custom", "server": "/bin/c"})
+        for bad in (entry(cmd="run --port ${PORT}", mtp=True), entry(engine="c", mtp=True, ctx=8),
+                    entry(engine="e", mtp="yes")):
+            with self.subTest(bad=bad), self.assertRaises(ManagerError):
+                render_config({"x": bad}, "{}", settings)
+        with self.assertRaisesRegex(ValueError, "mtp_args"):
+            self.engine_settings(c={"kind": "custom", "server": "/bin/c", "mtp_args": ["--x"]})
+        with self.assertRaisesRegex(ValueError, "mtp_args"):
+            self.engine_settings(e={"server": "/bin/srv", "mtp_args": "--spec-type draft-mtp"})
+        legacy = {"x": entry(engine="e", extra_args=["--spec-type draft-mtp"])}
+        expected = ("/bin/srv --host 127.0.0.1 --port ${PORT} -m /models/example.gguf -c 1024 -np 1 "
+                    "--kv-unified --spec-type draft-mtp")
+        self.assertEqual(yaml.safe_load(render_config(legacy, "{}", settings))["models"]["x"]["cmd"], expected)
+
+    def test_custom_engine_requires_measured_ctx(self):
+        settings = self.engine_settings(mlx={"kind": "custom", "server": "omlx-cli"})
+        for ctx in (None, 0, -1, "65536", True):
+            bad = {"capability": "chat", "engine": "mlx", "extra_args": ["--model org/m"]}
+            if ctx is not None:
+                bad["ctx"] = ctx
+            with self.subTest(ctx=ctx), self.assertRaisesRegex(ManagerError, "mlx-model.*measured"):
+                render_config({"mlx-model": bad}, "{}", settings)
+        good = {"mlx-model": {"capability": "chat", "engine": "mlx", "ctx": 65536, "trained_ctx": 262144,
+                              "extra_args": ["--model org/m"]}}
+        render_config(good, "{}", settings)
+        manager = ModelManager(settings, probe=self.probe, opener=self.opener, runner=self.runner)
+        manager.init()
+        atomic_write(settings.registry, json.dumps(good))
+        manager.ensure_clients()
+        [model] = json.loads(settings.client_path.read_text())["providers"]["llama-swap"]["models"]
+        self.assertEqual(model["contextWindow"], 65536)
+        atomic_write(settings.registry, json.dumps({"mlx-model": {"capability": "chat", "engine": "mlx"}}))
+        with self.assertRaisesRegex(ManagerError, "measured"):
+            manager.ensure_clients()
 
     def test_registry_overrides_engine_defaults(self):
         settings = self.engine_settings(e={"server": "/bin/srv", "env": {"A": "1"},
@@ -366,6 +427,50 @@ class MutationTests(IsolatedTest):
         self.runner.assert_not_called()
         self.opener.assert_not_called()
 
+    def test_local_add_records_mtp_intent_and_embedded_sampling(self):
+        self.manager.init()
+        self.probe.return_value = {"general.architecture": "qwen35moe", "qwen35moe.context_length": 4096,
+                                   "_has_mtp": True, "general.sampling.temp": 1.0, "general.sampling.top_k": 20}
+        _, model = self.manager.add(str(self.weights()), name="mtp-model", no_mmproj=True)
+        self.assertIs(model["mtp"], True)
+        self.assertFalse(any("--spec-type" in arg for arg in model["extra_args"]))
+        self.assertEqual(model["embedded_sampling"], {"temp": 1.0, "top_k": 20})
+        cmd = yaml.safe_load(self.settings.output.read_text())["models"]["mtp-model"]["cmd"]
+        self.assertIn("--spec-type draft-mtp", cmd)
+        self.assertNotIn("--temp", cmd)
+        self.probe.return_value = {"general.architecture": "llama", "llama.context_length": 1024}
+        _, plain = self.manager.add(str(self.weights("plain-Q4_K_M.gguf")), name="plain", no_mmproj=True)
+        self.assertNotIn("mtp", plain)
+        self.assertNotIn("embedded_sampling", plain)
+
+    def test_unregistered_discovery_lists_only_complete_unreferenced_models(self):
+        hub = self.settings.hf_cache
+        def snap(repo, files):
+            d = hub / f"models--{repo.replace('/', '--')}" / "snapshots" / "abc"
+            for name, body in files.items():
+                (d / name).parent.mkdir(parents=True, exist_ok=True)
+                (d / name).write_text(body)
+            return d
+        registered = snap("org/registered-GGUF", {"m-Q4_K_M.gguf": "x"})
+        snap("org/sharded-GGUF", {f"s-Q4_K_M-{i:05}-of-00002.gguf": "xx" for i in (1, 2)} | {"mmproj-F16.gguf": "p"})
+        snap("org/broken-GGUF", {"b-Q4_K_M-00001-of-00003.gguf": "x"})
+        snap("org/partial-MLX", {"model-00001-of-00002.safetensors": "w"})
+        index = json.dumps({"weight_map": {"a": "model-00001-of-00002.safetensors", "b": "model-00002-of-00002.safetensors"}})
+        snap("org/missing-shard-MLX", {"config.json": "{}", "model.safetensors.index.json": index,
+                                       "model-00001-of-00002.safetensors": "w"})
+        snap("org/complete-MLX", {"config.json": "{}", "model.safetensors.index.json": index,
+                                  "model-00001-of-00002.safetensors": "w", "model-00002-of-00002.safetensors": "ww"})
+        snap("org/referenced-MLX", {"config.json": "{}", "model.safetensors": "w"})
+        self.registry({"g": entry(registered / "m-Q4_K_M.gguf"),
+                       "x": {"capability": "chat", "engine": "mlx", "ctx": 8, "extra_args": ["--model org/referenced-MLX"]}})
+        found = {(row["kind"], row["repo"]): row for row in self.manager.unregistered()}
+        self.assertEqual(set(found), {("gguf", "org/sharded-GGUF"), ("mlx", "org/complete-MLX")})
+        self.assertEqual(found[("gguf", "org/sharded-GGUF")]["files"], 2)
+        self.assertTrue(found[("gguf", "org/sharded-GGUF")]["path"].endswith("s-Q4_K_M-00001-of-00002.gguf"))
+        self.assertEqual(found[("mlx", "org/complete-MLX")]["size_bytes"], 3)
+        self.runner.assert_not_called()
+        self.opener.assert_not_called()
+
     def test_incomplete_local_shard_rejected_before_probe(self):
         path = self.weights("target-00001-of-00002.gguf")
         with self.assertRaises(ManagerError):
@@ -505,10 +610,52 @@ class APITests(IsolatedTest):
             self.response(body)
             with self.assertRaises(ManagerError):
                 self.manager.use("real-id")
+        for message in ({"role": "assistant", "content": "ok"},
+                        {"role": "assistant", "content": None, "reasoning_content": "thinking"},
+                        {"role": "assistant", "content": None, "reasoning": "thinking"}):
+            with self.subTest(message=message):
+                self.response({"choices": [{"message": message}]})
+                self.manager.use("real-id")
+        for message in ({"role": "assistant", "content": None, "reasoning": 5},
+                        {"role": "user", "content": None, "reasoning": "x"}):
+            self.response({"choices": [{"message": message}]})
+            with self.subTest(message=message), self.assertRaises(ManagerError):
+                self.manager.use("real-id")
         self.response({"choices": [{"message": {"role": "assistant", "content": "ok"}}]})
         self.manager.use("real-id")
         request = self.opener.call_args.args[0]
         self.assertEqual(json.loads(request.data)["model"], "real-id")
+
+    def test_unload_all_one_and_unknown(self):
+        self.registry({"a/b": entry()})
+        self.response(b"")
+        self.manager.unload()
+        self.assertEqual((self.opener.call_args.args[0].full_url, self.opener.call_args.args[0].method),
+                         ("http://127.0.0.1:18080/api/models/unload", "POST"))
+        self.response(b"")
+        self.manager.unload("a/b")
+        self.assertEqual(self.opener.call_args.args[0].full_url, "http://127.0.0.1:18080/api/models/unload/a%2Fb")
+        calls = self.opener.call_count
+        with self.assertRaisesRegex(ManagerError, "unknown model"):
+            self.manager.unload("nope")
+        self.assertEqual(self.opener.call_count, calls)
+
+    def test_use_sync_clients_sets_pi_default_only_after_valid_answer(self):
+        self.registry({"kat-apex": entry()})
+        pi_settings = self.settings.client_path.parent / "settings.json"
+        atomic_write(pi_settings, json.dumps({"theme": "dark", "defaultProvider": "other", "defaultModel": "x"}))
+        before = pi_settings.read_text()
+        self.response({"choices": []})
+        with self.assertRaises(ManagerError):
+            self.manager.use_and_sync("kat-apex")
+        self.assertEqual(pi_settings.read_text(), before)
+        self.assertFalse(self.settings.client_path.exists())
+        self.response({"choices": [{"message": {"role": "assistant", "content": "ok"}}]})
+        self.manager.use_and_sync("kat-apex")
+        self.assertEqual(json.loads(pi_settings.read_text()),
+                         {"theme": "dark", "defaultProvider": "llama-swap", "defaultModel": "kat-apex"})
+        models = json.loads(self.settings.client_path.read_text())["providers"]["llama-swap"]["models"]
+        self.assertEqual([m["id"] for m in models], ["kat-apex"])
 
     def test_doctor_offline_no_network(self):
         self.manager.init()
@@ -516,6 +663,32 @@ class APITests(IsolatedTest):
         self.assertTrue(next(c for c in checks if c["check"] == "config")["ok"])
         self.opener.assert_not_called()
         self.runner.assert_not_called()
+
+    def test_doctor_requires_server_only_when_an_entry_renders_through_it(self):
+        settings = replace(self.settings, server="/nonexistent/llama-server",
+                           engines={"e": {"kind": "custom", "server": "/bin/sh"}})
+        manager = ModelManager(settings, probe=self.probe, opener=self.opener, runner=self.runner)
+        manager.init()
+        atomic_write(settings.registry, json.dumps({"m": {"capability": "chat", "engine": "e", "ctx": 8}}))
+        check = next(c for c in manager.doctor() if c["check"] == "server")
+        self.assertFalse(check["ok"])
+        self.assertFalse(check["required"])
+        atomic_write(settings.registry, json.dumps({"m": entry()}))  # header-macro path uses server
+        self.assertTrue(next(c for c in manager.doctor() if c["check"] == "server")["required"])
+
+    def test_doctor_checks_env_chdir_only_when_an_engine_sets_cwd(self):
+        self.manager.init()
+        self.assertNotIn("env-chdir", [c["check"] for c in self.manager.doctor()])
+        manager = ModelManager(replace(self.settings, engines={"e": {"server": "/bin/srv", "cwd": "/srv"}}),
+                               probe=self.probe, opener=self.opener, runner=self.runner)
+        for result, ok in ((SimpleNamespace(returncode=0, stderr=""), True),
+                           (SimpleNamespace(returncode=1, stderr="env: illegal option -- C"), False)):
+            self.runner.side_effect, self.runner.return_value = None, result
+            with self.subTest(ok=ok):
+                check = next(c for c in manager.doctor() if c["check"] == "env-chdir")
+                self.assertIs(check["ok"], ok)
+                self.assertTrue(check["required"])
+        self.assertEqual(self.runner.call_args.args[0], ["/usr/bin/env", "-C", "/", "true"])
 
     def test_doctor_malformed_header_and_live_failure(self):
         self.manager.init()
@@ -555,18 +728,15 @@ class ServiceTests(IsolatedTest):
     @contextlib.contextmanager
     def live_process(self, *, argv=None, executable=None, error=None):
         self.properties.update(ActiveState="active", MainPID="4321")
-        original_read, original_resolve = Path.read_bytes, Path.resolve
-        def read(path):
-            if path == Path("/proc/4321/cmdline"):
-                if error:
-                    raise error
-                return b"\0".join(os.fsencode(a) for a in (self.argv if argv is None else argv)) + b"\0"
-            return original_read(path)
-        def resolve(path, strict=False):
-            if path == Path("/proc/4321/exe"):
-                return original_resolve(executable or self.binary, strict=strict)
-            return original_resolve(path, strict=strict)
-        with patch.object(Path, "read_bytes", read), patch.object(Path, "resolve", resolve):
+        def read_argv(pid):
+            self.assertEqual(pid, 4321)
+            if error:
+                raise error
+            return list(self.argv if argv is None else argv)
+        def read_exe(pid):
+            self.assertEqual(pid, 4321)
+            return Path(executable or self.binary).resolve(strict=True)
+        with patch("llms._proc.argv", read_argv), patch("llms._proc.exe", read_exe):
             yield
 
     def test_install_nonoverwriting_and_does_not_touch_manager(self):
@@ -676,6 +846,24 @@ class ServiceTests(IsolatedTest):
         with self.assertRaisesRegex(ManagerError, "cannot verify"):
             self.manager.service("restart")
         self.assertEqual(self.actions, [])
+
+    def test_start_refused_when_listen_address_taken_by_another_process(self):
+        import socket
+
+        with socket.socket() as squatter:
+            squatter.bind(("127.0.0.1", 0))
+            squatter.listen()
+            port = squatter.getsockname()[1]
+            settings = replace(self.settings, listen=f"127.0.0.1:{port}", swap_url=f"http://127.0.0.1:{port}")
+            manager = ModelManager(settings, probe=self.probe, opener=self.opener, runner=self.runner)
+            manager._verify_service = Mock(return_value=False)
+            with patch("llms.manager.socket.create_connection", wraps=real_create_connection):
+                for action in ("start", "restart"):
+                    with self.subTest(action=action), self.assertRaisesRegex(ManagerError, "in use by a process other"):
+                        manager.service(action)
+                manager._verify_service.return_value = True  # our own active service holds it: fine
+                manager.service("restart")
+        self.assertEqual(self.actions, [["systemctl", "--user", "restart", "llama-swap.service"]])
 
     def test_action_errors_still_propagate_after_verification(self):
         self.action_result = SimpleNamespace(returncode=1, stdout="", stderr="stop failure")
@@ -930,6 +1118,8 @@ class CLITests(IsolatedTest):
         writer.add_head_count(1)
         writer.add_head_count_kv(1)
         writer.add_embedding_length(4)
+        writer.add_float32("general.sampling.temp", 1.0)
+        writer.add_uint32("llama.nextn_predict_layers", 1)
         writer.add_tensor("token_embd.weight", np.zeros((4, 4), dtype=np.float32))
         writer.write_header_to_file()
         writer.write_kv_data_to_file()
@@ -940,7 +1130,15 @@ class CLITests(IsolatedTest):
         for command in (["init", "--server", "/nonexistent/llama-server"], ["add", "tiny", str(path), "--no-restart", "--no-mmproj"], ["render"], ["ls", "--offline"]):
             result = subprocess.run([sys.executable, "-m", "llms", "--config-dir", str(self.settings.config_dir), *command], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.manager.load_registry()["tiny"]["trained_ctx"], 1024)
+            if command[0] == "add":
+                self.assertIn("embeds sampling defaults", result.stderr)
+                self.assertIn("temp=1.0", result.stderr)
+        tiny = self.manager.load_registry()["tiny"]
+        self.assertEqual(tiny["trained_ctx"], 1024)
+        self.assertEqual(tiny["embedded_sampling"], {"temp": 1.0})
+        self.assertIs(tiny["mtp"], True)
+        cmd = yaml.safe_load(self.settings.output.read_text())["models"]["tiny"]["cmd"]
+        self.assertNotIn("--temp", cmd)
         self.assertFalse((self.root / "xdg").exists())
 
 

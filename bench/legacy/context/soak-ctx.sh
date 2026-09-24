@@ -21,7 +21,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB="$HERE/../lib"
+LIB="$HERE/../../lib"
 HUB="$HOME/.cache/huggingface/hub"
 SERVER="$HOME/opt/llama.cpp-vulkan/bin/llama-server"
 M="$(ls "$HUB"/models--gbuzhf--KAT-Coder-V2.5-Dev-APEX-MTP-GGUF/snapshots/*/*MTP-UD-Q5_K_XL.gguf | head -1)"
