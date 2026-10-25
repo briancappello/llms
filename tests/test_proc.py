@@ -48,8 +48,9 @@ class LiveProcessTests(unittest.TestCase):
     def test_reads_exact_argv_and_executable_of_a_child(self):
         argv = ["/bin/sleep", "30"]
         # sleep(1) rejects odd arguments, so exercise quoting through sh's $0/$@.
-        # A compound command keeps the shell from exec'ing into sleep.
-        quoted = ["/bin/sh", "-c", "sleep 30; :", "arg with space", ""]
+        # A compound command keeps the shell from exec'ing into sleep. Not /bin/sh:
+        # on macOS it is a shim that re-execs /bin/bash, so exe() races that exec.
+        quoted = ["/bin/bash", "-c", "sleep 30; :", "arg with space", ""]
         for command in (argv, quoted):
             with self.subTest(command=command):
                 child = subprocess.Popen(command)
