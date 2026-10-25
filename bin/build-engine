@@ -185,7 +185,8 @@ fetch_spec() {  # <ref> -> what to ask the remote for
 
 if [[ -n "$SRC" ]]; then
     SRC="${SRC/#\~/$HOME}"
-    [[ -d "$SRC/.git" ]] || die "$SRC is not a git checkout"
+    # -e, not -d: in a git worktree .git is a file
+    [[ -e "$SRC/.git" ]] || die "$SRC is not a git checkout"
     ((!REPO_SET)) || die "--repo applies to the managed clone; a --src tree builds from its own origin"
     [[ -z "$(git -C "$SRC" status --porcelain --untracked-files=no)" ]] \
         || die "$SRC has uncommitted changes; commit or stash them first"
@@ -222,7 +223,7 @@ if [[ -n "$SRC" ]]; then
 else
     SRC="${LLMS_SRC_DIR:-$HOME/src/llama.cpp}"
     REF="${REF:-master}"
-    [[ -d "$SRC/.git" ]] || { log "cloning $REPO -> $SRC"; git clone --depth 1 "$REPO" "$SRC" || exit 1; }
+    [[ -e "$SRC/.git" ]] || { log "cloning $REPO -> $SRC"; git clone --depth 1 "$REPO" "$SRC" || exit 1; }
     fetch="$(fetch_spec "$REF")"
     case "$REF" in
         *:*) REPO="https://github.com/${REF%%:*}/llama.cpp"; fetch="refs/heads/${REF#*:}" ;;

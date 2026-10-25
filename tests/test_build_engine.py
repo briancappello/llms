@@ -95,6 +95,15 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(git(self.src, "symbolic-ref", "--short", "HEAD"), "master")  # still on the branch
         self.assertTrue(latest.startswith(self.built_commit()))
 
+    def test_src_may_be_a_git_worktree(self):
+        worktree = self.root / "wt"
+        git(self.src, "worktree", "add", "--quiet", "--track", "-b", "wt", str(worktree), "origin/master")
+        latest = self.commit("v2")
+        self.push()
+        result = self.build("--src", str(worktree))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(git(worktree, "rev-parse", "HEAD"), latest)
+
     def test_ref_pins_a_fallback_sha_or_tag(self):
         self.commit("v2")
         self.push()
