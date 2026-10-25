@@ -70,5 +70,10 @@ swebench-venv:
 	cd bench/swebench && uv venv .venv --python 3.12
 	uv pip install --python bench/swebench/.venv/bin/python mini-swe-agent swebench
 
+# Must match bench/lib/common.py DEFAULT_CORPUS.
+CORPUS ?= $(or $(LLMS_BENCH_CORPUS),/tmp/code-corpus.txt)
+
 corpus:
-	python3 bench/lib/build_code_corpus.py
+	python3 bench/lib/build_code_corpus.py > $(CORPUS).tmp && mv $(CORPUS).tmp $(CORPUS) \
+	  || { rm -f $(CORPUS).tmp; exit 1; }
+	@echo "wrote $(CORPUS) ($$(wc -c < $(CORPUS)) bytes)"

@@ -37,6 +37,8 @@ def collect(root):
     return paths
 
 paths = collect(ROOT)
+if not paths:
+    sys.exit(f"no source files under {ROOT}; set LLAMA_CPP_SRC to a llama.cpp checkout")
 out = sys.stdout
 total_bytes = 0
 target_bytes = int(sys.argv[1]) if len(sys.argv) > 1 else 800_000
