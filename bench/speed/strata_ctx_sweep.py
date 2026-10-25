@@ -16,10 +16,17 @@ Each --ctx NAME=CONFIG is one variant: the registry entry's extra_args point at 
         --ctx 32k=~/.config/llms/strata/coder-iq1_m.json --ctx 256k=~/.config/llms/strata/coder-iq1_m-256k.json
     bench/speed/strata_ctx_sweep.py sweep --model qwen38-coder-strata \\
         --ctx 256k=~/.config/llms/strata/coder-iq1_m-256k.json --depths 4096,65536,250000 --reps 2
+
+With --agent-request CAPTURE.json (one chat request recorded from the agent you use), every request carries that
+agent's system prompt and tools and no sampling fields, so the server applies the model card's defaults as it does
+for the agent. The context is a session of read tool calls answered with corpus files, and the follow-up answers
+whatever the model did (tool results for its tool calls, else a new user turn). The capture holds the agent's whole
+system prompt, personal instructions included: keep it out of the repository.
 """
 
 import json
 from pathlib import Path
+import re
 import sys
 import threading
 import time
@@ -34,7 +41,7 @@ from common import (PROVENANCE, QUESTION, TSV, StackError, Variant, arg_parser, 
 COLUMNS = ["model", "variant", "max_ctx", "phase", "depth", "rep", "prompt_tok", "cache_n", "prompt_n", "compl_tok",
            "pp_tok_s", "tg_tok_s", "ttft_s", "wall_s", "draft_n", "draft_acc", "acc_pct", "expert_slots",
            "expert_cache_mib", "kv_resident", "arena_mib", "ram_used_gib", "min_avail_gib", "vram_mib", "load_s",
-           "status", *PROVENANCE]
+           "tool_call", "finish", "reasoning_chars", "status", *PROVENANCE]
 FOLLOWUP = ("Now write the fix for the problem you named as a short unified diff against that file. "
             "Only the diff, no explanation.")
 
@@ -128,7 +135,9 @@ def request(stack, model, payload):
     t = response.get("timings") or {}
     row = {**timings(response), "cache_n": t.get("cache_n", mem.NA), "prompt_n": t.get("prompt_n", mem.NA),
            "ttft_s": round(t["prompt_ms"] / 1000, 2) if t.get("prompt_ms") is not None else mem.NA,
-           "wall_s": round(wall, 1), "vram_mib": mem.cell(vram),
+           "wall_s": round(wall, 1), "vram_mib": mem.cell(vram), "tool_call": made_tool_call(response),
+           "finish": (response.get("choices") or [{}])[0].get("finish_reason", mem.NA),
+           "reasoning_chars": len(((response.get("choices") or [{}])[0].get("message") or {}).get("reasoning_content") or ""),
            "min_avail_gib": round(avail.low, 1) if avail.low is not None else mem.NA}
     return row, response
 
@@ -147,6 +156,88 @@ def followup_payload(payload, response, gen, tool_output):
         answer["reasoning_content"] = message["reasoning_content"]
     turn = f"Here is another file you asked to see:\n\n{tool_output}\n\n{FOLLOWUP}"
     return {**payload, "max_tokens": gen, "messages": [*payload["messages"], answer, {"role": "user", "content": turn}]}
+
+
+FILE_MARK = re.compile(r"^// ===== (.+?) =====$", re.M)
+AGENT_TASK = ("Find the most error-prone function in the allocator and backend scheduling code, read whatever you need, "
+              "then fix it.")
+
+
+def corpus_files(corpus, max_lines=2000):
+    """(path, numbered text) per corpus file, as the agent's read tool returns it (line numbers, capped)."""
+    marks = list(FILE_MARK.finditer(corpus))
+    files = []
+    for i, mark in enumerate(marks):
+        body = corpus[mark.end() + 1:marks[i + 1].start() if i + 1 < len(marks) else len(corpus)]
+        lines = body.splitlines()[:max_lines]
+        if lines:
+            files.append((mark.group(1), "\n".join(f"{n}: {line}" for n, line in enumerate(lines, 1))))
+    return files
+
+
+class Agent:
+    """Requests shaped like a captured agent request: its system prompt and tools, no sampling fields (the
+    server applies the model card's), and a history of read tool calls answered with corpus files."""
+
+    def __init__(self, path, files, count):
+        captured = json.loads(Path(path).expanduser().read_text())
+        self.system = [m for m in captured["messages"] if m["role"] == "system"]
+        self.tools = captured.get("tools") or []
+        self.files, self.count = files, count
+        self.base = count("\n".join(m["content"] for m in self.system) + json.dumps(self.tools))
+        self._sizes = {}
+
+    def size(self, i):
+        if i not in self._sizes:
+            self._sizes[i] = self.count(self.files[i][1]) + 40
+        return self._sizes[i]
+
+    def history(self, depth):
+        """The task, then read calls and their results until about depth tokens (the system prompt included)."""
+        messages = [{"role": "user", "content": f"[session {uuid.uuid4().hex}] {AGENT_TASK}"}]
+        total, i = self.base + 60, 0
+        while i < len(self.files) and total < depth - 256:
+            call = f"call_{i}"
+            path, text = self.files[i]
+            arguments = {"path": path}
+            size = self.size(i)
+            if total + size > depth:                     # the last read takes only the lines that fit (read's limit)
+                lines = text.splitlines()
+                keep = max(1, int(len(lines) * (depth - total) / size))
+                text, arguments["limit"] = "\n".join(lines[:keep]), keep
+                size = self.count(text) + 40
+            messages.append({"role": "assistant", "content": "", "tool_calls": [
+                {"id": call, "type": "function", "function": {"name": "read", "arguments": json.dumps(arguments)}}]})
+            messages.append({"role": "tool", "tool_call_id": call, "content": text})
+            total, i = total + size, i + 1
+        return messages
+
+    def payload(self, model, messages, gen):
+        return {"model": model, "stream": False, "max_tokens": gen, "messages": [*self.system, *messages],
+                "tools": self.tools}
+
+    def followup(self, payload, response, tool_output):
+        """Answer what the model did: its tool calls get results (the first one a file), a text answer gets a new
+        user turn with a file. Only this tail is new to the conversation cache."""
+        message = (response.get("choices") or [{}])[0].get("message") or {}
+        answer = {"role": "assistant", "content": message.get("content") or ""}
+        for key in ("reasoning_content", "tool_calls"):
+            if message.get(key):
+                answer[key] = message[key]
+        tail = [answer]
+        if message.get("tool_calls"):
+            for n, call in enumerate(message["tool_calls"]):
+                tail.append({"role": "tool", "tool_call_id": call.get("id"),
+                             "content": tool_output if n == 0 else "(no output)"})
+        else:
+            tail.append({"role": "user", "content": f"Here is another file you should look at:\n\n{tool_output}\n\n"
+                                                    "Continue with the fix."})
+        return {**payload, "messages": [*payload["messages"], *tail]}
+
+
+def made_tool_call(response):
+    message = (response.get("choices") or [{}])[0].get("message") or {}
+    return "yes" if message.get("tool_calls") else "no"
 
 
 def run_variant(args, out, corpus, variant, max_ctx):
@@ -177,10 +268,14 @@ def run_variant(args, out, corpus, variant, max_ctx):
         if skipped:
             log(f"  depths over this context, skipped: {skipped}")
         reps = 1 if args.phase == "probe" else args.reps
+        agent = Agent(args.agent_request, corpus_files(corpus), count) if args.agent_request else None
+        if agent:
+            log(f"  agent request: {len(agent.system)} system message(s), {len(agent.tools)} tools, ~{agent.base} tokens "
+                "before the conversation; no sampling fields (the server's model-card defaults)")
         for depth in depths:
-            text = sized_text(count, corpus, depth - len(QUESTION) // 3)
+            text = None if agent else sized_text(count, corpus, depth - len(QUESTION) // 3)
             for rep in range(1, reps + 1):
-                payload = cold_payload(model, text, args.gen)
+                payload = agent.payload(model, agent.history(depth), args.gen) if agent else cold_payload(model, text, args.gen)
                 try:
                     row, response = request(stack, model, payload)
                 except (OSError, ValueError) as error:
@@ -190,11 +285,14 @@ def run_variant(args, out, corpus, variant, max_ctx):
                 out.row(**base, phase=args.phase if args.phase == "probe" else "cold", depth=depth, rep=rep, **row,
                         **engine_state(stack, model), load_s=load_s, status="OK", **record)
                 log(f"  depth {depth} rep {rep} cold: {row['prompt_tok']} tok (cache {row['cache_n']}) PP {row['pp_tok_s']} "
-                    f"TTFT {row['ttft_s']}s | TG {row['tg_tok_s']} | acc {row['acc_pct']}% | avail {row['min_avail_gib']} GiB")
+                    f"TTFT {row['ttft_s']}s | TG {row['tg_tok_s']} | acc {row['acc_pct']}% | avail {row['min_avail_gib']} GiB"
+                    f" | tool call {row['tool_call']}, finish {row['finish']}, reasoning {row['reasoning_chars']} chars")
                 if args.phase == "probe" or args.no_followup:
                     continue
                 try:
-                    frow, _ = request(stack, model, followup_payload(payload, response, args.gen, tool_output))
+                    next_payload = (agent.followup(payload, response, tool_output) if agent
+                                    else followup_payload(payload, response, args.gen, tool_output))
+                    frow, _ = request(stack, model, next_payload)
                 except (OSError, ValueError) as error:
                     log(f"  depth {depth} rep {rep}: follow-up failed: {error}")
                     out.row(**base, phase="followup", depth=depth, rep=rep, status="REQUEST_FAIL", load_s=load_s, **record)
@@ -202,7 +300,8 @@ def run_variant(args, out, corpus, variant, max_ctx):
                 out.row(**base, phase="followup", depth=depth, rep=rep, **frow, **engine_state(stack, model),
                         load_s=load_s, status="OK", **record)
                 log(f"  depth {depth} rep {rep} follow-up: {frow['prompt_tok']} tok, read {frow['prompt_n']} "
-                    f"(cache {frow['cache_n']}) TTFT {frow['ttft_s']}s | TG {frow['tg_tok_s']} | acc {frow['acc_pct']}%")
+                    f"(cache {frow['cache_n']}) TTFT {frow['ttft_s']}s | TG {frow['tg_tok_s']} | acc {frow['acc_pct']}%"
+                    f" | tool call {frow['tool_call']}, finish {frow['finish']}")
 
 
 def main():
@@ -216,6 +315,9 @@ def main():
     parser.add_argument("--no-followup", action="store_true")
     parser.add_argument("--tool-chars", type=int, default=7000, help="size of the follow-up turn's tool output")
     parser.add_argument("--corpus", default=None)
+    parser.add_argument("--agent-request", default=None,
+                        help="a captured agent chat request (JSON): send its system prompt and tools, no sampling "
+                             "fields, and fill the context with read tool calls instead of one user message")
     args = parser.parse_args()
     if len(args.model) != 1:
         parser.error("one --model per run")
