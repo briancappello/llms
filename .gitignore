@@ -20,3 +20,6 @@ extensions/camofox/node_modules/
 config/registry.json
 config/settings.json
 config/config.header.yaml
+
+# ik_llama.cpp writes llama.log into its working directory (the repo root for bench runs)
+llama.log
