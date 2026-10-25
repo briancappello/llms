@@ -118,7 +118,8 @@ class TSV:
     """Append-as-you-go TSV so an interrupted run keeps every finished row."""
 
     def __init__(self, path, columns):
-        self.path, self.columns = Path(path), list(columns)
+        # Drivers name "variant" up front for readability and PROVENANCE repeats it; keep the first.
+        self.path, self.columns = Path(path), list(dict.fromkeys(columns))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("w", newline="") as stream:
             csv.writer(stream, delimiter="\t").writerow(self.columns)

@@ -60,6 +60,18 @@ class MergePatchTests(unittest.TestCase):
             Variant.parse('x={"registry": {}}')
 
 
+class TSVTests(unittest.TestCase):
+    def test_driver_columns_overlapping_provenance_are_written_once(self):
+        from common import PROVENANCE, TSV
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "out.tsv"
+            out = TSV(path, ["model", "variant", "depth", *PROVENANCE])
+            out.row(model="m", variant="v", depth=1)
+            header, row = (line.split("\t") for line in path.read_text().splitlines())
+        self.assertEqual(header, ["model", "variant", "depth", *PROVENANCE[1:]])
+        self.assertEqual(row[:3], ["m", "v", "1"])
+
+
 class StackTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
