@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # Build a llama.cpp variant and install it as a named engine under ~/opt.
 #
-#   build-engine <name> <backend> [--src DIR | --repo URL --ref REF] [cmake args...]
+#   build-engine <name> <backend> [--src DIR | --repo URL] [--ref REF] [cmake args...]
+#
+# Always builds the latest code: the managed clone (~/src/llama.cpp) is
+# fetched, and a --src tree is fetched and fast-forwarded. --ref pins a
+# fallback instead: a branch, tag, full SHA, or pr/N (owner:branch on the
+# managed clone only). A --src tree is never reset: uncommitted changes or
+# local commits that cannot fast-forward stop the build.
 #
 # Examples:
 #   build-engine metal   metal                       # macOS, Apple Silicon
@@ -9,7 +15,9 @@
 #   build-engine vulkan  vulkan                      # upstream master, RADV
 #   build-engine hip     hip                         # upstream master, ROCm
 #   build-engine mtp     hip --ref pr/28097          # an upstream PR
+#   build-engine old     cuda --arch 89 --ref b6500  # a known-good tag
 #   build-engine bonsai  hip --src ~/dev/bonsai-llama.cpp
+#   build-engine ik-cuda cuda --arch 89 --src ~/dev/ik_llama.cpp --ref 7434a014...  # pinned fork
 #   build-engine cuda    cuda --arch 90              # an NVIDIA host
 #   build-engine metal   metal --check-only          # re-run the isolation check only
 #
@@ -43,11 +51,12 @@ JOBS="$(getconf _NPROCESSORS_ONLN)"
 ARCH="${LLMS_GPU_ARCH:-}"
 EXTRA=()
 CHECK_ONLY=0
+REPO_SET=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --src)  SRC="${2:?}"; shift 2 ;;
-        --repo) REPO="${2:?}"; shift 2 ;;
+        --repo) REPO="${2:?}"; REPO_SET=1; shift 2 ;;
         --ref)  REF="${2:?}"; shift 2 ;;
         --arch) ARCH="${2:?}"; shift 2 ;;
         --jobs) JOBS="${2:?}"; shift 2 ;;
@@ -71,31 +80,6 @@ done
 if [[ "$OS" == Darwin ]]; then
     command -v otool >/dev/null 2>&1 || die "required tool not found: otool (xcode-select --install)"
 fi
-
-ROCM_CLANG=/opt/rocm/llvm/bin/clang
-args=()
-case "$BACKEND" in
-    metal)
-        # Embed the shader library so the binary never looks for a .metallib
-        # outside its own prefix.
-        args=(-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON) ;;
-    vulkan) args=(-DGGML_VULKAN=ON) ;;
-    cpu)
-        # Metal is on by default on Apple platforms; a cpu engine must not use it.
-        [[ "$OS" == Darwin ]] && args=(-DGGML_METAL=OFF) ;;
-    hip|hip-wmma)
-        [[ -x "$ROCM_CLANG" ]] || die "ROCm clang not found at $ROCM_CLANG"
-        [[ -n "$ARCH" ]] || ARCH="$(rocminfo 2>/dev/null | awk '/gfx[0-9]/{print $2; exit}')"
-        [[ -n "$ARCH" ]] || die "set --arch (e.g. gfx1201); could not detect one"
-        args=(-DGGML_HIP=ON -DAMDGPU_TARGETS="$ARCH" -DGPU_TARGETS="$ARCH"
-              -DCMAKE_C_COMPILER="$ROCM_CLANG" -DCMAKE_CXX_COMPILER="${ROCM_CLANG}++")
-        [[ "$BACKEND" == hip-wmma ]] && args+=(-DGGML_HIP_ROCWMMA_FATTN=ON)
-        ;;
-    cuda)
-        [[ -n "$ARCH" ]] || die "set --arch to a compute capability, e.g. 90 for H100"
-        args=(-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="$ARCH")
-        ;;
-esac
 
 # --- isolation --------------------------------------------------------------
 # Every libggml*/libllama* the server loads must come from $PREFIX.
@@ -159,24 +143,95 @@ if ((CHECK_ONLY)); then
     exit 0
 fi
 
+# Backend build flags. Below --check-only on purpose: inspecting an installed
+# prefix needs neither a GPU arch nor a toolchain.
+ROCM_CLANG=/opt/rocm/llvm/bin/clang
+args=()
+case "$BACKEND" in
+    metal)
+        # Embed the shader library so the binary never looks for a .metallib
+        # outside its own prefix.
+        args=(-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON) ;;
+    vulkan) args=(-DGGML_VULKAN=ON) ;;
+    cpu)
+        # Metal is on by default on Apple platforms; a cpu engine must not use it.
+        [[ "$OS" == Darwin ]] && args=(-DGGML_METAL=OFF) ;;
+    hip|hip-wmma)
+        [[ -x "$ROCM_CLANG" ]] || die "ROCm clang not found at $ROCM_CLANG"
+        [[ -n "$ARCH" ]] || ARCH="$(rocminfo 2>/dev/null | awk '/gfx[0-9]/{print $2; exit}')"
+        [[ -n "$ARCH" ]] || die "set --arch (e.g. gfx1201); could not detect one"
+        args=(-DGGML_HIP=ON -DAMDGPU_TARGETS="$ARCH" -DGPU_TARGETS="$ARCH"
+              -DCMAKE_C_COMPILER="$ROCM_CLANG" -DCMAKE_CXX_COMPILER="${ROCM_CLANG}++")
+        [[ "$BACKEND" == hip-wmma ]] && args+=(-DGGML_HIP_ROCWMMA_FATTN=ON)
+        ;;
+    cuda)
+        [[ -n "$ARCH" ]] || die "set --arch to a compute capability, e.g. 90 for H100"
+        args=(-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="$ARCH")
+        ;;
+esac
+
 # --- source ---------------------------------------------------------------
+# Always build the latest code. --ref is the fallback: a branch, tag, full
+# commit SHA, or pr/N, checked out detached.
+#   managed clone (no --src): fetched and reset; nothing in it is yours.
+#   --src tree: fetched, then fast-forwarded (or moved to --ref). Never reset:
+#     uncommitted changes or unpushed commits stop the build instead.
+fetch_spec() {  # <ref> -> what to ask the remote for
+    case "$1" in
+        pr/*|pull/*) echo "refs/pull/${1##*/}/head" ;;
+        *)           echo "$1" ;;
+    esac
+}
+
 if [[ -n "$SRC" ]]; then
     SRC="${SRC/#\~/$HOME}"
     [[ -d "$SRC/.git" ]] || die "$SRC is not a git checkout"
-    [[ -z "$REF" ]] || die "--ref applies to --repo, not --src; check the fork out yourself"
+    ((!REPO_SET)) || die "--repo applies to the managed clone; a --src tree builds from its own origin"
+    [[ -z "$(git -C "$SRC" status --porcelain --untracked-files=no)" ]] \
+        || die "$SRC has uncommitted changes; commit or stash them first"
+    if [[ -n "$REF" ]]; then
+        [[ "$REF" != *:* ]] || die "owner:branch refs apply to the managed clone; for --src add that remote and pass its branch"
+        log "fetching $REF from origin into $SRC"
+        if git -C "$SRC" fetch --quiet origin "+$(fetch_spec "$REF"):refs/build-target"; then
+            target=refs/build-target
+        elif git -C "$SRC" rev-parse --quiet --verify "$REF^{commit}" >/dev/null; then
+            log "    fetch failed; using the local $REF"
+            target="$REF"
+        else
+            die "cannot fetch or resolve $REF in $SRC"
+        fi
+        git -C "$SRC" checkout --quiet --detach "$target" || die "checkout failed for $REF"
+        SOURCE="$SRC@$REF"
+    else
+        branch="$(git -C "$SRC" symbolic-ref --quiet --short HEAD)"
+        if [[ -n "$branch" ]] && git -C "$SRC" rev-parse --quiet --verify '@{u}' >/dev/null; then
+            log "pulling $branch in $SRC"
+            git -C "$SRC" pull --quiet --ff-only \
+                || die "cannot fast-forward $branch to its upstream (local commits?); rebase it or pass --ref"
+            SOURCE="$SRC@$branch"
+        else
+            log "no tracked branch in $SRC; fetching origin's default branch"
+            git -C "$SRC" fetch --quiet origin || die "fetch failed for $SRC"
+            git -C "$SRC" remote set-head origin --auto >/dev/null 2>&1
+            git -C "$SRC" rev-parse --quiet --verify refs/remotes/origin/HEAD >/dev/null \
+                || die "cannot determine origin's default branch in $SRC; pass --ref"
+            git -C "$SRC" checkout --quiet --detach refs/remotes/origin/HEAD || die "checkout failed in $SRC"
+            SOURCE="$SRC@origin/HEAD"
+        fi
+    fi
 else
     SRC="${LLMS_SRC_DIR:-$HOME/src/llama.cpp}"
     REF="${REF:-master}"
     [[ -d "$SRC/.git" ]] || { log "cloning $REPO -> $SRC"; git clone --depth 1 "$REPO" "$SRC" || exit 1; }
+    fetch="$(fetch_spec "$REF")"
     case "$REF" in
-        pr/*|pull/*) fetch="refs/pull/${REF##*/}/head" ;;
-        *:*)         REPO="https://github.com/${REF%%:*}/llama.cpp"; fetch="refs/heads/${REF#*:}" ;;
-        *)           fetch="refs/heads/${REF}" ;;
+        *:*) REPO="https://github.com/${REF%%:*}/llama.cpp"; fetch="refs/heads/${REF#*:}" ;;
     esac
     log "fetching $REF ($fetch) from $REPO"
     git -C "$SRC" fetch --depth 1 "$REPO" "+${fetch}:refs/build-target" || die "fetch failed for $REF"
     git -C "$SRC" checkout --quiet --detach refs/build-target \
         && git -C "$SRC" reset --hard --quiet refs/build-target || die "checkout failed for $REF"
+    SOURCE="$REPO@$REF"
 fi
 
 COMMIT="$(git -C "$SRC" rev-parse --short HEAD)"
@@ -216,7 +271,7 @@ cmake --install "$BUILD" || die "install failed for $NAME"
 
 check_isolation
 
-echo "$COMMIT  $(git -C "$SRC" describe --tags --always 2>/dev/null || echo "$COMMIT")  ${REF:-$SRC}  $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+echo "$COMMIT  $(git -C "$SRC" describe --tags --always 2>/dev/null || echo "$COMMIT")  $SOURCE  $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     > "$PREFIX/COMMIT"
 log "    isolation OK (all ggml/llama libs from $PREFIX/lib)"
 log "=== $NAME OK -> $PREFIX/bin/llama-server ==="
