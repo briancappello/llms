@@ -73,3 +73,8 @@ This host was already on the branch (installed 2026-09-24, after 7e964db), so th
 
 The `cuda` engine has no registry entry on this host, so nothing serves through it;
 `doctor` confirms its binary.
+
+## 10.3 CI
+
+`.github/workflows/ci.yml` passes on `ubuntu-latest` (Python 3.10 and 3.12) and
+`macos-latest` (Python 3.12, arm64) for the pushed branch: run 40242772786.

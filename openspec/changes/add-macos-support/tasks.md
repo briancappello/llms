@@ -72,7 +72,7 @@
 
 - [x] 10.1 Update `README.md`: per-platform requirements, a macOS install path (brew llama-swap/cmake/ninja, `build-engine metal`), launchd service steps, `llms logs`, a `newsyslog` rotation example, and the stack-benchmark method. Verify: every command in the macOS section has been run on this Mac.
 - [x] 10.2 Add to `config/settings.example.json` a Mac Metal engine with `mtp_args`, an MLX `custom` engine, and `service_manager`/`service_path`; add an MLX entry with `ctx` to `registry.example.json`. Verify: a test loads both examples with `_comment` keys removed through `Settings` and `render_config` without errors.
-- [ ] 10.3 Add a GitHub Actions workflow with an `ubuntu-latest` and `macos-latest` matrix (D14). Verify: the workflow passes on both runners in a pushed branch.
+- [x] 10.3 Add a GitHub Actions workflow with an `ubuntu-latest` and `macos-latest` matrix (D14). Verify: the workflow passes on both runners in a pushed branch.
 
 ## 11. End-to-end host verification
 
