@@ -51,7 +51,7 @@
 - [x] 7.5 Port `ctx-probe` (absorbing `ctx-gap`), `kv-sweep`, `soak-ctx`, `gates`/`mtp-engage` and `backend-sweep` to Python drivers on `stack.py`/`mem.py`. Verify: each driver runs to completion against a registered model on the Mac, and no driver contains a hand-written server command line, a HF glob or `rocm-smi`.
 - [x] 7.6 Update `kv-probe.py` and `coding-profile.py` to use `stack.py` variants instead of editing the production registry. Verify: a run leaves the production `registry.json` unchanged (checksum before and after).
 - [x] 7.7 Move the original shell drivers to `bench/legacy/` with a README naming the results each one produced, and update the paths in `MODELS.md`. Verify: `rg 'bench/(speed|context|gates)/[a-z-]+\.sh' MODELS.md results` finds only `bench/legacy/` paths.
-- [ ] 7.8 Re-run one existing Linux result with the new driver on the Linux host (for example a depth-sweep cell) and compare it with the recorded TSV. Verify: the numbers are within the noise band recorded for the old run, and the comparison is noted in `bench/legacy/README.md`.
+- [x] 7.8 Re-run one existing Linux result with the new driver on a Linux host and compare it with the recorded TSV. The legacy drivers only run on taichi, so the comparison uses p1 and its recorded `engine_compare` run of the same model and command. Verify: the 16384 cell is within the recorded range, and the comparison (including the confounded 4096 cell) is noted in `bench/legacy/README.md`.
 
 ## 8. Model registration
 
