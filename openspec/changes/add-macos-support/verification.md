@@ -54,3 +54,22 @@ mlx_vlm was retired and uninstalled (`uv tool uninstall mlx-vlm`) after oMLX mea
 registry now holds a single `cyber-tiel`: MLX oQ4e (non-MTP build), served by oMLX with
 mtp_enabled=false. The GGUF and mlx_vlm entries above were removed with `llms rm`;
 their weights are still in the HF cache.
+
+## 11.1 Linux host (p1: RTX 3000 Ada Laptop 8 GB, systemd, llama-swap v255)
+
+This host was already on the branch (installed 2026-09-24, after 7e964db), so the
+`--chdir=` -> `-C` change had already landed. The run upgraded it to the branch head.
+
+| Step | Observed |
+|---|---|
+| `make install` (bfc293f) | reinstalled the `llms` uv tool |
+| `llms render` | rendered config byte-identical to the one before the upgrade; the strata entry renders `/usr/bin/env -C /home/brian/dev/strata ...` |
+| systemd unit | `llama-swap.service` byte-identical |
+| `llms doctor --live` | 16/16 checks OK, including `env-chdir` and `live` |
+| `llms restart` | rc 0 |
+| `llms use bonsai` (engine bonsai) | ready in 5 s, warm-up answer valid |
+| `llms use cyber-tiel` (engine ik-cuda) | ready in 15 s, warm-up answer valid |
+| `llms use qwen38-coder-strata` (engine strata, custom, `cwd`) | ready in 29 s, warm-up answer valid |
+
+The `cuda` engine has no registry entry on this host, so nothing serves through it;
+`doctor` confirms its binary.
