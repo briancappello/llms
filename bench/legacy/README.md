@@ -33,7 +33,7 @@ during generation.
 
 ## Cross-check against the new drivers
 
-Task 7.8 of `openspec/changes/add-macos-support` re-runs one recorded cell on
+Task 7.8 of `openspec/changes/archive/2026-10-25-add-macos-support` re-runs one recorded cell on
 a Linux host with the new driver and compares it here.
 
 The legacy drivers above only run on taichi (Vulkan build, `rocm-smi`, KAT
