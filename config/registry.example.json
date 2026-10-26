@@ -43,20 +43,20 @@
       "\"mtp\": true is intent, not flags: each host's engine renders its own",
       "mtp_args. llms add writes it when the GGUF carries MTP layers."
     ],
-    "engine": "bonsai",
+    "engine": "llama-hip",
     "mtp": true,
-    "path": "/home/you/.cache/huggingface/hub/models--prism-ml--Ternary-Bonsai-2-27B-gguf/snapshots/<sha>/Ternary-Bonsai-2-27B-PQ2_0.gguf",
-    "display": "Bonsai 2 27B (ternary PQ2_0)",
-    "description": "PQ2_0 is ggml type 142 and needs the PrismML fork; stock llama.cpp cannot load it.",
+    "path": "/home/you/.cache/huggingface/hub/models--peculiar-ragdoll--Cyber-Tiel-Coder-35B-A3B-GGUF-MTP/snapshots/<sha>/Cyber-Tiel-Coder-35B-A3B-MTP-UD-IQ4_XS.gguf",
+    "display": "Cyber Tiel Coder 35B A3B (UD-IQ4_XS, MTP)",
+    "description": "MoE coder with MTP layers on the stock HIP build.",
     "capability": "chat",
-    "arch": "qwen35",
-    "quant": "PQ2_0",
+    "arch": "qwen35moe",
+    "quant": "UD-IQ4_XS",
     "trained_ctx": 262144,
-    "ctx": 262144,
-    "parallel": 2,
+    "ctx": 131072,
+    "parallel": 1,
     "kv_unified": true,
     "common": true,
-    "extra_args": ["--reasoning-preserve", "--temp 1.0", "--top-p 0.95", "--top-k 20", "--min-p 0.0", "--repeat-penalty 1.0"]
+    "extra_args": ["--temp 0.6", "--top-p 0.95", "--top-k 20", "--min-p 0"]
   },
 
   "example-mlx": {

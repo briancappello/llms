@@ -16,7 +16,6 @@ help:
 	  'test           run Python and Go tests' \
 	  'build          build the Python wheel and source archive' \
 	  'engine         build an inference engine, e.g.' \
-	  '               make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp' \
 	  '               make engine NAME=vulkan BACKEND=vulkan' \
 	  'vllm           build pinned vLLM source for the configured ROCm GPU' \
 	  'vllm-reranker  serve BAAI/bge-reranker-v2-m3 on port 8010' \

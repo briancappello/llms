@@ -241,7 +241,6 @@ make engine NAME=metal  BACKEND=metal
 make engine NAME=vulkan BACKEND=vulkan
 make engine NAME=hip    BACKEND=hip
 make engine NAME=mtp    BACKEND=hip REF=pr/28097
-make engine NAME=bonsai BACKEND=hip SRC=~/dev/bonsai-llama.cpp
 make engine NAME=cuda   BACKEND=cuda ARCH=90
 ```
 
@@ -286,7 +285,7 @@ systemctl --user enable llms-reranker.service llms-embeddings.service
 # macOS, start at login: copy the printed plists into ~/Library/LaunchAgents/
 ```
 
-On the 32 GiB R9700, the verified resident stack is Bonsai 2 27B chat through
+On the 32 GiB R9700, the stack was verified resident with a 27B chat model through
 llama-swap, BGE reranking on `:8010`, and Voyage embeddings on `:8011`. The two
 pooling models use eager execution to preserve VRAM for the chat context.
 

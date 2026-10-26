@@ -114,12 +114,6 @@
       "args": ["-ngl", "999"]
     },
 
-    "bonsai": {
-      "server": "/home/you/opt/llama.cpp-bonsai/bin/llama-server",
-      "env": { "HIP_VISIBLE_DEVICES": "0" },
-      "args": ["-ngl", "999"]
-    },
-
     "ds4-hip": {
       "kind": "custom",
       "server": "./ds4-server",

@@ -196,14 +196,14 @@ class PureTests(IsolatedTest):
         return replace(self.settings, engines=engines)
 
     def test_engine_supplies_binary_env_and_fixed_args(self):
-        settings = self.engine_settings(bonsai={
-            "server": "/opt/llama.cpp-bonsai/bin/llama-server",
+        settings = self.engine_settings(fork={
+            "server": "/opt/llama.cpp-fork/bin/llama-server",
             "env": {"HIP_VISIBLE_DEVICES": "0"},
             "args": ["-ngl", "999"]})
         model = yaml.safe_load(render_config(
-            {"x": entry(engine="bonsai")}, "macros:\n  common: -fa on\n", settings))["models"]["x"]
+            {"x": entry(engine="fork")}, "macros:\n  common: -fa on\n", settings))["models"]["x"]
         tokens = shlex.split(model["cmd"].replace("${PORT}", "1234"))
-        self.assertEqual(tokens[0], "/opt/llama.cpp-bonsai/bin/llama-server")
+        self.assertEqual(tokens[0], "/opt/llama.cpp-fork/bin/llama-server")
         self.assertEqual(tokens[tokens.index("--port") + 1], "1234")
         self.assertEqual(tokens[tokens.index("-ngl") + 1], "999")
         self.assertEqual(tokens[tokens.index("-m") + 1], "/models/example.gguf")

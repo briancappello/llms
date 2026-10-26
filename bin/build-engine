@@ -16,7 +16,6 @@
 #   build-engine hip     hip                         # upstream master, ROCm
 #   build-engine mtp     hip --ref pr/28097          # an upstream PR
 #   build-engine old     cuda --arch 89 --ref b6500  # a known-good tag
-#   build-engine bonsai  hip --src ~/dev/bonsai-llama.cpp
 #   build-engine ik-cuda cuda --arch 89 --src ~/dev/ik_llama.cpp --ref 7434a014...  # pinned fork
 #   build-engine cuda    cuda --arch 90              # an NVIDIA host
 #   build-engine metal   metal --check-only          # re-run the isolation check only
