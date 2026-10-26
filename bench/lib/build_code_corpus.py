@@ -3,11 +3,11 @@
 suitable for use as a long-context coding prompt corpus.
 
 Usage:  build_code_corpus.py [target_bytes]
-Env:    LLAMA_CPP_SRC (default /opt/src/llama.cpp) — repo to walk.
+Env:    LLAMA_CPP_SRC (default ~/dev/llama.cpp) — repo to walk.
 """
 import os, sys, pathlib
 
-ROOT = os.environ.get("LLAMA_CPP_SRC", "/opt/src/llama.cpp")
+ROOT = os.environ.get("LLAMA_CPP_SRC", os.path.expanduser("~/dev/llama.cpp"))
 SKIP_DIRS = {"build", ".git", "vendor", "tests", "ci", "docs", "scripts", "examples", "models", ".github", "cmake", "common/curl"}
 EXTS = {".cpp", ".h", ".hpp", ".c", ".py", ".cu", ".cuh", ".metal", ".comp"}
 
