@@ -544,6 +544,22 @@ class MutationTests(IsolatedTest):
         self.assertEqual(block["models"][0]["contextWindow"], 2048)
         self.assertEqual(block["models"][1]["input"], ["text", "image"])
 
+    def test_clients_per_model_overrides(self):
+        client = {"compat": {"thinkingFormat": "openai", "supportsReasoningEffort": True},
+                  "thinkingLevelMap": {"off": "none", "minimal": None}}
+        self.registry({"a": entry(), "b": entry(client=client)})
+        self.manager.ensure_clients()
+        models = json.loads(self.settings.client_path.read_text())["providers"]["llama-swap"]["models"]
+        self.assertNotIn("compat", models[0])
+        self.assertEqual(models[1]["compat"], client["compat"])
+        self.assertEqual(models[1]["thinkingLevelMap"], {"off": "none", "minimal": None})
+
+    def test_clients_rejects_unknown_override_unchanged(self):
+        self.registry({"a": entry(client={"contextWindow": 1})})
+        with self.assertRaisesRegex(ManagerError, "unknown client keys for a: contextWindow"):
+            self.manager.ensure_clients()
+        self.assertFalse(self.settings.client_path.exists())
+
     def test_malformed_client_file_unchanged(self):
         atomic_write(self.settings.client_path, "not json")
         with self.assertRaises(ValueError):

@@ -760,12 +760,30 @@ class ModelManager:
                 if entry.get("kv_unified") is False:
                     context //= int(entry.get("parallel", 4))
                 context = min(context, int(entry.get("trained_ctx") or context))
-            block["models"].append({"id": name, "name": entry.get("display", name), "reasoning": True,
-                                    "input": ["text", "image"] if entry.get("mmproj") else ["text"],
-                                    "contextWindow": context, "maxTokens": min(context, 65536),
-                                    "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}})
+            model = {"id": name, "name": entry.get("display", name), "reasoning": True,
+                     "input": ["text", "image"] if entry.get("mmproj") else ["text"],
+                     "contextWindow": context, "maxTokens": min(context, 65536),
+                     "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}}
+            model.update(self._client_overrides(entry, name))
+            block["models"].append(model)
         atomic_write(path, json.dumps(data, indent=2) + "\n")
         return path
+
+    # Per-model pi fields a registry entry may set under "client". A custom
+    # engine can speak a different thinking dialect than llama.cpp (e.g. it
+    # reads reasoning_effort but ignores deepseek's thinking:{type}), so the
+    # provider-wide compat block is not always right for every model.
+    CLIENT_KEYS = ("compat", "thinkingLevelMap", "samplingParams", "maxTokens", "input")
+
+    @classmethod
+    def _client_overrides(cls, entry, name):
+        client = entry.get("client", {})
+        if not isinstance(client, dict):
+            raise ManagerError(f"client must be an object for {name}")
+        unknown = sorted(set(client) - set(cls.CLIENT_KEYS))
+        if unknown:
+            raise ManagerError(f"unknown client keys for {name}: {', '.join(unknown)}")
+        return copy.deepcopy(client)
 
     @property
     def backend(self):
