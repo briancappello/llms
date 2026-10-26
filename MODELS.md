@@ -1,7 +1,7 @@
 # Model serving: locked configuration and operations
 
 Companion to `README.md`. Everything about *which* models are served, with *what* flags, and how to switch
-between them. For building llama.cpp see `~/dev/my-llama/RUNBOOK.md`. Measured data behind
+between them. For building llama.cpp see `bin/build-engine`. Measured data behind
 every claim here is in `results/`.
 
 ## Source of truth
@@ -61,16 +61,18 @@ packages (`llama.cpp-hip`, etc.) or drop stray binaries in `~/.local/bin` -- the
 shadow `$PATH` and cause version skew.
 
 ```
-~/src/llama.cpp                      shallow clone of ggml-org/master (THE source)
-        |  ~/dev/my-llama/build-backends.sh   (pulls latest, one pinned commit)
+~/dev/llama.cpp                      the only source tree (ggml-org/llama.cpp)
+        |  bin/build-engine {vulkan,hip} --src ~/dev/llama.cpp
+        |  (fetches and fast-forwards to the latest; --ref TAG|SHA pins a version)
         v
 ~/opt/llama.cpp-vulkan   (RADV, gfx1201)   <-- SERVING backend (config.header.yaml macro)
 ~/opt/llama.cpp-hip      (ROCm/HIP)         built + isolation-checked, kept for ad-hoc use
-~/opt/llama.cpp-hip-wmma (ROCm + rocWMMA)   built, but no gain over hip here
-~/opt/llama.cpp-COMMIT                       records the built commit for all three
+~/opt/llama.cpp-*/COMMIT                     records the commit each prefix was built from
 ```
 
-`build-backends.sh` builds all three from the *same* commit with
+Build both from the *same* commit: after the first build, pass
+`--ref "$(git -C ~/dev/llama.cpp rev-parse HEAD)"` to the second, so an upstream
+push between the two cannot split them. `build-engine` builds with
 `-DCMAKE_INSTALL_RPATH='$ORIGIN/../lib'` and asserts each binary's ggml/llama libs
 resolve to its own prefix (isolation check), so a backend comparison is real and
 not version skew. `~/.local/bin/{llama-server,llama-cli,...}` are **symlinks** into
