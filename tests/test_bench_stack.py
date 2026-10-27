@@ -253,6 +253,7 @@ class StackTests(unittest.TestCase):
         production = Settings.from_env(self.prod, environ=self.env)
         expected = base_digest(production, json.loads((self.prod / "registry.json").read_text()), "m", Variant())
         self.assertEqual(data["provenance"]["mode"], "stack")
+        self.assertEqual(data["model"], "m")
         self.assertEqual(data["provenance"]["base_digest"], expected)
         self.assertEqual(data["summary"]["256"]["n"], 1)
 

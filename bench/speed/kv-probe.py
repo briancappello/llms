@@ -117,7 +117,7 @@ def summarise(args, recs, depths, provenance):
     print("\n=== SUMMARY (median) ===")
     for dep, s in summ.items():
         print(f"  depth {dep:>6}: PP {s['pp_med']:8.1f} | TG {s['tg_med']:6.2f} | acc {s['acc_med']}%")
-    json.dump({"tag": args.tag, "provenance": provenance, "summary": summ, "records": recs},
+    json.dump({"tag": args.tag, "model": args.model[0], "provenance": provenance, "summary": summ, "records": recs},
               open(args.out, "w"), indent=2)
     print(f"\nwrote {args.out}")
 

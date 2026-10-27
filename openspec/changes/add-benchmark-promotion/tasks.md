@@ -13,7 +13,7 @@
 
 ## 3. Promote
 
-- [ ] 3.1 Implement result loading in `bench/lib/promote.py` (D2): TSV and kv-probe JSON; select OK rows by variant and optional model; require agreement on patch, digest and command; refuse standalone results and results without a digest; name the available variants when the requested one is missing. Verify: unit tests for each refusal and for a TSV holding two models.
+- [x] 3.1 Implement result loading in `bench/lib/promote.py` (D2): TSV and kv-probe JSON; select OK rows by variant and optional model; require agreement on patch, digest and command; refuse standalone results and results without a digest; name the available variants when the requested one is missing. Verify: unit tests for each refusal and for a TSV holding two models.
 - [ ] 3.2 Implement the pre-write checks (D3 steps 2-5) against a temporary production config dir. Verify: tests for a patch touching another entry, an edited production entry (digest mismatch), a render mismatch, and a shared-engine change listed and refused without `--accept-shared-engine`.
 - [ ] 3.3 Implement writes, restart, warm-up and rollback (D4) with an injected manager. Verify: tests show (a) success writes the patched registry and settings with `_comment` and unknown keys kept; (b) a failing warm-up restores all three files byte-identical and restarts twice; (c) an inactive service is not restarted and the warm-up is skipped; (d) the `production` variant changes no file.
 - [ ] 3.4 Append to `results/promotions.tsv` on success only (D5), with the header written once. Verify: two successful promotions give one header and two rows; a failed one adds none.
