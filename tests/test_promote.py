@@ -193,7 +193,9 @@ class PlanTests(ProductionCase):
         self.assertEqual((planned.affected, planned.settings["engines"]["f"]["args"]), ([], ["-ngl", "40"]))
 
 
-class ApplyTests(ProductionCase):
+class ApplyCase(ProductionCase):
+    """Production with a real ModelManager whose service calls are mocked."""
+
     def setUp(self):
         super().setUp()
         from llms import ModelManager
@@ -211,6 +213,8 @@ class ApplyTests(ProductionCase):
         planned = plan(self.measure(variant, model=model), self.production(), **kwargs)
         return apply(planned, self.production(), manager=self.manager)
 
+
+class ApplyTests(ApplyCase):
     def test_success_writes_restarts_and_warms(self):
         variant = Variant("both", entries={"solo": {"ctx": 4096}}, engines={"f": {"args": ["-ngl", "40"]}})
         self.assertEqual(self.apply(variant, model="solo"), "ok")
@@ -257,6 +261,51 @@ class ApplyTests(ProductionCase):
         self.assertEqual(self.apply(Variant()), "unchanged")
         self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
         self.service.assert_not_called()
+
+
+class LogTests(ApplyCase):
+    def results(self, variant, model="m"):
+        measured = self.measure(variant, model=model)
+        path = self.root / f"{variant.name}.tsv"
+        with path.open("w", newline="") as stream:
+            writer = csv.DictWriter(stream, list(row()), delimiter="\t")
+            writer.writeheader()
+            writer.writerow(row(model=model, variant=variant, digest=measured.base_digest, cmd=measured.rendered_cmd))
+        return path
+
+    def promote(self, results, variant, **kwargs):
+        from promote import promote
+        return promote(results, variant, production=self.production(), manager=self.manager,
+                       log_path=self.root / "promotions.tsv", **kwargs)
+
+    def log_rows(self):
+        with (self.root / "promotions.tsv").open(newline="") as stream:
+            return list(csv.DictReader(stream, delimiter="\t"))
+
+    def test_successes_append_rows_under_one_header(self):
+        self.assertEqual(self.promote(self.results(Variant()), "production"), "unchanged")
+        self.assertEqual(self.promote(self.results(Q8V), "q8V"), "ok")
+        text = (self.root / "promotions.tsv").read_text()
+        self.assertEqual(text.count("utc\thost\tmodel"), 1)
+        rows = self.log_rows()
+        self.assertEqual([(r["model"], r["variant"], r["warmup"]) for r in rows],
+                         [("m", "production", "unchanged"), ("m", "q8V", "ok")])
+        self.assertTrue(rows[1]["results"].endswith("q8V.tsv"))
+        self.assertIn("--cache-type-v q8_0", rows[1]["rendered_cmd"])
+        self.assertEqual(json.loads(rows[1]["patch"])["entries"], Q8V.entries)
+        self.assertEqual(len(rows[1]["base_digest"]), 64)
+
+    def test_failures_append_nothing(self):
+        from llms import ManagerError
+        results = self.results(Q8V)
+        self.use.side_effect = ManagerError("no answer")
+        with self.assertRaises(PromoteError):
+            self.promote(results, "q8V")
+        self.registry["m"]["ctx"] = 1
+        (self.prod / "registry.json").write_text(json.dumps(self.registry))
+        with self.assertRaisesRegex(PromoteError, "base digest differs"):
+            self.promote(results, "q8V")
+        self.assertFalse((self.root / "promotions.tsv").exists())
 
 
 if __name__ == "__main__":

@@ -203,3 +203,42 @@ def apply(planned, production, *, manager=None):
             except Exception as again:  # report both; the files are already back
                 message += f"; restart after restoring also failed: {again} (run `llms restart`)"
         raise PromoteError(message) from error
+
+
+REPO = Path(__file__).resolve().parents[2]
+LOG = REPO / "results" / "promotions.tsv"
+LOG_COLUMNS = ["utc", "host", "model", "variant", "results", "patch", "base_digest", "rendered_cmd", "warmup"]
+
+
+def log_promotion(planned, warmup, path=LOG):
+    """Append one row; the header only when the file is new (design D5)."""
+    import socket
+    import time
+
+    measured = planned.measured
+    results = Path(measured.results).resolve()
+    try:
+        results = results.relative_to(REPO)
+    except ValueError:
+        pass
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    new = not path.is_file() or path.stat().st_size == 0
+    with path.open("a", newline="") as stream:
+        writer = csv.writer(stream, delimiter="\t")
+        if new:
+            writer.writerow(LOG_COLUMNS)
+        writer.writerow([time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), socket.gethostname(), measured.model,
+                         measured.variant.name, str(results),
+                         json.dumps(measured.variant.to_dict(), sort_keys=True), measured.base_digest,
+                         measured.rendered_cmd, warmup])
+    return path
+
+
+def promote(results, variant, *, model=None, production, accept_shared_engine=False, manager=None, log_path=LOG):
+    """Load, check, apply, then log. Nothing is logged unless every step succeeded."""
+    measured = load_measured(results, variant, model=model)
+    planned = plan(measured, production, accept_shared_engine=accept_shared_engine)
+    warmup = apply(planned, production, manager=manager)
+    log_promotion(planned, warmup, log_path)
+    return warmup
