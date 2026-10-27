@@ -91,8 +91,13 @@ class Plan:
     registry: dict
     settings: dict
     affected: list = field(default_factory=list)
-    changes: bool = True
     production: object = None  # Settings with the engine patch applied, for rendering
+    registry_changed: bool = True
+    settings_changed: bool = True
+
+    @property
+    def changes(self):
+        return self.registry_changed or self.settings_changed
 
 
 def _rendered_models(registry, header, settings):
@@ -140,7 +145,8 @@ def plan(measured, production, *, accept_shared_engine=False):
         raise PromoteError(f"variant {variant.name} also changes {', '.join(affected)} (shared engine); "
                            "re-run with --accept-shared-engine to promote it for them too")
     return Plan(measured=measured, registry=new_registry, settings=new_settings, affected=affected,
-                changes=new_registry != registry or new_settings != raw_settings, production=patched_settings)
+                production=patched_settings, registry_changed=new_registry != registry,
+                settings_changed=new_settings != raw_settings)
 
 
 def merge_engines(engines, patches):
@@ -150,18 +156,26 @@ def merge_engines(engines, patches):
     return merged
 
 
+def _write(path, text):
+    """atomic_write, keeping the file's existing permissions (atomic_write creates 0600)."""
+    from llms.manager import atomic_write
+
+    mode = path.stat().st_mode & 0o7777 if path.is_file() else None
+    atomic_write(path, text)
+    if mode is not None:
+        path.chmod(mode)
+
+
 def _snapshot(paths):
     return {path: (path.read_bytes() if path.is_file() else None) for path in paths}
 
 
 def _restore(snapshot):
-    from llms.manager import atomic_write
-
     for path, data in snapshot.items():
         if data is None:
             path.unlink(missing_ok=True)
         else:
-            atomic_write(path, data.decode("utf-8"))
+            _write(path, data.decode("utf-8"))
 
 
 def apply(planned, production, *, manager=None):
@@ -170,8 +184,6 @@ def apply(planned, production, *, manager=None):
     Returns the warm-up outcome: "ok", "skipped" (service was not active) or
     "unchanged" (nothing to write, e.g. the production variant).
     """
-    from llms.manager import atomic_write
-
     if not planned.changes:
         return "unchanged"
     manager = manager or ModelManager(production)
@@ -179,12 +191,15 @@ def apply(planned, production, *, manager=None):
     snapshot = _snapshot([production.config_dir / "settings.json", production.registry, production.output])
     step = "write"
     try:
-        atomic_write(production.registry, json.dumps(planned.registry, indent=2, sort_keys=True) + "\n")
-        atomic_write(production.config_dir / "settings.json", json.dumps(planned.settings, indent=2) + "\n")
+        # Only what the patch changes is rewritten, so untouched files keep their layout.
+        if planned.registry_changed:
+            _write(production.registry, json.dumps(planned.registry, indent=2, sort_keys=True) + "\n")
+        if planned.settings_changed:
+            _write(production.config_dir / "settings.json", json.dumps(planned.settings, indent=2) + "\n")
         step = "render"
         # Not manager.render(): the manager holds the Settings from before the engine patch.
-        atomic_write(production.output, render_config(planned.registry, production.header.read_text(),
-                                                      planned.production))
+        _write(production.output, render_config(planned.registry, production.header.read_text(),
+                                                planned.production))
         if not active:
             return "skipped"
         step = "restart"

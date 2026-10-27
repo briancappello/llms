@@ -250,6 +250,32 @@ class ApplyTests(ApplyCase):
             self.apply(Q8V)
         self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
 
+    def test_entry_only_patch_leaves_settings_bytes_alone(self):
+        settings = self.prod / "settings.json"
+        settings.chmod(0o644)
+        before = settings.read_bytes()
+        self.assertEqual(self.apply(Q8V), "ok")
+        self.assertEqual(settings.read_bytes(), before)  # hand formatting kept: not rewritten
+        self.assertEqual(settings.stat().st_mode & 0o777, 0o644)
+
+    def test_engine_only_patch_leaves_registry_bytes_alone(self):
+        registry = self.prod / "registry.json"
+        registry.write_text(json.dumps(self.registry, indent=4))  # not llms' own layout
+        before = registry.read_bytes()
+        self.before = {p: p.read_bytes() for p in self.paths}
+        self.assertEqual(self.apply(Variant("f-ngl", engines={"f": {"args": ["-ngl", "40"]}}), model="solo"), "ok")
+        self.assertEqual(registry.read_bytes(), before)
+
+    def test_rollback_restores_bytes_and_mode_of_a_rewritten_settings_file(self):
+        from llms import ManagerError
+        settings = self.prod / "settings.json"
+        settings.chmod(0o644)
+        self.use.side_effect = ManagerError("no answer")
+        with self.assertRaises(PromoteError):
+            self.apply(Variant("f-ngl", engines={"f": {"args": ["-ngl", "40"]}}), model="solo")
+        self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
+        self.assertEqual(settings.stat().st_mode & 0o777, 0o644)
+
     def test_inactive_service_is_left_stopped(self):
         self.verify_service.return_value = False
         self.assertEqual(self.apply(Q8V), "skipped")
