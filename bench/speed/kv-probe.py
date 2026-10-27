@@ -13,8 +13,15 @@ cost at depth.
   bench/speed/kv-probe.py --model cold-fusion --tag cf-q8_0 \
       --variant 'q8V={"entries": {"cold-fusion": {"common": false, "extra_args": ["..."]}}}' \
       --depths 4096,65536 --reps 2 --out results/speed/kv-probe-cf-q8_0.json
+
+Standalone mode measures a llama-server you started yourself, for quick
+exploration. --model is then only a label, the production service is not
+touched, and the results are labelled standalone: they cannot be promoted.
+Re-measure a standalone finding as a --variant before promoting it.
+
+  bench/speed/kv-probe.py --model try-q4v --tag q4v --server http://127.0.0.1:8080
 """
-import json, os, statistics as st, sys, time
+import json, os, statistics as st, sys, time, urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
 from common import arg_parser, depth_prompt, load_corpus, stack_for, variants  # noqa: E402
@@ -27,22 +34,40 @@ def main():
     ap.add_argument("--depths", default="4096,65536")
     ap.add_argument("--reps", type=int, default=2)
     ap.add_argument("--gen", type=int, default=128)
+    ap.add_argument("--server", default=None,
+                    help="standalone mode: base URL of a llama-server started outside the stack")
     args = ap.parse_args()
     if len(args.model) != 1 or len(variants(args)) != 1:
         ap.error("kv-probe measures exactly one --model and at most one --variant per run (use --tag)")
+    if args.server and args.variant:
+        ap.error("--server measures a server outside the stack; --variant does not apply")
     model, variant = args.model[0], variants(args)[0]
     corpus = load_corpus(args.corpus) if args.corpus else load_corpus()
     depths = [int(x) for x in args.depths.split(",")]
-    with stack_for(args, variant) as stack:
-        stack.load(model)
-        tok = stack.upstream(model, "/tokenize")
-        provenance = {"mode": "stack", **stack.record(model)}
-        print(f"== {args.tag} == {model} variant={variant.name} depths={depths} reps={args.reps} gen={args.gen}\n")
-        recs = run(stack, model, tok, corpus, depths, args)
+    if args.server:
+        server = args.server.rstrip("/")
+        provenance = {"mode": "standalone", "server": server}
+        print(f"== {args.tag} == standalone {server} depths={depths} reps={args.reps} gen={args.gen}\n")
+        recs = run(lambda payload: post_json(server + "/v1/chat/completions", payload),
+                   model, server + "/tokenize", corpus, depths, args)
+    else:
+        with stack_for(args, variant) as stack:
+            stack.load(model)
+            tok = stack.upstream(model, "/tokenize")
+            provenance = {"mode": "stack", **stack.record(model)}
+            print(f"== {args.tag} == {model} variant={variant.name} depths={depths} reps={args.reps} gen={args.gen}\n")
+            recs = run(stack.chat, model, tok, corpus, depths, args)
     summarise(args, recs, depths, provenance)
 
 
-def run(stack, model, tok, corpus, depths, args):
+def post_json(url, payload, timeout=1800):
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read())
+
+
+def run(chat, model, tok, corpus, depths, args):
     recs = []
     for depth in depths:
         try:
@@ -53,7 +78,7 @@ def run(stack, model, tok, corpus, depths, args):
         for rep in range(1, args.reps + 1):
             t0 = time.time()
             try:
-                d = stack.chat(payload)
+                d = chat(payload)
             except Exception as e:
                 print(f"  depth {depth} rep {rep}: request failed: {e}"); continue
             wall = time.time() - t0

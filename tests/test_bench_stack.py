@@ -1,5 +1,6 @@
 """bench/lib/stack.py isolation guarantees, against a stub llama-swap."""
 
+import io
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import tempfile
 import time
 import unittest
 import unittest.mock
+import urllib.request
 from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bench" / "lib"))
@@ -253,6 +255,55 @@ class StackTests(unittest.TestCase):
         self.assertEqual(data["provenance"]["mode"], "stack")
         self.assertEqual(data["provenance"]["base_digest"], expected)
         self.assertEqual(data["summary"]["256"]["n"], 1)
+
+    def load_kv_probe(self):
+        import importlib.util
+        script = Path(__file__).resolve().parents[1] / "bench" / "speed" / "kv-probe.py"
+        spec = importlib.util.spec_from_file_location("kv_probe", script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_kv_probe_standalone_mode_never_builds_a_stack(self):
+        port = free_port()
+        server = subprocess.Popen([str(self.stub), "-listen", f"127.0.0.1:{port}"],
+                                  env={**self.env, "STUB_CHILD_FILE": str(self.child_file)})
+        self.addCleanup(server.wait)
+        self.addCleanup(server.kill)
+        self.addCleanup(lambda: self.child_gone() or os.kill(int(self.child_file.read_text()), signal.SIGKILL))
+        url = f"http://127.0.0.1:{port}"
+        for _ in range(50):
+            try:
+                urllib.request.urlopen(url + "/health", timeout=1)
+                break
+            except OSError:
+                time.sleep(0.1)
+        corpus = Path(self.temp.name) / "corpus.txt"
+        corpus.write_text("int main(void) { return 0; }\n" * 400)
+        out = Path(self.temp.name) / "standalone.json"
+        module = self.load_kv_probe()
+        argv = ["kv-probe.py", "--model", "probe", "--tag", "t", "--server", url, "--depths", "256",
+                "--reps", "1", "--gen", "4", "--corpus", str(corpus), "--out", str(out)]
+        with unittest.mock.patch.object(module, "stack_for", side_effect=AssertionError("stack built")), \
+                unittest.mock.patch.object(sys, "argv", argv), \
+                unittest.mock.patch("sys.stdout", new_callable=io.StringIO):
+            module.main()
+        data = json.loads(out.read_text())
+        self.assertEqual(data["provenance"], {"mode": "standalone", "server": url})
+        self.assertEqual(data["summary"]["256"]["n"], 1)
+        self.assertEqual({p: p.read_bytes() for p in self.prod.iterdir()}, self.files)
+
+    def test_kv_probe_server_with_variant_is_a_usage_error(self):
+        module = self.load_kv_probe()
+        argv = ["kv-probe.py", "--model", "m", "--tag", "t", "--server", "http://127.0.0.1:1",
+                "--variant", 'x={"entries": {"m": {"ctx": 1}}}']
+        stderr = io.StringIO()
+        with unittest.mock.patch.object(module, "stack_for", side_effect=AssertionError("stack built")), \
+                unittest.mock.patch.object(sys, "argv", argv), \
+                unittest.mock.patch("sys.stderr", stderr), self.assertRaises(SystemExit) as raised:
+            module.main()
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("--server measures a server outside the stack; --variant does not apply", stderr.getvalue())
 
     def test_not_installed_production_is_left_alone(self):
         self.prod_manager.backend.definition_path.return_value = self.prod / "missing.service"
