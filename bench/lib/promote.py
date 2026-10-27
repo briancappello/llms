@@ -92,6 +92,7 @@ class Plan:
     settings: dict
     affected: list = field(default_factory=list)
     changes: bool = True
+    production: object = None  # Settings with the engine patch applied, for rendering
 
 
 def _rendered_models(registry, header, settings):
@@ -139,7 +140,7 @@ def plan(measured, production, *, accept_shared_engine=False):
         raise PromoteError(f"variant {variant.name} also changes {', '.join(affected)} (shared engine); "
                            "re-run with --accept-shared-engine to promote it for them too")
     return Plan(measured=measured, registry=new_registry, settings=new_settings, affected=affected,
-                changes=new_registry != registry or new_settings != raw_settings)
+                changes=new_registry != registry or new_settings != raw_settings, production=patched_settings)
 
 
 def merge_engines(engines, patches):
@@ -147,3 +148,58 @@ def merge_engines(engines, patches):
     for name, patch in patches.items():
         merged[name] = merge_patch(merged.get(name, {}), patch)
     return merged
+
+
+def _snapshot(paths):
+    return {path: (path.read_bytes() if path.is_file() else None) for path in paths}
+
+
+def _restore(snapshot):
+    from llms.manager import atomic_write
+
+    for path, data in snapshot.items():
+        if data is None:
+            path.unlink(missing_ok=True)
+        else:
+            atomic_write(path, data.decode("utf-8"))
+
+
+def apply(planned, production, *, manager=None):
+    """Write the plan, restart, warm the model; restore everything on any failure (design D4).
+
+    Returns the warm-up outcome: "ok", "skipped" (service was not active) or
+    "unchanged" (nothing to write, e.g. the production variant).
+    """
+    from llms.manager import atomic_write
+
+    if not planned.changes:
+        return "unchanged"
+    manager = manager or ModelManager(production)
+    active = manager._verify_service()
+    snapshot = _snapshot([production.config_dir / "settings.json", production.registry, production.output])
+    step = "write"
+    try:
+        atomic_write(production.registry, json.dumps(planned.registry, indent=2, sort_keys=True) + "\n")
+        atomic_write(production.config_dir / "settings.json", json.dumps(planned.settings, indent=2) + "\n")
+        step = "render"
+        # Not manager.render(): the manager holds the Settings from before the engine patch.
+        atomic_write(production.output, render_config(planned.registry, production.header.read_text(),
+                                                      planned.production))
+        if not active:
+            return "skipped"
+        step = "restart"
+        manager.service("restart")
+        manager.wait_ready()
+        step = "warm-up"
+        manager.use(planned.measured.model)
+        return "ok"
+    except BaseException as error:
+        _restore(snapshot)
+        message = f"{step} failed: {error}; production files restored"
+        if active:
+            try:
+                manager.service("restart")
+                manager.wait_ready()
+            except Exception as again:  # report both; the files are already back
+                message += f"; restart after restoring also failed: {again} (run `llms restart`)"
+        raise PromoteError(message) from error

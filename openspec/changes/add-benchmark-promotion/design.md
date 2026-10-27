@@ -87,7 +87,8 @@ Then:
 - registry: written the way `ModelManager._commit` writes it (`indent=2`,
   `sort_keys=True`);
 - settings: raw JSON loaded, `engines.<name>` merge-patched, written with
-  `indent=2`, so unknown and `_comment` keys survive;
+  `indent=2`, so every other key and engine survives. (`Settings` rejects
+  `_comment` and unknown keys in a real `settings.json`, so none can exist.)
 - render through `ModelManager.render()`.
 
 If the service was active: `service("restart")`, `wait_ready`, `use(model)`.

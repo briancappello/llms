@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bench" / "lib"))
 
@@ -190,6 +191,72 @@ class PlanTests(ProductionCase):
         variant = Variant("f-ngl", engines={"f": {"args": ["-ngl", "40"]}})
         planned = self.plan(self.measure(variant, model="solo"))
         self.assertEqual((planned.affected, planned.settings["engines"]["f"]["args"]), ([], ["-ngl", "40"]))
+
+
+class ApplyTests(ProductionCase):
+    def setUp(self):
+        super().setUp()
+        from llms import ModelManager
+        self.manager = ModelManager(self.production())
+        self.manager.render()
+        self.paths = [self.prod / "settings.json", self.prod / "registry.json", self.production().output]
+        self.before = {p: p.read_bytes() for p in self.paths}
+        for name, value in (("_verify_service", True), ("service", None), ("wait_ready", None), ("use", {})):
+            patcher = unittest.mock.patch.object(self.manager, name, return_value=value)
+            setattr(self, name.strip("_"), patcher.start())
+            self.addCleanup(patcher.stop)
+
+    def apply(self, variant, model="m", **kwargs):
+        from promote import apply, plan
+        planned = plan(self.measure(variant, model=model), self.production(), **kwargs)
+        return apply(planned, self.production(), manager=self.manager)
+
+    def test_success_writes_restarts_and_warms(self):
+        variant = Variant("both", entries={"solo": {"ctx": 4096}}, engines={"f": {"args": ["-ngl", "40"]}})
+        self.assertEqual(self.apply(variant, model="solo"), "ok")
+        registry = json.loads((self.prod / "registry.json").read_text())
+        settings = json.loads((self.prod / "settings.json").read_text())
+        self.assertEqual(registry["solo"]["ctx"], 4096)
+        self.assertEqual({k: v for k, v in registry.items() if k != "solo"},
+                         {k: v for k, v in self.registry.items() if k != "solo"})
+        self.assertEqual(settings["engines"]["f"]["args"], ["-ngl", "40"])
+        self.assertEqual(settings["engines"]["e"], json.loads(self.settings_text)["engines"]["e"])
+        self.assertEqual(settings["swap_binary"], "llama-swap")
+        self.assertIn("-ngl 40", self.production().output.read_text())
+        from llms import ModelManager
+        written = self.production().output.read_text()
+        ModelManager(self.production()).render()  # what `llms render` makes from the new files
+        self.assertEqual(self.production().output.read_text(), written)
+        self.assertEqual([c.args for c in self.service.call_args_list], [("restart",)])
+        self.use.assert_called_once_with("solo")
+
+    def test_failed_warmup_restores_files_and_restarts_again(self):
+        from llms import ManagerError
+        self.use.side_effect = ManagerError("malformed chat completion")
+        with self.assertRaisesRegex(PromoteError, "warm-up.*malformed.*restored"):
+            self.apply(Q8V)
+        self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
+        self.assertEqual([c.args for c in self.service.call_args_list], [("restart",), ("restart",)])
+
+    def test_failed_rollback_restart_is_reported_after_restoring(self):
+        from llms import ManagerError
+        self.use.side_effect = ManagerError("no answer")
+        self.service.side_effect = [None, ManagerError("unit failed")]
+        with self.assertRaisesRegex(PromoteError, "(?s)no answer.*restart after restoring also failed: unit failed"):
+            self.apply(Q8V)
+        self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
+
+    def test_inactive_service_is_left_stopped(self):
+        self.verify_service.return_value = False
+        self.assertEqual(self.apply(Q8V), "skipped")
+        self.service.assert_not_called()
+        self.use.assert_not_called()
+        self.assertIn("--cache-type-v q8_0", self.production().output.read_text())
+
+    def test_production_variant_changes_no_file(self):
+        self.assertEqual(self.apply(Variant()), "unchanged")
+        self.assertEqual({p: p.read_bytes() for p in self.paths}, self.before)
+        self.service.assert_not_called()
 
 
 if __name__ == "__main__":
