@@ -21,10 +21,14 @@
 
 ## 4. Docs
 
-- [ ] 4.1 Document the measure, conclude and promote loop, and standalone mode, in `README.md`'s benchmark section and in kv-probe's docstring. Verify: every command shown in the new text has been run once on p1.
+- [x] 4.1 Document the measure, conclude and promote loop, and standalone mode, in `README.md`'s benchmark section and in kv-probe's docstring. Verify: every command shown in the new text has been run once on p1.
 
 ## 5. Host verification (p1)
 
 - [x] 5.1 On p1, run `kv_sweep.py` (or `depth_sweep.py`) for one model with `production` and one one-flag variant, then promote `production`. Verify: production files are unchanged and `results/promotions.tsv` has a row with `warmup` `unchanged`.
 - [x] 5.2 Promote the one-flag variant. Then run a new sweep with a variant that restores the old value, and promote that. Verify: `llms doctor --live` is green after each step, the rendered command matches the recorded one, and the final production files equal the backup taken before 5.1.
 - [x] 5.3 Edit the model's production entry after a sweep and try to promote from it. Verify: promotion refuses with a base digest mismatch, and the files are unchanged.
+
+Note for 4.1: the standalone command was run on p1 against a hand-started
+ik-cuda `llama-server` (cyber-tiel IQ4_XS, `-c 16384`, port 8080) with production
+unloaded. It wrote a `standalone` result, and `bench/promote.py` refused it.

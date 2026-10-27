@@ -19,7 +19,7 @@ exploration. --model is then only a label, the production service is not
 touched, and the results are labelled standalone: they cannot be promoted.
 Re-measure a standalone finding as a --variant before promoting it.
 
-  bench/speed/kv-probe.py --model try-q4v --tag q4v --server http://127.0.0.1:8080
+  bench/speed/kv-probe.py --model try-q8kv --tag standalone-check --server http://127.0.0.1:8080
 """
 import json, os, statistics as st, sys, time, urllib.request
 

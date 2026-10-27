@@ -373,6 +373,45 @@ llama-swap on its own port. Everything is measured over HTTP: completion
 See `MODELS.md`, "Running the benchmarks". Stop a backgrounded run with
 `kill -TERM`, because shells start background jobs with SIGINT ignored.
 
+### Measure, conclude, promote
+
+A benchmark is finished when production serves the winner. Every result row
+records its variant's patch, the command it was served with, and a digest of the
+production configuration it was measured against. Promote the winning variant
+straight from the results file:
+
+```bash
+bench/speed/kv_sweep.py --model cyber-tiel --variant production \
+    --variant 'c64k={"entries": {"cyber-tiel": {"ctx": 65536, "cmd": "..."}}}' \
+    --depths 512 --reps 1 --out results/speed/p1-promotion-check-c64k.tsv
+bench/promote.py results/speed/p1-promotion-check-c64k.tsv --variant c64k
+```
+
+Promotion applies the recorded patch to the production registry and engines,
+re-renders, restarts the service and warms the model. It refuses, changing
+nothing, when:
+
+- production changed since the run (the base digest differs) or would render a
+  different command;
+- the patch touches another model's entry;
+- the result is standalone, or predates base digests (re-run it);
+- an engine change would also reach other models, unless you pass
+  `--accept-shared-engine`.
+
+If the restart or warm-up fails, the previous files are restored and the
+service restarted on them. Of `registry.json` and `settings.json`, only the one
+the patch changes is rewritten, so the other keeps its formatting.
+Each promotion is logged in `results/promotions.tsv`.
+
+For quick exploration, `kv-probe.py --server URL` measures a `llama-server`
+you started yourself. Production is not touched, and the result is labelled
+`standalone`, so it cannot be promoted. Re-measure the change as a `--variant`
+first:
+
+```bash
+bench/speed/kv-probe.py --model try-q8kv --tag standalone-check --server http://127.0.0.1:8080
+```
+
 ## Development
 
 CI runs the checks on Ubuntu and macOS. Locally:
