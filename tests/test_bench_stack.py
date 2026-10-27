@@ -60,6 +60,61 @@ class MergePatchTests(unittest.TestCase):
             Variant.parse('x={"registry": {}}')
 
 
+class BaseDigestTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.prod = Path(self.temp.name)
+        self.header = {"macros": {"common": "--jinja"}}
+        self.registry = {"m": {"path": "/models/m.gguf", "capability": "chat", "ctx": 4096, "engine": "e"},
+                         "other": {"path": "/models/o.gguf", "capability": "chat", "ctx": 8192}}
+        self.settings_data = {"service_manager": "systemd",
+                              "engines": {"e": {"server": "/opt/e/llama-server", "args": ["-ngl", "999"]},
+                                          "f": {"server": "/opt/f/llama-server"}}}
+        self.write()
+
+    def write(self, indent=None, sort_keys=False):
+        import yaml
+        (self.prod / "config.header.yaml").write_text(yaml.safe_dump(self.header))
+        (self.prod / "registry.json").write_text(json.dumps(self.registry))
+        (self.prod / "settings.json").write_text(json.dumps(self.settings_data, indent=indent, sort_keys=sort_keys))
+
+    def digest(self, variant=None):
+        from llms import Settings
+        from stack import base_digest
+        settings = Settings.from_env(self.prod, environ={"HOME": str(self.prod)})
+        return base_digest(settings, json.loads((self.prod / "registry.json").read_text()), "m", variant or Variant())
+
+    def test_changes_with_entry_engine_and_macros(self):
+        before = self.digest()
+        for change in (lambda: self.registry["m"].update(ctx=8192),
+                       lambda: self.settings_data["engines"]["e"].update(env={"CUDA_VISIBLE_DEVICES": "1"}),
+                       lambda: self.header["macros"].update(common="--jinja -fa on")):
+            with self.subTest(change=change):
+                self.setUp()
+                change()
+                self.write()
+                self.assertNotEqual(self.digest(), before)
+
+    def test_ignores_formatting_key_order_and_unrelated_models(self):
+        before = self.digest()
+        self.write(indent=4, sort_keys=True)
+        self.assertEqual(self.digest(), before)
+        self.registry["other"]["ctx"] = 1
+        self.write()
+        self.assertEqual(self.digest(), before)
+
+    def test_covers_engines_the_patch_names(self):
+        moved = Variant("to-f", entries={"m": {"engine": "f"}})
+        patched = Variant("f-args", engines={"f": {"args": ["-ngl", "1"]}})
+        before = {v.name: self.digest(v) for v in (moved, patched)}
+        self.settings_data["engines"]["f"]["server"] = "/opt/f2/llama-server"
+        self.write()
+        for variant in (moved, patched):
+            self.assertNotEqual(self.digest(variant), before[variant.name])
+        self.assertEqual(self.digest(), self.digest(Variant()))
+
+
 class TSVTests(unittest.TestCase):
     def test_driver_columns_overlapping_provenance_are_written_once(self):
         from common import PROVENANCE, TSV

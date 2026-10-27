@@ -2,7 +2,7 @@
 
 ## 1. Base digest in results
 
-- [ ] 1.1 Add `base_digest(production_settings, registry, model, variant)` to `bench/lib/stack.py` (D1): canonical JSON of the entry, the entry's engine plus every patched engine (null when absent), and the header `macros`. Verify: unit tests show the digest changes when the entry's `ctx`, the engine's `env`, or a header macro changes, and stays the same when `settings.json` is re-indented or its keys are reordered.
+- [x] 1.1 Add `base_digest(production_settings, registry, model, variant)` to `bench/lib/stack.py` (D1): canonical JSON of the entry, the entry's engine plus every patched engine (null when absent), and the header `macros`. Verify: unit tests show the digest changes when the entry's `ctx`, the engine's `env`, or a header macro changes, and stays the same when `settings.json` is re-indented or its keys are reordered.
 - [ ] 1.2 Return `base_digest` from `Stack.record()` and add it to `PROVENANCE` in `bench/lib/common.py`. Verify: a `test_bench_stack.py` test with the stub llama-swap shows `record()` has the key and equals `base_digest` computed from the production files, not the isolated copy.
 - [ ] 1.3 Check every driver that writes `PROVENANCE` still runs. Verify: `rg -l PROVENANCE bench` lists only drivers that splat `stack.record()` into rows, and the test suite passes.
 

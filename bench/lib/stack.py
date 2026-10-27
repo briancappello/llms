@@ -91,6 +91,25 @@ class Variant:
         return {"name": self.name, "entries": self.entries, "engines": self.engines}
 
 
+def base_digest(settings, registry, model, variant):
+    """SHA-256 of the production inputs a variant of model is built on.
+
+    Covers the model's registry entry, every engine it can be served by before
+    or after the patch (null when absent), and the header macros. Canonical
+    JSON, so formatting and key order do not matter (design D1).
+    """
+    import yaml
+
+    entry = registry.get(model)
+    patched = merge_patch(entry, variant.entries.get(model, {})) if entry is not None else None
+    names = {e.get("engine") for e in (entry, patched) if e and e.get("engine")} | set(variant.engines)
+    header = yaml.safe_load(settings.header.read_text()) if settings.header.is_file() else None
+    document = {"entry": entry,
+                "engines": {name: settings.engines.get(name) for name in sorted(names)},
+                "macros": (header or {}).get("macros") or {}}
+    return hashlib.sha256(json.dumps(document, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def _digest(path):
     path = Path(path)
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
