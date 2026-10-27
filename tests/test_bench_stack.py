@@ -31,8 +31,9 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
     def do_GET(self): self.reply({"running": []})
     def do_POST(self):
-        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
         if self.path.startswith("/api/models/unload"): return self.reply(None)
+        if self.path.endswith("/tokenize"): return self.reply({"tokens": [0] * (len(json.loads(body)["content"]) // 4)})
         self.reply({"choices": [{"message": {"role": "assistant", "content": "ok"}}], "timings": {"prompt_per_second": 10.0, "predicted_per_second": 5.0, "draft_n": 4, "draft_n_accepted": 3}, "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
 http.server.HTTPServer((host, int(port)), H).serve_forever()
 '''
@@ -229,6 +230,29 @@ class StackTests(unittest.TestCase):
             with self.stack(Variant("bad", entries={"nope": {"ctx": 1}})):
                 pass
         self.prod_manager.service.assert_not_called()
+
+    def run_kv_probe(self, *args):
+        corpus = Path(self.temp.name) / "corpus.txt"
+        corpus.write_text("int main(void) { return 0; }\n" * 400)
+        out = Path(self.temp.name) / "kv.json"
+        script = Path(__file__).resolve().parents[1] / "bench" / "speed" / "kv-probe.py"
+        result = subprocess.run([sys.executable, str(script), "--model", "m", "--tag", "t", "--depths", "256",
+                                 "--reps", "1", "--gen", "4", "--corpus", str(corpus), "--out", str(out), *args],
+                                env={**self.env, "STUB_CHILD_FILE": str(self.child_file)},
+                                capture_output=True, text=True, timeout=120)
+        return result, (json.loads(out.read_text()) if out.exists() else None)
+
+    def test_kv_probe_records_stack_mode_and_base_digest(self):
+        result, data = self.run_kv_probe("--config-dir", str(self.prod), "--no-manage-production",
+                                         "--port", str(free_port()))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        from llms import Settings
+        from stack import base_digest
+        production = Settings.from_env(self.prod, environ=self.env)
+        expected = base_digest(production, json.loads((self.prod / "registry.json").read_text()), "m", Variant())
+        self.assertEqual(data["provenance"]["mode"], "stack")
+        self.assertEqual(data["provenance"]["base_digest"], expected)
+        self.assertEqual(data["summary"]["256"]["n"], 1)
 
     def test_not_installed_production_is_left_alone(self):
         self.prod_manager.backend.definition_path.return_value = self.prod / "missing.service"

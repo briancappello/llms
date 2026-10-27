@@ -8,7 +8,7 @@
 
 ## 2. kv-probe modes
 
-- [ ] 2.1 Record `"mode": "stack"` and `base_digest` in kv-probe's `provenance`. Verify: a test runs `kv-probe` against the stub stack and reads both keys from the output JSON.
+- [x] 2.1 Record `"mode": "stack"` and `base_digest` in kv-probe's `provenance`. Verify: a test runs `kv-probe` against the stub stack and reads both keys from the output JSON.
 - [ ] 2.2 Add `--server URL` standalone mode (D6): `/tokenize` and `/v1/chat/completions` from the URL, no `Stack`, provenance `{"mode": "standalone", "server": URL}`; `--server` with `--variant` is a parse error. Verify: a test against a local stub HTTP server writes a standalone JSON, and a mocked `Stack` is never constructed.
 
 ## 3. Promote

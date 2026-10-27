@@ -36,7 +36,7 @@ def main():
     with stack_for(args, variant) as stack:
         stack.load(model)
         tok = stack.upstream(model, "/tokenize")
-        provenance = stack.record(model)
+        provenance = {"mode": "stack", **stack.record(model)}
         print(f"== {args.tag} == {model} variant={variant.name} depths={depths} reps={args.reps} gen={args.gen}\n")
         recs = run(stack, model, tok, corpus, depths, args)
     summarise(args, recs, depths, provenance)
