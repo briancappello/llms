@@ -17,7 +17,7 @@
 - [x] 3.2 Implement the pre-write checks (D3 steps 2-5) against a temporary production config dir. Verify: tests for a patch touching another entry, an edited production entry (digest mismatch), a render mismatch, and a shared-engine change listed and refused without `--accept-shared-engine`.
 - [x] 3.3 Implement writes, restart, warm-up and rollback (D4) with an injected manager. Verify: tests show (a) success writes the patched registry and settings with every other key and engine kept; (b) a failing warm-up restores all three files byte-identical and restarts twice; (c) an inactive service is not restarted and the warm-up is skipped; (d) the `production` variant changes no file.
 - [x] 3.4 Append to `results/promotions.tsv` on success only (D5), with the header written once. Verify: two successful promotions give one header and two rows; a failed one adds none.
-- [ ] 3.5 Add the `bench/promote.py` CLI (`RESULTS --variant NAME [--model ID] [--config-dir DIR] [--accept-shared-engine]`). Verify: `bench/promote.py --help` lists the options, and a CLI test refuses a pre-digest results file with exit code non-zero.
+- [x] 3.5 Add the `bench/promote.py` CLI (`RESULTS --variant NAME [--model ID] [--config-dir DIR] [--accept-shared-engine]`). Verify: `bench/promote.py --help` lists the options, and a CLI test refuses a pre-digest results file with exit code non-zero.
 
 ## 4. Docs
 

@@ -308,5 +308,34 @@ class LogTests(ApplyCase):
         self.assertFalse((self.root / "promotions.tsv").exists())
 
 
+class CliTests(ProductionCase):
+    SCRIPT = Path(__file__).resolve().parents[1] / "bench" / "promote.py"
+
+    def run_cli(self, *args):
+        import subprocess
+        return subprocess.run([sys.executable, str(self.SCRIPT), *args], capture_output=True, text=True,
+                              env={**self.env, "PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin"}, timeout=60)
+
+    def test_help_lists_options(self):
+        result = self.run_cli("--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for option in ("RESULTS", "--variant", "--model", "--config-dir", "--accept-shared-engine"):
+            self.assertIn(option, result.stdout)
+
+    def test_pre_digest_results_are_refused_without_changes(self):
+        path = self.root / "old.tsv"
+        old = {k: v for k, v in row().items() if k != "base_digest"}
+        with path.open("w", newline="") as stream:
+            writer = csv.DictWriter(stream, list(old), delimiter="\t")
+            writer.writeheader()
+            writer.writerow(old)
+        before = {p: p.read_bytes() for p in self.prod.iterdir()}
+        result = self.run_cli(str(path), "--variant", "q8V", "--config-dir", str(self.prod))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("promote: ", result.stderr)
+        self.assertIn("no base digest", result.stderr)
+        self.assertEqual({p: p.read_bytes() for p in self.prod.iterdir()}, before)
+
+
 if __name__ == "__main__":
     unittest.main()
