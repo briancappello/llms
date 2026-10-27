@@ -124,6 +124,7 @@ class TSVTests(unittest.TestCase):
             out.row(model="m", variant="v", depth=1)
             header, row = (line.split("\t") for line in path.read_text().splitlines())
         self.assertEqual(header, ["model", "variant", "depth", *PROVENANCE[1:]])
+        self.assertIn("base_digest", PROVENANCE)
         self.assertEqual(row[:3], ["m", "v", "1"])
 
 
@@ -185,6 +186,13 @@ class StackTests(unittest.TestCase):
             record = stack.record("m")
             self.assertEqual(record["variant"], "mtp-n1")
             self.assertIn("--spec-draft-n-max 1", record["rendered_cmd"])
+            from llms import Settings
+            from stack import base_digest
+            production = Settings.from_env(self.prod, environ=self.env)
+            expected = base_digest(production, json.loads((self.prod / "registry.json").read_text()), "m", variant)
+            self.assertEqual(record["base_digest"], expected)
+            isolated = base_digest(stack.settings, stack.registry, "m", variant)
+            self.assertNotEqual(isolated, expected)  # the copy carries the patch; the record must not
             self.assertEqual(stack.production_state, "active")
             self.assertNotEqual(stack.settings.config_dir, self.prod)
         self.assertTrue(self.child_gone(config))

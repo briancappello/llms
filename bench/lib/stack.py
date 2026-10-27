@@ -331,8 +331,10 @@ class Stack:
 
     def record(self, model):
         """Provenance attached to every result row."""
+        production_registry = ModelManager(self.production).load_registry()
         return {"variant": self.variant.name, "patch": json.dumps(self.variant.to_dict(), sort_keys=True),
-                "rendered_cmd": self.rendered_command(model), "production": self.production_state}
+                "rendered_cmd": self.rendered_command(model), "production": self.production_state,
+                "base_digest": base_digest(self.production, production_registry, model, self.variant)}
 
     def running(self):
         return self.get("/running").get("running", [])

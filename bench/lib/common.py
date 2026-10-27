@@ -158,7 +158,7 @@ def read_tsv(path):
         return list(csv.DictReader(stream, delimiter="\t"))
 
 
-PROVENANCE = ["variant", "patch", "rendered_cmd", "production"]
+PROVENANCE = ["variant", "patch", "rendered_cmd", "production", "base_digest"]
 
 
 def arg_parser(description, *, default_out):
