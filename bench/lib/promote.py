@@ -6,15 +6,17 @@ benchmark applied it, after proving that production has not drifted since the
 measurement. See openspec/specs/benchmark-promotion.
 """
 
+import copy
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 import json
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stack import Variant  # noqa: E402
+from stack import ModelManager, Variant, base_digest, merge_patch  # noqa: E402
+from llms import ManagerError, render_config  # noqa: E402
 
 
 class PromoteError(RuntimeError):
@@ -79,3 +81,69 @@ def load_measured(results, variant, model=None):
     first = ok[0]
     return Measured(results=results, model=model, variant=_variant(first["patch"], results),
                     base_digest=first["base_digest"], rendered_cmd=first["rendered_cmd"], rows=len(ok))
+
+
+@dataclass
+class Plan:
+    """Production as it will be after promotion; nothing is written yet."""
+
+    measured: Measured
+    registry: dict
+    settings: dict
+    affected: list = field(default_factory=list)
+    changes: bool = True
+
+
+def _rendered_models(registry, header, settings):
+    import yaml
+
+    try:
+        return yaml.safe_load(render_config(registry, header, settings))["models"]
+    except ManagerError as error:
+        raise PromoteError(f"render failed: {error}") from error
+
+
+def plan(measured, production, *, accept_shared_engine=False):
+    """Check that production still matches the measurement, and plan the patch (design D3)."""
+    model, variant = measured.model, measured.variant
+    registry = ModelManager(production).load_registry()
+    if model not in registry:
+        raise PromoteError(f"{model} is not in the production registry")
+    others = sorted(set(variant.entries) - {model})
+    if others:
+        raise PromoteError(f"variant {variant.name} patches registry entries other than {model}: {', '.join(others)}")
+    current = base_digest(production, registry, model, variant)
+    if current != measured.base_digest:
+        raise PromoteError(f"base digest differs: production changed since {measured.results} was recorded "
+                           f"(recorded {measured.base_digest[:12]}, now {current[:12]}); re-run the benchmark")
+
+    settings_path = production.config_dir / "settings.json"
+    raw_settings = json.loads(settings_path.read_text()) if settings_path.is_file() else {}
+    new_settings = copy.deepcopy(raw_settings)
+    engines = new_settings.setdefault("engines", {})
+    for name, patch in variant.engines.items():
+        engines[name] = merge_patch(engines.get(name, {}), patch)
+    new_registry = copy.deepcopy(registry)
+    for name, patch in variant.entries.items():
+        new_registry[name] = merge_patch(new_registry[name], patch)
+
+    header = production.header.read_text()
+    patched_settings = replace(production, engines=merge_engines(production.engines, variant.engines))
+    before = _rendered_models(registry, header, production)
+    after = _rendered_models(new_registry, header, patched_settings)
+    if after.get(model, {}).get("cmd") != measured.rendered_cmd:
+        raise PromoteError(f"production would render a different command for {model} than the one measured:\n"
+                           f"  measured: {measured.rendered_cmd}\n  promoted: {after.get(model, {}).get('cmd')}")
+    affected = sorted(name for name in set(before) | set(after) if name != model and before.get(name) != after.get(name))
+    if affected and not accept_shared_engine:
+        raise PromoteError(f"variant {variant.name} also changes {', '.join(affected)} (shared engine); "
+                           "re-run with --accept-shared-engine to promote it for them too")
+    return Plan(measured=measured, registry=new_registry, settings=new_settings, affected=affected,
+                changes=new_registry != registry or new_settings != raw_settings)
+
+
+def merge_engines(engines, patches):
+    merged = copy.deepcopy(dict(engines))
+    for name, patch in patches.items():
+        merged[name] = merge_patch(merged.get(name, {}), patch)
+    return merged

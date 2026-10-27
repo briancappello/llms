@@ -97,5 +97,100 @@ class LoadMeasuredTests(unittest.TestCase):
             load_measured(path, "production")
 
 
+class ProductionCase(unittest.TestCase):
+    """A temporary production config dir; measurements come from Stack's own config code."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.prod = self.root / "prod"
+        self.prod.mkdir()
+        self.env = {"HOME": str(self.root), "PATH": "/usr/bin:/bin"}
+        (self.prod / "config.header.yaml").write_text("macros:\n  common: --jinja\n")
+        self.registry = {
+            "m": {"path": "/models/m.gguf", "capability": "chat", "ctx": 4096, "engine": "e"},
+            "n": {"path": "/models/n.gguf", "capability": "chat", "ctx": 8192, "engine": "e"},
+            "solo": {"path": "/models/s.gguf", "capability": "chat", "ctx": 2048, "engine": "f"},
+        }
+        (self.prod / "registry.json").write_text(json.dumps(self.registry, indent=2, sort_keys=True) + "\n")
+        self.settings_text = json.dumps({
+            "service_manager": "systemd",
+            "swap_binary": "llama-swap",
+            "engines": {"e": {"server": "/opt/e/llama-server", "args": ["-ngl", "999"]},
+                        "f": {"server": "/opt/f/llama-server", "args": ["-ngl", "999"]}},
+        }, indent=4) + "\n"
+        (self.prod / "settings.json").write_text(self.settings_text)
+
+    def production(self):
+        from llms import Settings
+        return Settings.from_env(self.prod, environ=self.env)
+
+    def measure(self, variant, model="m"):
+        """What a benchmark run of variant would record, via Stack's own isolated render."""
+        from promote import Measured
+        from stack import Stack, base_digest
+        stack = Stack(variant, production_dir=self.prod, environ=self.env, log=lambda *_: None)
+        stack._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(stack._tmp.cleanup)
+        stack._write_isolated_config()
+        registry = json.loads((self.prod / "registry.json").read_text())
+        return Measured(results=self.root / "r.tsv", model=model, variant=variant,
+                        base_digest=base_digest(self.production(), registry, model, variant),
+                        rendered_cmd=stack.rendered_command(model), rows=1)
+
+
+class PlanTests(ProductionCase):
+    def plan(self, measured, **kwargs):
+        from promote import plan
+        return plan(measured, self.production(), **kwargs)
+
+    def test_entry_patch_is_planned(self):
+        planned = self.plan(self.measure(Q8V))
+        self.assertEqual(planned.registry["m"]["extra_args"], ["--cache-type-v q8_0"])
+        self.assertEqual(planned.registry["n"], self.registry["n"])
+        self.assertEqual(planned.affected, [])
+        self.assertTrue(planned.changes)
+
+    def test_production_variant_changes_nothing(self):
+        planned = self.plan(self.measure(Variant()))
+        self.assertFalse(planned.changes)
+
+    def test_patch_reaching_another_entry_is_refused(self):
+        variant = Variant("both", entries={"m": {"ctx": 2048}, "n": {"ctx": 2048}})
+        with self.assertRaisesRegex(PromoteError, "patches registry entries other than m: n"):
+            self.plan(self.measure(variant))
+
+    def test_production_edited_after_the_run_is_refused(self):
+        measured = self.measure(Q8V)
+        self.registry["m"]["ctx"] = 8192
+        (self.prod / "registry.json").write_text(json.dumps(self.registry))
+        with self.assertRaisesRegex(PromoteError, "base digest differs"):
+            self.plan(measured)
+
+    def test_render_mismatch_is_refused(self):
+        measured = self.measure(Q8V)
+        measured.rendered_cmd += " --extra"
+        with self.assertRaisesRegex(PromoteError, "would render a different command for m"):
+            self.plan(measured)
+
+    def test_shared_engine_needs_acceptance(self):
+        variant = Variant("pin", engines={"e": {"env": {"CUDA_VISIBLE_DEVICES": "1"}}})
+        measured = self.measure(variant)
+        with self.assertRaisesRegex(PromoteError, r"also changes n.*--accept-shared-engine"):
+            self.plan(measured)
+        planned = self.plan(measured, accept_shared_engine=True)
+        self.assertEqual(planned.affected, ["n"])
+        self.assertEqual(planned.settings["engines"]["e"],
+                         {"server": "/opt/e/llama-server", "args": ["-ngl", "999"],
+                          "env": {"CUDA_VISIBLE_DEVICES": "1"}})
+        self.assertEqual(planned.settings["swap_binary"], "llama-swap")
+
+    def test_unshared_engine_patch_needs_no_acceptance(self):
+        variant = Variant("f-ngl", engines={"f": {"args": ["-ngl", "40"]}})
+        planned = self.plan(self.measure(variant, model="solo"))
+        self.assertEqual((planned.affected, planned.settings["engines"]["f"]["args"]), ([], ["-ngl", "40"]))
+
+
 if __name__ == "__main__":
     unittest.main()
