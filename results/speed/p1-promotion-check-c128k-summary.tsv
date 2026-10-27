@@ -1,0 +1,3 @@
+model	variant	depth	n	pp_med	pp_min	pp_max	tg_med	tg_min	tg_max	acc_med	mem_mib
+cyber-tiel	c128k	512	1	198.79	198.79	198.79	29.39	29.39	29.39	87.5	7266
+cyber-tiel	production	512	1	200.33	200.33	200.33	30.24	30.24	30.24	87.5	6450
