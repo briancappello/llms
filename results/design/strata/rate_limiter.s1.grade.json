@@ -1,0 +1,54 @@
+{
+ "label": "strata",
+ "task": "rate_limiter",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 10782,
+ "reasoning_chars": 15018,
+ "wall_s": 120.2,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 213,
+ "hidden": {
+  "passed": 61,
+  "failed": 0,
+  "by_cat": {
+   "basic": [
+    17,
+    17
+   ],
+   "edge": [
+    31,
+    31
+   ],
+   "prop": [
+    3,
+    3
+   ],
+   "conc": [
+    7,
+    7
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [],
+  "tail": "61 passed in 0.41s"
+ },
+ "own_tests": {
+  "passed": 55,
+  "failed": 0,
+  "error": null
+ },
+ "bench_s": 0.3823597899172455,
+ "perf_ratio": 1.0,
+ "ruff": 5,
+ "ruff_serious": 4,
+ "ruff_codes": [
+  "B904",
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

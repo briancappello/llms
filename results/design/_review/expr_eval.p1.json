@@ -1,0 +1,171 @@
+{
+ "task": "expr_eval",
+ "pass": 1,
+ "order": [
+  "C-7ed1",
+  "C-4f67",
+  "C-d774",
+  "C-70ac",
+  "C-6117",
+  "C-dad9",
+  "C-25c9",
+  "C-85a4",
+  "C-4bd7"
+ ],
+ "model": "anthropic/claude-fable-5-1",
+ "scores": {
+  "C-7ed1": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 2,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "No Expr class, compile_expr or evaluate are defined although __all__ lists them; the module cannot satisfy the interface (`from solution import *` raises AttributeError).",
+    "Parser state machine is internally inconsistent: the 'f' frame reuses the has_cmp slot as an args-list marker, _propagate never handles 'f' frames, and 'fa'/'fa2' states only work by accident; no evaluator or variable collection exists at all.",
+    "_lbp('^')=5 but _rbp('^')=4 and unary rbp=4 contradict the grammar's right-assoc power / unary interplay (moot since nothing runs)."
+   ],
+   "summary": "Half-written tokenizer plus a broken iterative parser with no public API or evaluator; not a usable submission."
+  },
+  "C-4f67": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 1,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "No solution.py delivered."
+   ],
+   "summary": "Nothing delivered."
+  },
+  "C-d774": {
+   "correctness": 2,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 1,
+   "overall": 3,
+   "bugs": [
+    "`if` never parses: after the condition, 'if_cond_done' pushes want_expr without consuming the ',' so `if(1, 10, 20)` raises ExprSyntaxError at the first comma; the spec's headline formula `if(qty >= 10, ...)` fails to compile.",
+    "Consequently `if(1)` / `if(1,2)` report a syntax error at the ')' or ',' instead of an arg-count ExprSyntaxError at the name position.",
+    "`x ^ y` overflow (`10^400`) raises Python OverflowError from `l ** r` instead of ExprEvalError (no try/except around pow).",
+    "ExprNameError message always says 'unknown function' even when raised for a missing variable (cosmetic)."
+   ],
+   "summary": "Clean lazy-tokenizer + iterative bytecode design with correct precedence and error positions, but `if` is completely broken and pow overflow leaks OverflowError, with no tests."
+  },
+  "C-70ac": {
+   "correctness": 3,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 5,
+   "bugs": [
+    "Trailing comma accepted: _F_FUNC treats ')' after ',' as end-of-args, so `max(1,)` compiles to max(1) (spec: ExprSyntaxError at 6; the candidate's own test expects 6 and would fail); `if(1,2,)` becomes an arity error at the name instead.",
+    "`10^400` raises OverflowError from `a ** b` (no try/except), not ExprEvalError; their own test_overflow fails.",
+    "Tokenizer raises eagerly on invalid characters / malformed numbers, so `1 2 $` reports position 4 instead of 2, violating the leftmost-token rule.",
+    "Non-numeric variable values propagate raw ValueError/TypeError rather than an ExprError (minor)."
+   ],
+   "summary": "Solid iterative Pratt parser, iterative AST evaluator, enforced immutability and a broad test suite, but it accepts trailing commas, leaks OverflowError on pow, and misreports positions when an invalid character follows an earlier grammatical error; its own tests were evidently not run."
+  },
+  "C-6117": {
+   "correctness": 2,
+   "robustness": 2,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 3,
+   "readability": 2,
+   "tests": 3,
+   "overall": 3,
+   "bugs": [
+    "`1e999` is tokenized as a NUM with value inf (no isfinite check) and only fails at evaluate with ExprEvalError; spec requires compile-time ExprSyntaxError at 0 (their own test encodes the wrong behaviour).",
+    "EOF sentinel position is hard-coded to 0: `1 +` reports position 0 instead of 3, and unmatched '(' reports 0 (`(1+2` \u2192 0, spec 4; their own test expects 4 and fails).",
+    "IndexError crash paths on malformed input: `1+)`, `(1+)`, `1 + max(1,)`, `1 + abs()` pop from an empty output stack and escape as raw IndexError instead of ExprSyntaxError.",
+    "`abs()` raises 'Empty argument' at position 4 instead of the arity ExprSyntaxError at 0 (own test expects 0); `1+abs()` silently steals the outer operand `1` as the argument before crashing.",
+    "Unknown function raises ExprNameError immediately during parsing, before grammaticality is established (`foo(1` \u2192 ExprNameError) and ahead of a leftmost arity error (`abs(1,2)+foo(1)` reports foo).",
+    "`10^400` leaks OverflowError from `l ** r`.",
+    "Dead/duplicated code (_CMP_OPS defined twice, unused last_pos) and stream-of-consciousness comments in the number scanner."
+   ],
+   "summary": "Shunting-yard parser whose precedence handling is right but whose error handling is wrong in many places (positions, raw IndexError crashes, early name errors, inf literal), packaged with messy code and tests that partly fail."
+  },
+  "C-dad9": {
+   "correctness": 3,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 1,
+   "overall": 4,
+   "bugs": [
+    "Chained comparisons are accepted: after a 'c' frame pops, min_prec is restored to 1 so `1 < 2 < 3` compiles as `(1<2)<3` instead of ExprSyntaxError at 6.",
+    "Results of + - * / are never checked for finiteness: `1e308 * 10` returns inf and `-1e308 - 1e308` returns -inf (spec: ExprEvalError); only `^` is checked, and inf/nan can then propagate out of evaluate.",
+    "_validate walks calls in completion (inner-first) order, so `abs(1, sqrt(1,2))` reports the inner `sqrt` instead of the leftmost `abs` arity error.",
+    "Malformed/infinite numbers raise inside the tokenizer before parsing, so `1 2 1e` reports position 4 instead of 2 (minor leftmost-rule deviation)."
+   ],
+   "summary": "Compact iterative mode-machine compiler to jump-based bytecode with lazy `if` and good performance, but it fails the non-associative comparison rule and the overflow-detection requirements for the basic arithmetic operators, and ships no tests."
+  },
+  "C-25c9": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 4,
+   "performance": 3,
+   "design": 2,
+   "readability": 2,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "`_find_func_name_pos` and `_build_if` are referenced but never defined \u2192 Python NameError for every function call with arguments (`abs(1)`, any `if(...)`).",
+    "Tokenizer classifies a lone `<` as invalid (`if c in '=!<'`) and `>` falls into the catch-all invalid branch, so `1 < 2` and `1 > 2` are syntax errors.",
+    "Arity underflow path raises at hard-coded position 0 via `saved_min_pos(...) if False else 0`; arity overflow on ',' reports the position of a token two back rather than the function name.",
+    "Unknown function raises ExprNameError during parsing before grammaticality is established.",
+    "No finiteness checks on + - * / ^ results: `1e308*10` returns inf, `10^400` raises OverflowError.",
+    "Uses str.isdigit/isalpha/isalnum so non-ASCII digits/letters are accepted (e.g. '\u00b2'.isdigit() \u2192 then float('\u00b2') raises ValueError).",
+    "Leftover 'Need to fix ... Let me redesign' comment; the func frame is admittedly unfinished."
+   ],
+   "summary": "Unfinished bytecode compiler: function calls crash with NameError, single-character comparisons are rejected, and overflow handling is absent."
+  },
+  "C-85a4": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 1,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "No solution.py delivered."
+   ],
+   "summary": "Nothing delivered."
+  },
+  "C-4bd7": {
+   "correctness": 1,
+   "robustness": 2,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 3,
+   "readability": 3,
+   "tests": 3,
+   "overall": 1,
+   "bugs": [
+    "Parser reads child results from `fdata[0]` in 'have_lhs'/'have_base'/'after' states, but those frames are created with fdata=[] and the child value is passed via `result`; every input (even `42`) raises IndexError, which compile_expr converts to ExprSyntaxError('unexpected end of input') \u2014 nothing compiles.",
+    "Bytecode emitter emits `('+',)`, `('*',)`, `('^',)` etc. for binary nodes while the evaluator dispatches on 'add'/'sub'/'mul'/'div'/'mod'/'pow', so every binary operation would hit the 'unknown opcode' ExprEvalError even if parsing worked.",
+    "Invalid characters are rejected in a pre-scan before parsing, so `1 2 $` reports position 4 instead of 2 (their own test expects 2).",
+    "Unknown function raises ExprNameError during parsing before grammaticality is established; arity errors are raised inner-first rather than leftmost.",
+    "Bytecode is stored as a mutable list on the immutable Expr (minor)."
+   ],
+   "summary": "Reasonably structured grammar-mirroring parser, bytecode and evaluator, but two fundamental wiring bugs mean no expression can be compiled or evaluated; the extensive test suite was clearly never executed."
+  }
+ }
+}

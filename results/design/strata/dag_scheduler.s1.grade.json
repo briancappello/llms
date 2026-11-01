@@ -1,0 +1,58 @@
+{
+ "label": "strata",
+ "task": "dag_scheduler",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 12254,
+ "reasoning_chars": 21734,
+ "wall_s": 140.6,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 216,
+ "hidden": {
+  "passed": 39,
+  "failed": 4,
+  "by_cat": {
+   "basic": [
+    13,
+    15
+   ],
+   "edge": [
+    13,
+    13
+   ],
+   "prop": [
+    4,
+    5
+   ],
+   "conc": [
+    5,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_fail_fast_stops_new_tasks_running_ones_finish",
+   "test_basic_fail_fast_single_worker_sequence",
+   "test_conc_fail_fast_lets_running_task_finish",
+   "test_prop_fail_fast_single_worker_model"
+  ],
+  "tail": "4 failed, 39 passed in 123.68s (0:02:03)"
+ },
+ "own_tests": {
+  "passed": 45,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": 1.1693783749360591,
+ "perf_ratio": 3.84,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

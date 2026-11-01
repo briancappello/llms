@@ -1,0 +1,70 @@
+{
+ "label": "exl3",
+ "task": "text_diff",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 40561,
+ "reasoning_chars": 99472,
+ "wall_s": 738.8,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 292,
+ "hidden": {
+  "passed": 22,
+  "failed": 16,
+  "by_cat": {
+   "basic": [
+    9,
+    13
+   ],
+   "edge": [
+    11,
+    15
+   ],
+   "prop": [
+    1,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    1,
+    5
+   ]
+  },
+  "failures": [
+   "test_basic_myers_paper_example_minimal",
+   "test_basic_apply_roundtrip",
+   "test_basic_unified_two_hunks",
+   "test_basic_unified_default_names_and_context0",
+   "test_edge_tuple_inputs_and_not_mutated",
+   "test_edge_unified_hunk_merge_boundary",
+   "test_edge_unified_change_at_start_and_end",
+   "test_edge_repeated_lines",
+   "test_prop_minimal_and_valid_small_alphabet",
+   "test_prop_minimal_medium_inputs",
+   "test_prop_unique_lcs_ops_and_unified_match_difflib",
+   "test_prop_unified_consistent_with_own_diff",
+   "test_stress_large_files_few_changes",
+   "test_stress_large_files_repeated_lines_few_changes",
+   "test_stress_mostly_different_with_shared_lines",
+   "test_stress_large_unique_lcs_unified_matches_difflib"
+  ],
+  "tail": "16 failed, 22 passed in 2.48s"
+ },
+ "own_tests": {
+  "passed": 44,
+  "failed": 7,
+  "error": null
+ },
+ "bench_s": "error: solution.PatchError: non-contiguous: expected a_start=48, b_start=47; got a_start=48, b_start=48",
+ "perf_ratio": null,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

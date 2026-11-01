@@ -1,0 +1,58 @@
+{
+ "label": "llama",
+ "task": "circuit_breaker",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 10642,
+ "reasoning_chars": 13456,
+ "wall_s": 356.0,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 179,
+ "hidden": {
+  "passed": 61,
+  "failed": 2,
+  "by_cat": {
+   "basic": [
+    17,
+    18
+   ],
+   "edge": [
+    33,
+    34
+   ],
+   "prop": [
+    2,
+    2
+   ],
+   "conc": [
+    6,
+    6
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [
+   "test_basic_retry_with_breaker_fails_fast_by_default",
+   "test_edge_retry_circuit_open_subclass_rules"
+  ],
+  "tail": "2 failed, 61 passed in 0.30s"
+ },
+ "own_tests": {
+  "passed": 42,
+  "failed": 1,
+  "error": null
+ },
+ "bench_s": 0.30966379796154797,
+ "perf_ratio": 0.95,
+ "ruff": 3,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "PLR1730",
+  "SIM102",
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

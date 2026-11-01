@@ -1,0 +1,69 @@
+{
+ "label": "exl3",
+ "task": "dag_scheduler",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 14256,
+ "reasoning_chars": 33530,
+ "wall_s": 266.7,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 226,
+ "hidden": {
+  "passed": 32,
+  "failed": 11,
+  "by_cat": {
+   "basic": [
+    10,
+    15
+   ],
+   "edge": [
+    11,
+    13
+   ],
+   "prop": [
+    2,
+    5
+   ],
+   "conc": [
+    5,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_failure_propagates_to_transitive_dependents",
+   "test_basic_multiple_failures_and_order_contains_failed",
+   "test_basic_fail_fast_stops_new_tasks_running_ones_finish",
+   "test_basic_without_fail_fast_independent_tasks_run",
+   "test_basic_fail_fast_single_worker_sequence",
+   "test_edge_exception_types_and_none_results",
+   "test_edge_failure_in_diamond_skips_join_only",
+   "test_conc_fail_fast_lets_running_task_finish",
+   "test_prop_run_matches_sequential_evaluation",
+   "test_prop_single_worker_order_equals_topological_order",
+   "test_prop_fail_fast_single_worker_model"
+  ],
+  "tail": "11 failed, 32 passed in 332.27s (0:05:32)"
+ },
+ "own_tests": {
+  "passed": 36,
+  "failed": 6,
+  "error": null
+ },
+ "bench_s": "timeout",
+ "perf_ratio": null,
+ "ruff": 5,
+ "ruff_serious": 2,
+ "ruff_codes": [
+  "F821",
+  "F841",
+  "SIM102",
+  "SIM117",
+  "UP035"
+ ],
+ "mypy_errors": 1
+}

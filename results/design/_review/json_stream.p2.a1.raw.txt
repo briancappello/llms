@@ -1,0 +1,87 @@
+<<<JSON
+{
+"C-94c9": {"correctness": 1, "robustness": 1, "concurrency": null, "performance": 3, "design": 2, "readability": 2, "tests": 1, "overall": 1,
+  "bugs": [
+    "_is_ws/_is_hex are defined without self or @staticmethod but called as self._is_ws(ch); the very first non-empty feed() raises TypeError, so the decoder never works",
+    "Container key strings: _tick_cont_string reads frame[2] for 'key'/'val' role but nothing ever sets it, so every key is treated as a value and the following ':' errors ({\"a\":1} fails)",
+    "_tick_cont_number re-dispatches the terminator via self._tick_container(ch, off, []) with a throwaway results list, so a top-level container closed right after a number ([1]) loses its value",
+    "close() after feed('12') raises IncompleteJSONError: state stays TOP_NUMBER (TOP_NUM_DONE is only entered on a terminator), spec requires [12]",
+    "Buffer-limit check runs before terminator detection in _tick_top_number/_tick_top_literal, so feed('123 ') with max_buffer=3 raises BufferLimitError even though the value is exactly 3 chars",
+    "\\u escape: _str_hex is set to 0 after 'u' and the check is `if self._str_hex:`, so hex digits are never validated; '\"\\uZZZZ\"' reaches json.loads and raises JSONDecodeError"
+  ],
+  "summary": "Non-functional: a staticmethod omission crashes every feed, and underneath that objects, numbers-in-arrays, close() and \\u validation are all broken."},
+"C-aac4": {"correctness": 1, "robustness": 1, "concurrency": null, "performance": 3, "design": 1, "readability": 2, "tests": 1, "overall": 1,
+  "bugs": [
+    "_do_str references self._pop_results and self._pending_results, and _emit/_emit_cont append to self._emit_queue; none exist, so completing any string or container raises AttributeError and no value is ever returned to feed()'s results list",
+    "Top-level number followed by whitespace: _num_term_char only switches to NUM_TERM and does not emit; the next non-ws char then fails in _do_num_term, so '1 2 ' raises instead of returning [1, 2]",
+    "_deferred char after number/literal ('1[2]') is stored but never processed, so the '[' is silently dropped",
+    "_do_num_top in NUM_IN_FRAC / NUM_EXP_DIGITS treats any non-digit as an error, so '1.5 ' and '1e5 ' raise instead of terminating",
+    "Numbers inside containers terminated by whitespace ('[1 ]') raise 'invalid character in number'",
+    "_check_buf_limit raises plain JSONStreamError instead of BufferLimitError",
+    "max_buffer=True accepted (bool not excluded)"
+  ],
+  "summary": "Unfinished scaffold with undefined attributes on every emission path; it cannot return a single value."},
+"C-0905": {"correctness": 1, "robustness": 2, "concurrency": null, "performance": 2, "design": 2, "readability": 2, "tests": 3, "overall": 2,
+  "bugs": [
+    "In 'between' state the generic check `if ch in \"]}:,\"` fires before container-close handling for the array_value/object_key contexts, so '{}' and '[]' raise JSONStreamError",
+    "_process_container_number never updates _stack[-1] to the after-value state, so the terminator is reprocessed with ctx still 'array_value'/'object_value' and '[1]', '[1,2]', '{\"a\":1}' all raise",
+    "close() after feed('12') raises IncompleteJSONError because state is 'top_number' rather than 'top_term'",
+    "_process_top_number wraps _add_to_buffer in `except JSONStreamError`, which also swallows BufferLimitError: with max_buffer=3, feed('123 ') sets _errored, pops the real '3' and returns [12]",
+    "Object keys may start with digits/t/f/n (ctx 'object_key' falls through to generic value start), so '{1:2}' errors at ':' (offset 2) rather than at '1' (offset 1)",
+    "Nesting deeper than 1000 is rejected with an error the spec does not call for"
+  ],
+  "summary": "Container state transitions are missing for numbers and empty containers, close() on pending numbers fails, and the exception-driven number scanner swallows BufferLimitError; tests are broad but were clearly never run."},
+"C-dc5f": {"correctness": 2, "robustness": 3, "concurrency": null, "performance": 3, "design": 3, "readability": 2, "tests": 1, "overall": 3,
+  "bugs": [
+    "After ',' in an object the frame goes to _C_VALUE, and _cont_str only maps to _C_COLON when cs == _C_FIRST, so the second key becomes _C_SEP and the following ':' errors: '{\"a\":1,\"b\":2}' raises JSONStreamError at offset 10",
+    "close() after feed('12') raises IncompleteJSONError because _wt is only set when a terminator char is seen (literals work, numbers do not)",
+    "After ',' in an object any value may start ({\"a\":1,2:3}), so the error is reported at ':' instead of at '2'",
+    "_cont_struct has a dead `while True:` loop body that always returns"
+  ],
+  "summary": "Clean per-char scanner whose object grammar breaks on the second key and whose close() cannot flush a pending number; no tests."},
+"C-40c2": {"correctness": 1, "robustness": 1, "concurrency": null, "performance": 3, "design": 2, "readability": 3, "tests": 3, "overall": 1,
+  "bugs": [
+    "_string_content pops the closing quote from _buf before emitting, so json.loads('\"hello') raises JSONDecodeError; every string and every object with a key fails",
+    "_errored is never set to True anywhere, so after an error feed()/close() keep working on corrupted state instead of raising JSONStreamError",
+    "_number_top with ns 'z' raises 'leading zero' for '.' and 'e' too, so '0.5 ' and '-0.0 ' raise",
+    "Terminator is checked before number completeness: '1. ' / '- ' / '[1.]' are passed to json.loads and raise JSONDecodeError (not JSONStreamError, no .offset)",
+    "_literal_top emits incomplete literals on a terminator ('tru ' -> json.loads('tru') JSONDecodeError)"
+  ],
+  "summary": "Strings are unparseable due to the closing-quote pop, errors never poison the decoder, and 0.x numbers are rejected; the sizeable test file would mostly fail."},
+"C-5ffc": {"correctness": 2, "robustness": 2, "concurrency": null, "performance": 3, "design": 3, "readability": 3, "tests": 1, "overall": 2,
+  "bugs": [
+    "_end_number at depth 0 silently swallows any non-continuing char that is not '{[\\\"': feed('1-2') returns [1] and feed('1,2') returns [1] with no error (spec: error at offset 1); only when the '-' arrives in a later chunk is it rejected, so behaviour depends on chunking",
+    "close() after feed('12') raises IncompleteJSONError: feed sets _after_top='number' but leaves _num_phase=2 and close checks `if self._num_phase`",
+    "_after_top_char emits on whitespace but leaves _num_phase set, so feed('7'); feed('\\n{\"a\":1}') routes '{' into _number_char/_end_number which calls _decode() on an empty buffer -> json.JSONDecodeError; same for feed('1'); feed(' x')",
+    "_after_top_char resets a continued number to phase 2/4/6 regardless of prior phase, so feed('1.5'); feed('.5 ') is accepted and then json.loads fails; feed('0'); feed('1 ') yields JSONDecodeError instead of offset-1 error",
+    "Whitespace inside containers is not appended to _buf, so pending() and the max_buffer accounting exclude it, contrary to spec",
+    "ch.isdigit() accepts non-ASCII digits (e.g. '٣', '²'), which get buffered and later crash json.loads"
+  ],
+  "summary": "Compact unified scanner, but the top-level number termination logic is chunk-dependent, silently accepts invalid separators, and breaks close()/next-value handling across chunk boundaries."},
+"C-3c62": {"correctness": 1, "robustness": 3, "concurrency": null, "performance": 3, "design": 3, "readability": 4, "tests": 3, "overall": 2,
+  "bugs": [
+    "_number_terminator/_do_literal inside a container call _container_char_after_value without first setting the frame to *_EXPECT_END, and that function requires cs to be an END state for ',' / ']' / '}', so '[1]', '[1,2]', '{\"a\":1}', '[true]' all raise JSONStreamError (only strings and nested containers work as container members)",
+    "Whitespace inside containers is never added to the buffer (both _do_container and _container_char_after_value return without _add_buf), so '[1 2]' is buffered as '[12]' and accepted, and pending()/max_buffer ignore inner whitespace",
+    "_value_done helper that would fix the state transition exists but is never called"
+  ],
+  "summary": "Readable design with a fatal omission: numbers and literals inside any container never transition the parent frame, so virtually all real log objects fail; tests exist but would have exposed this immediately."},
+"C-6f90": {"correctness": 4, "robustness": 3, "concurrency": null, "performance": 3, "design": 3, "readability": 3, "tests": 4, "overall": 7,
+  "bugs": [
+    "_c_key (state after ',' in an object) accepts '}' and pops, so '{\"a\":1,}' is passed to json.loads which raises json.JSONDecodeError (not JSONStreamError, no .offset at 7) and _err is not set; the decoder is then left with an empty _stk in TOP_CONT and a later char hits IndexError",
+    "Nesting deeper than 1000 is rejected (spec only requires 1000 to be supported; not strictly a violation but an undocumented limit)",
+    "test_deep_nesting's first assert is `assert X == [...] if False else None` which evaluates to `assert None` and always fails; test_no_trailing_comma_object would also fail against this implementation"
+  ],
+  "summary": "The only candidate that correctly implements the full grammar, terminator rules, close(), buffer limit and offsets; one trailing-comma-in-object hole leaks JSONDecodeError, and it is a plain per-char Python loop so the 8 MB-in-1s target is unlikely."},
+"C-0b2d": {"correctness": 2, "robustness": 2, "concurrency": null, "performance": 3, "design": 4, "readability": 3, "tests": 1, "overall": 4,
+  "bugs": [
+    "JSONStreamError.__init__ accepts only (msg), but feed()/close() call JSONStreamError(msg, self._total) and IncompleteJSONError(msg, self._total); every such path raises TypeError instead: close() on an unfinished value never produces IncompleteJSONError, and feed()/close() after close or error raise TypeError rather than JSONStreamError",
+    "pending() after a successful close() that returned a value still reports the old buffer length (buffer not cleared) — minor/unspecified"
+  ],
+  "summary": "The scanner itself (grammar, terminators, offsets, buffer limit, multi-key objects) traces correctly and is the cleanest design, but a constructor signature mismatch turns every IncompleteJSONError / closed-decoder path into a TypeError; no tests."}
+}
+JSON>>>
+
+--- stderr ---
+[0m
+> build · claude-fable-5-1
+[0m

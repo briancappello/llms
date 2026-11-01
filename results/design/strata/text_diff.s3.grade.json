@@ -1,0 +1,86 @@
+{
+ "label": "strata",
+ "task": "text_diff",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 22904,
+ "reasoning_chars": 42943,
+ "wall_s": 253.3,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 392,
+ "hidden": {
+  "passed": 9,
+  "failed": 29,
+  "by_cat": {
+   "basic": [
+    2,
+    13
+   ],
+   "edge": [
+    7,
+    15
+   ],
+   "prop": [
+    0,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    0,
+    5
+   ]
+  },
+  "failures": [
+   "test_basic_identical",
+   "test_basic_insert_into_empty_and_delete_all",
+   "test_basic_middle_insert",
+   "test_basic_middle_delete",
+   "test_basic_replace_is_delete_then_insert",
+   "test_basic_myers_paper_example_minimal",
+   "test_basic_apply_roundtrip",
+   "test_basic_unified_simple_matches_difflib",
+   "test_basic_unified_two_hunks",
+   "test_basic_unified_default_names_and_context0",
+   "test_basic_unified_empty_sides",
+   "test_edge_all_different",
+   "test_edge_tuple_inputs_and_not_mutated",
+   "test_edge_apply_content_mismatch",
+   "test_edge_apply_wrong_length_input",
+   "test_edge_unified_hunk_merge_boundary",
+   "test_edge_unified_context_larger_than_file",
+   "test_edge_unified_change_at_start_and_end",
+   "test_edge_repeated_lines",
+   "test_prop_minimal_and_valid_small_alphabet",
+   "test_prop_minimal_medium_inputs",
+   "test_prop_unique_lcs_ops_and_unified_match_difflib",
+   "test_prop_unified_consistent_with_own_diff",
+   "test_prop_apply_rejects_tampered_content",
+   "test_stress_large_files_few_changes",
+   "test_stress_large_files_repeated_lines_few_changes",
+   "test_stress_totally_different_files",
+   "test_stress_mostly_different_with_shared_lines",
+   "test_stress_large_unique_lcs_unified_matches_difflib"
+  ],
+  "tail": "29 failed, 9 passed in 0.37s"
+ },
+ "own_tests": {
+  "passed": 0,
+  "failed": 1,
+  "error": null
+ },
+ "bench_s": "error: UnboundLocalError: cannot access local variable 'a_pos' where it is not associated with a value",
+ "perf_ratio": null,
+ "ruff": 6,
+ "ruff_serious": 5,
+ "ruff_codes": [
+  "B007",
+  "F823",
+  "F841",
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

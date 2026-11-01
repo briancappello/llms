@@ -1,0 +1,78 @@
+{
+ "label": "llama",
+ "task": "dag_scheduler",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 13844,
+ "reasoning_chars": 25275,
+ "wall_s": 463.5,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 212,
+ "hidden": {
+  "passed": 19,
+  "failed": 24,
+  "by_cat": {
+   "basic": [
+    4,
+    15
+   ],
+   "edge": [
+    10,
+    13
+   ],
+   "prop": [
+    2,
+    5
+   ],
+   "conc": [
+    2,
+    6
+   ],
+   "stress": [
+    1,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_results_passed_as_kwargs",
+   "test_basic_exact_kwargs_and_identity",
+   "test_basic_non_identifier_names",
+   "test_basic_dependencies_finish_before_dependents_start",
+   "test_basic_single_worker_runs_in_topological_order",
+   "test_basic_failure_propagates_to_transitive_dependents",
+   "test_basic_multiple_failures_and_order_contains_failed",
+   "test_basic_fail_fast_stops_new_tasks_running_ones_finish",
+   "test_basic_without_fail_fast_independent_tasks_run",
+   "test_basic_fail_fast_single_worker_sequence",
+   "test_basic_run_twice_reexecutes_and_graph_extendable",
+   "test_edge_deps_any_iterable",
+   "test_edge_exception_types_and_none_results",
+   "test_edge_failure_in_diamond_skips_join_only",
+   "test_conc_max_workers_never_exceeded",
+   "test_conc_no_level_barrier",
+   "test_conc_dependent_starts_while_sibling_still_running",
+   "test_conc_fail_fast_lets_running_task_finish",
+   "test_prop_run_matches_sequential_evaluation",
+   "test_prop_single_worker_order_equals_topological_order",
+   "test_prop_fail_fast_single_worker_model",
+   "test_stress_5000_node_random_dag",
+   "test_stress_deep_chain_and_long_cycle",
+   "test_stress_wide_fan_in_fan_out"
+  ],
+  "tail": "24 failed, 19 passed in 721.67s (0:12:01)"
+ },
+ "own_tests": {
+  "passed": 39,
+  "failed": 14,
+  "error": null
+ },
+ "bench_s": "timeout",
+ "perf_ratio": null,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

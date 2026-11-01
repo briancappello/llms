@@ -1,0 +1,11 @@
+{
+ "label": "llama",
+ "task": "text_diff",
+ "sample": 1,
+ "finish_reason": "length",
+ "completion_tokens": 32768,
+ "reasoning_chars": 93033,
+ "wall_s": 1116.0,
+ "has_solution": false,
+ "has_tests": false
+}

@@ -1,0 +1,56 @@
+{
+ "label": "strata",
+ "task": "circuit_breaker",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 15340,
+ "reasoning_chars": 25013,
+ "wall_s": 199.1,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 200,
+ "hidden": {
+  "passed": 62,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    18,
+    18
+   ],
+   "edge": [
+    34,
+    34
+   ],
+   "prop": [
+    2,
+    2
+   ],
+   "conc": [
+    6,
+    6
+   ],
+   "stress": [
+    2,
+    3
+   ]
+  },
+  "failures": [
+   "test_stress_huge_attempt_count_no_overflow"
+  ],
+  "tail": "1 failed, 62 passed in 0.26s"
+ },
+ "own_tests": {
+  "passed": null,
+  "failed": null,
+  "error": "suite timeout"
+ },
+ "bench_s": 0.2924501388333738,
+ "perf_ratio": 0.89,
+ "ruff": 2,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "SIM102",
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

@@ -1,0 +1,55 @@
+<<<JSON
+{
+"C-3069": {"correctness": 2, "robustness": 3, "concurrency": 3, "performance": 4, "design": 2, "readability": 2, "tests": 2, "overall": 2,
+  "bugs": ["`fail_fast_flag = fail_fast_flag or True` sets the flag on ANY failure and the `fail_fast` argument is never consulted in `_run_impl`, so fail_fast=False behaves like fail_fast=True: tasks that become ready after an unrelated failure (e.g. a fails, c succeeds, d deps c) are never started and land in skipped, violating 'all tasks not depending on a failure still run'",
+           "Two `def run` bodies in the class; the first is an abandoned sketch with unused `_worker`/`_propagate_failure` closures and a comment 'Let me redo' — dead code shipped",
+           "test_no_recursion_depth_issue re-adds f't{N-1}' and raises ValueError before reaching its assertion",
+           "test_concurrency_cap increments and decrements inside the same lock so max_concurrent is always 0; assertion is vacuous"],
+  "summary": "Reasonable graph/validation code but the scheduler silently turns every run into fail-fast and the file contains an abandoned duplicate run() sketch."},
+"C-c97c": {"correctness": 5, "robustness": 4, "concurrency": 5, "performance": 4, "design": 4, "readability": 4, "tests": 3, "overall": 8,
+  "bugs": ["test_5000_chain registers `lambda prev_val, i=i: ...` with deps=[t{i-1}]; fn receives kwarg `t{i-1}`, raises TypeError, so the test fails against its own solution",
+           "Completion order among futures returned in the same `wait()` batch follows set iteration order (nondeterministic), acceptable per spec but worth noting"],
+  "summary": "Clean single-threaded scheduler over ThreadPoolExecutor + wait(FIRST_COMPLETED) with no shared mutable state; correct on all spec points, only the candidate's own tests contain a defect."},
+"C-b80c": {"correctness": 1, "robustness": 1, "concurrency": 2, "performance": 3, "design": 2, "readability": 3, "tests": 2, "overall": 1,
+  "bugs": ["`_results_snapshot` is only a bare class annotation, never assigned; `_submit_ready` does `self._results_snapshot[name] = None` so every run() on a non-empty graph raises AttributeError",
+           "Even if the attribute existed, successful results are never written into `_results_snapshot` (only a None placeholder), so dependents would receive None instead of the dependency's return value",
+           "`_mark_skipped` filters the ready heap with a list comprehension, which does not preserve the heap invariant (no heapify afterwards)",
+           "`_as_completed_any` returns (name, fut) but the caller unpacks as `done, _` and treats `done` as the name — works only by accident",
+           "All run() tests in the candidate's own suite would fail; clearly never executed"],
+  "summary": "Validation/topological code is fine but run() is non-functional (uninitialised attribute crash on every call)."},
+"C-7f75": {"correctness": 2, "robustness": 3, "concurrency": 4, "performance": 4, "design": 3, "readability": 4, "tests": 3, "overall": 3,
+  "bugs": ["Final skipped set only collects `status == 0`; tasks marked status 4 by `_propagate_failure` (transitive dependents of a failed task) are omitted from results, errors AND skipped, breaking the partition invariant (a fails, b deps a -> b appears nowhere)",
+           "Own tests test_failure_skips_dependents / test_transitive_skip / test_diamond_with_failure assert the skipped set and would fail"],
+  "summary": "Tidy index-based worker-pool design with sound locking, but skipped-reporting drops every dependent of a failure, a core spec requirement."},
+"C-5bd1": {"correctness": 5, "robustness": 4, "concurrency": 4, "performance": 4, "design": 4, "readability": 4, "tests": 3, "overall": 8,
+  "bugs": ["test_deep_chain_run uses `lambda prev: prev + 1` but the fn is called with kwarg `t{i-1}`, so t1 fails, all others are skipped and `r.results['t4999']` raises KeyError",
+           "test_fail_fast_stops_new_tasks builds a graph g with barrier/blocker tasks that is never run (dead test code)",
+           "Dependency results dict is read outside the lock in the worker (safe under CPython's GIL, but inconsistent with the rest of the locking)"],
+  "summary": "Correct, compact worker-thread/condition scheduler with proper skip propagation, fail-fast sweep and insertion-order tie-breaking; only the candidate's tests have defects."},
+"C-88c9": {"correctness": 5, "robustness": 4, "concurrency": 4, "performance": 4, "design": 3, "readability": 3, "tests": 2, "overall": 7,
+  "bugs": ["test_fail_fast_stops_new_tasks is an empty stub ending in `pass`; test_fail_fast_allows_running_to_finish is muddled and sets the event before running",
+           "Cycle check runs Kahn's algorithm and then a separate DFS over the remainder — redundant double pass, and the fallback `raise CycleError(list(remaining)[:2]...)` is unreachable filler",
+           "Single `cv.notify()` in _on_success may wake the main (waiting) thread instead of an idle worker; no deadlock since the completing worker re-checks the heap, but parallelism can momentarily drop"],
+  "summary": "Functionally correct and careful about fail-fast draining, but noticeably over-engineered with redundant state checks and weak tests."},
+"C-cb8d": {"correctness": 1, "robustness": 1, "concurrency": 2, "performance": 4, "design": 3, "readability": 4, "tests": 3, "overall": 1,
+  "bugs": ["In `_task_wrapper`, `except Exception as exc: success = False` — Python unbinds `exc` at the end of the except clause, so the later `result.errors[name] = exc` raises UnboundLocalError; `running` is never decremented and no notify is sent, so the scheduler sits in `cond.wait()` forever: run() hangs on any failing task",
+           "ThreadPoolExecutor.shutdown(wait=True) runs while holding the condition lock (works only because running==0 at that point; fragile)",
+           "Own failure/fail_fast tests would hang"],
+  "summary": "Good validation and scheduler shape, but a classic except-variable scoping bug makes every task failure hang the run."},
+"C-6d9f": {"correctness": 2, "robustness": 2, "concurrency": 3, "performance": 3, "design": 3, "readability": 4, "tests": 3, "overall": 3,
+  "bugs": ["fail_fast deadlock: after a failure, if ready_heap is non-empty and running_count==0 (e.g. a fails, b and c pending, max_workers=1), the dispatch loop breaks on `fail_fast and errors`, the 'nothing runnable' branch is skipped because ready_heap is non-empty, and the scheduler calls cv.wait() with nobody left to notify — run() hangs (own test_fail_fast_no_new_after_failure would hang)",
+           "Spawns a brand-new threading.Thread per task and keeps all Thread objects in a list until the end, rather than using a pool; 5000+ thread creations and O(n) Thread objects retained",
+           "Success path records the outcome inside the try block, so an exception from the bookkeeping would be misreported as a task error"],
+  "summary": "Mostly sensible event-driven scheduler but fail_fast deadlocks in the common case and it creates a thread per task instead of a pool."},
+"C-6a94": {"correctness": 1, "robustness": 1, "concurrency": 2, "performance": 3, "design": 2, "readability": 4, "tests": 3, "overall": 1,
+  "bugs": ["`executor.shutdown(wait=True)` is called immediately after the initial submits; shutdown sets _shutdown=True so every later `executor.submit` from a completion callback raises RuntimeError('cannot schedule new futures after shutdown'); the popped task is lost, completed_count never reaches n_all and `done_event.wait()` blocks forever — any graph with dependencies or more tasks than max_workers hangs",
+           "Under fail_fast there is no final sweep: unstarted tasks are never added to skipped (invariant broken) and completed_count never reaches n_all, so done_event.wait() hangs even in its own test_fail_fast_stops_scheduling",
+           "Callbacks are attached with add_done_callback while holding a non-reentrant Lock; if the future is already done the callback runs inline and would self-deadlock (only avoided because _run_one happens to acquire the same lock first)"],
+  "summary": "Callback-driven design that shuts the executor down before dependents can be submitted and never finalises fail-fast runs, so run() hangs for nearly all non-trivial graphs."}
+}
+JSON>>>
+
+--- stderr ---
+[0m
+> build · claude-fable-5-1
+[0m

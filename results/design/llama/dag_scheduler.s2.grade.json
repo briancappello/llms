@@ -1,0 +1,87 @@
+{
+ "label": "llama",
+ "task": "dag_scheduler",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 9599,
+ "reasoning_chars": 4986,
+ "wall_s": 320.3,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 250,
+ "hidden": {
+  "passed": 15,
+  "failed": 28,
+  "by_cat": {
+   "basic": [
+    3,
+    15
+   ],
+   "edge": [
+    9,
+    13
+   ],
+   "prop": [
+    2,
+    5
+   ],
+   "conc": [
+    0,
+    6
+   ],
+   "stress": [
+    1,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_results_passed_as_kwargs",
+   "test_basic_exact_kwargs_and_identity",
+   "test_basic_non_identifier_names",
+   "test_basic_dependencies_finish_before_dependents_start",
+   "test_basic_single_worker_runs_in_topological_order",
+   "test_basic_failure_propagates_to_transitive_dependents",
+   "test_basic_multiple_failures_and_order_contains_failed",
+   "test_basic_fail_fast_stops_new_tasks_running_ones_finish",
+   "test_basic_without_fail_fast_independent_tasks_run",
+   "test_basic_fail_fast_single_worker_sequence",
+   "test_basic_run_twice_reexecutes_and_graph_extendable",
+   "test_basic_runresult_type",
+   "test_edge_duplicate_name_rejected_graph_unchanged",
+   "test_edge_deps_any_iterable",
+   "test_edge_exception_types_and_none_results",
+   "test_edge_failure_in_diamond_skips_join_only",
+   "test_conc_independent_tasks_run_in_parallel",
+   "test_conc_parallel_speedup",
+   "test_conc_max_workers_never_exceeded",
+   "test_conc_no_level_barrier",
+   "test_conc_dependent_starts_while_sibling_still_running",
+   "test_conc_fail_fast_lets_running_task_finish",
+   "test_prop_run_matches_sequential_evaluation",
+   "test_prop_single_worker_order_equals_topological_order",
+   "test_prop_fail_fast_single_worker_model",
+   "test_stress_5000_node_random_dag",
+   "test_stress_deep_chain_and_long_cycle",
+   "test_stress_wide_fan_in_fan_out"
+  ],
+  "tail": "28 failed, 15 passed in 1.52s"
+ },
+ "own_tests": {
+  "passed": 19,
+  "failed": 13,
+  "error": null
+ },
+ "bench_s": "error: NameError: name 'heapq' is not defined. Did you mean: 'help'? Or did you forget to import 'heapq'?",
+ "perf_ratio": null,
+ "ruff": 8,
+ "ruff_serious": 2,
+ "ruff_codes": [
+  "F401",
+  "F821",
+  "PLC0415",
+  "PLR0917",
+  "SIM102",
+  "UP035"
+ ],
+ "mypy_errors": 2
+}

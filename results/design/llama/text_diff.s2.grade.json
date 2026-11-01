@@ -1,0 +1,56 @@
+{
+ "label": "llama",
+ "task": "text_diff",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 31744,
+ "reasoning_chars": 63690,
+ "wall_s": 1081.3,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 358,
+ "hidden": {
+  "passed": 0,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    0,
+    0
+   ],
+   "edge": [
+    0,
+    0
+   ],
+   "prop": [
+    0,
+    0
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    0,
+    0
+   ]
+  },
+  "failures": [
+   "test_hidden"
+  ],
+  "tail": "1 error in 0.08s"
+ },
+ "own_tests": {
+  "passed": 0,
+  "failed": 1,
+  "error": null
+ },
+ "bench_s": "error: SyntaxError: invalid syntax",
+ "perf_ratio": null,
+ "ruff": 13,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "W291",
+  "invalid-syntax"
+ ],
+ "mypy_errors": 8
+}

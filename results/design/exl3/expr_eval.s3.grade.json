@@ -1,0 +1,60 @@
+{
+ "label": "exl3",
+ "task": "expr_eval",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 44407,
+ "reasoning_chars": 119461,
+ "wall_s": 810.5,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 407,
+ "hidden": {
+  "passed": 154,
+  "failed": 4,
+  "by_cat": {
+   "basic": [
+    52,
+    52
+   ],
+   "edge": [
+    89,
+    93
+   ],
+   "prop": [
+    6,
+    6
+   ],
+   "conc": [
+    1,
+    1
+   ],
+   "stress": [
+    6,
+    6
+   ]
+  },
+  "failures": [
+   "test_edge_syntax_error_positions[max(1,)-6]",
+   "test_edge_syntax_error_positions[1 2 $-2]",
+   "test_edge_evaluation_errors[10^400]",
+   "test_edge_evaluation_errors[2^1024]"
+  ],
+  "tail": "4 failed, 154 passed in 1.58s"
+ },
+ "own_tests": {
+  "passed": 123,
+  "failed": 3,
+  "error": null
+ },
+ "bench_s": 0.4478535680100322,
+ "perf_ratio": 1.72,
+ "ruff": 13,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "E702",
+  "PLR1714",
+  "UP035"
+ ],
+ "mypy_errors": 8
+}

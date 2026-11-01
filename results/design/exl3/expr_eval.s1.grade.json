@@ -1,0 +1,77 @@
+{
+ "label": "exl3",
+ "task": "expr_eval",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 47434,
+ "reasoning_chars": 136361,
+ "wall_s": 888.7,
+ "has_solution": true,
+ "has_tests": false,
+ "loc": 494,
+ "hidden": {
+  "passed": 136,
+  "failed": 22,
+  "by_cat": {
+   "basic": [
+    47,
+    52
+   ],
+   "edge": [
+    84,
+    93
+   ],
+   "prop": [
+    0,
+    6
+   ],
+   "conc": [
+    1,
+    1
+   ],
+   "stress": [
+    4,
+    6
+   ]
+  },
+  "failures": [
+   "test_basic_result_is_float",
+   "test_basic_functions",
+   "test_basic_if_is_lazy",
+   "test_basic_variables",
+   "test_basic_compile_once_evaluate_many",
+   "test_edge_syntax_error_positions[if(1, 2, 3-10]",
+   "test_edge_arity_is_compile_time_syntax_error[if(1,2)-0]",
+   "test_edge_arity_is_compile_time_syntax_error[2*if(1,2,3,4)-2]",
+   "test_edge_unknown_function_at_compile_time",
+   "test_edge_evaluation_errors[10^400]",
+   "test_edge_evaluation_errors[2^1024]",
+   "test_edge_evaluation_errors[if(1, 1/0, 2)]",
+   "test_edge_non_finite_variable_value",
+   "test_edge_comparison_chain_allowed_with_parentheses",
+   "test_prop_fully_parenthesized_trees",
+   "test_prop_minimal_parentheses_trees",
+   "test_prop_minimal_rendering_without_whitespace_matches_full",
+   "test_prop_errors_and_evaluation_order",
+   "test_prop_variables_set",
+   "test_prop_compiled_expr_reused_with_random_variables",
+   "test_stress_deep_function_nesting",
+   "test_stress_evaluate_compiled_expr_100k_times"
+  ],
+  "tail": "22 failed, 136 passed in 1.29s"
+ },
+ "bench_s": "error: solution.ExprSyntaxError: unexpected token",
+ "perf_ratio": null,
+ "ruff": 32,
+ "ruff_serious": 2,
+ "ruff_codes": [
+  "B904",
+  "E701",
+  "E702",
+  "E741",
+  "SIM102",
+  "SIM114",
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

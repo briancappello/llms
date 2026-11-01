@@ -1,0 +1,60 @@
+{
+ "label": "strata",
+ "task": "dag_scheduler",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 12197,
+ "reasoning_chars": 10099,
+ "wall_s": 136.9,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 262,
+ "hidden": {
+  "passed": 39,
+  "failed": 4,
+  "by_cat": {
+   "basic": [
+    13,
+    15
+   ],
+   "edge": [
+    12,
+    13
+   ],
+   "prop": [
+    4,
+    5
+   ],
+   "conc": [
+    6,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_multiple_failures_and_order_contains_failed",
+   "test_basic_without_fail_fast_independent_tasks_run",
+   "test_edge_failure_in_diamond_skips_join_only",
+   "test_prop_run_matches_sequential_evaluation"
+  ],
+  "tail": "4 failed, 39 passed in 2.72s"
+ },
+ "own_tests": {
+  "passed": 40,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": "error: AssertionError: wrong results",
+ "perf_ratio": null,
+ "ruff": 5,
+ "ruff_serious": 4,
+ "ruff_codes": [
+  "F811",
+  "F841",
+  "UP035"
+ ],
+ "mypy_errors": 1
+}

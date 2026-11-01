@@ -1,0 +1,63 @@
+{
+ "label": "exl3",
+ "task": "json_stream",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 25837,
+ "reasoning_chars": 68249,
+ "wall_s": 494.2,
+ "has_solution": true,
+ "has_tests": false,
+ "loc": 449,
+ "hidden": {
+  "passed": 103,
+  "failed": 13,
+  "by_cat": {
+   "basic": [
+    11,
+    16
+   ],
+   "edge": [
+    89,
+    91
+   ],
+   "prop": [
+    0,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    3,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_single_object",
+   "test_basic_number_at_end_emitted_on_close",
+   "test_basic_scalar_terminated_by_value_start",
+   "test_basic_anything_may_follow_self_delimiting_values",
+   "test_basic_decoding_matches_json_loads",
+   "test_edge_error_offsets[{\"a\":1,\"b\"}-10]",
+   "test_edge_close_complete_scalars",
+   "test_prop_random_streams_random_chunks",
+   "test_prop_every_split_point",
+   "test_prop_every_three_way_split",
+   "test_prop_error_offsets_independent_of_chunking",
+   "test_prop_streams_with_error_after_valid_prefix",
+   "test_stress_one_character_feeds"
+  ],
+  "tail": "13 failed, 103 passed in 2.24s"
+ },
+ "bench_s": "error: solution.JSONStreamError: invalid JSON at offset 26: ':'",
+ "perf_ratio": null,
+ "ruff": 34,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "E702",
+  "PLR1714"
+ ],
+ "mypy_errors": 4
+}

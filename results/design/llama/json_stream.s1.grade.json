@@ -1,0 +1,67 @@
+{
+ "label": "llama",
+ "task": "json_stream",
+ "sample": 1,
+ "finish_reason": "length",
+ "completion_tokens": 32768,
+ "reasoning_chars": 85135,
+ "wall_s": 1111.3,
+ "has_solution": true,
+ "has_tests": false,
+ "loc": 403,
+ "hidden": {
+  "passed": 98,
+  "failed": 18,
+  "by_cat": {
+   "basic": [
+    16,
+    16
+   ],
+   "edge": [
+    73,
+    91
+   ],
+   "prop": [
+    5,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_edge_unusable_after_error",
+   "test_edge_close_incomplete[[1, 2-5]",
+   "test_edge_close_incomplete[\"abc-4]",
+   "test_edge_close_incomplete[{\"a\":-5]",
+   "test_edge_close_incomplete[tru-3]",
+   "test_edge_close_incomplete[--1]",
+   "test_edge_close_incomplete[1.-2]",
+   "test_edge_close_incomplete[1e+-3]",
+   "test_edge_close_incomplete[\"\\\\u12-5]",
+   "test_edge_close_incomplete[{\"a\"-4]",
+   "test_edge_close_incomplete[[[[]]-5]",
+   "test_edge_close_incomplete[\"abc\\\\-5]",
+   "test_edge_close_incomplete[  [  -5]",
+   "test_edge_close_incomplete[1 2 [-5]",
+   "test_edge_close_incomplete[fals-4]",
+   "test_edge_close_incomplete[1E-2]",
+   "test_edge_feed_or_close_after_close_raises",
+   "test_edge_buffer_limit_exact_size_in_one_chunk"
+  ],
+  "tail": "18 failed, 98 passed in 2.78s"
+ },
+ "bench_s": 1.077880701981485,
+ "perf_ratio": 3.13,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "PLR5501"
+ ],
+ "mypy_errors": 5
+}

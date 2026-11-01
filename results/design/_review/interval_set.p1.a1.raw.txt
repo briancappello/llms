@@ -1,0 +1,74 @@
+<<<JSON
+{
+  "C-bce0": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 5, "design": 5, "readability": 5, "tests": 4, "overall": 9,
+    "bugs": [],
+    "summary": "Clean, correct bisect-key implementation with proper touch/overlap boundaries, linear set ops, full validation and a solid passing test suite."
+  },
+  "C-8ebc": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 5, "design": 4, "readability": 4, "tests": 4, "overall": 9,
+    "bugs": [],
+    "summary": "Correct and efficient implementation (same boundary logic as the best candidates) with a good test suite including a randomized normalization-invariant check; minor oddity of post-validation asserts."
+  },
+  "C-1f3a": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 4, "design": 4, "readability": 4, "tests": 3, "overall": 8,
+    "bugs": [
+      "Own test test_many_adds adds (2i, 2i+1) intervals (not adjacent) but asserts a single [(0, 50000)] interval; the test fails, indicating the suite was not run."
+    ],
+    "summary": "Correct solution using tuple-bisect with float('inf') sentinels (safe for arbitrary ints) and O(n log m) difference, but ships with a failing stress test."
+  },
+  "C-c601": {
+    "correctness": 2, "robustness": 3, "concurrency": null, "performance": 4, "design": 2, "readability": 3, "tests": 2, "overall": 3,
+    "bugs": [
+      "_merge_union sets e = max(a[i][1], b[j][1]) before checking overlap, so disjoint intervals are fused: IntervalSet([(0,2)]) | IntervalSet([(5,8)]) returns [(0,8)] (own test_union_disjoint fails).",
+      "__or__ returns `merged and IntervalSet(...)`, so IntervalSet() | IntervalSet() returns an empty list, not an IntervalSet; it also computes the union twice.",
+      "Own test_from_generator asserts two contradictory values for list(s) and must fail."
+    ],
+    "summary": "Parallel-list design with a broken union merge and a bizarre __or__ that can return a list; the candidate's own tests would have caught it but were clearly never run."
+  },
+  "C-a7c9": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 5, "design": 4, "readability": 4, "tests": 3, "overall": 8,
+    "bugs": [
+      "Own test test_binary_search_contains asserts s.contains(500002) but the largest interval is (499990, 499995); the test fails."
+    ],
+    "summary": "Correct implementation with bisect plus bounded forward scans and linear set ops; relies on implicit __hash__=None (valid) and has one failing self-test."
+  },
+  "C-823d": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 5, "design": 4, "readability": 4, "tests": 3, "overall": 8,
+    "bugs": [
+      "Own test test_contains_log_time asserts s.contains(499_995) but the interval is (499990, 499995) half-open, so it fails."
+    ],
+    "summary": "Correct, tidy implementation using tuple-bisect with inf sentinels, linear two-pointer union/intersection/difference, and explicit unhashability; one self-test has a wrong expectation."
+  },
+  "C-7537": {
+    "correctness": 1, "robustness": 3, "concurrency": null, "performance": 3, "design": 2, "readability": 3, "tests": 2, "overall": 2,
+    "bugs": [
+      "add never merges touching intervals: left check uses ivs[lo-1][1] > start (should be >=) and hi uses (end-1, INF) which excludes intervals starting at end, so add(1,3); add(3,5) yields [(1,3),(3,5)] instead of [(1,5)] - violates the core normalization requirement and breaks __eq__ semantics.",
+      "gaps ignores an interval that starts before the window and extends into it: with [(0,10)] stored, gaps(2,8) returns [(2,8)] instead of [].",
+      "union/difference are implemented as repeated add/remove on a copy (O(m*(log n + memmove)) rather than linear), and union inherits the touching-merge bug.",
+      "Own tests (test_merge_touching, test_gaps_all_covered, test_many_small_adds, etc.) fail."
+    ],
+    "summary": "Fundamentally broken: touching intervals are never merged and gaps misses leading overlap, so the central normalization invariant does not hold."
+  },
+  "C-8fc0": {
+    "correctness": 5, "robustness": 5, "concurrency": null, "performance": 5, "design": 5, "readability": 5, "tests": 3, "overall": 9,
+    "bugs": [
+      "Own test test_intersection_large passes the tuple (5, 500) directly as the intervals iterable, which raises on unpacking; the test fails."
+    ],
+    "summary": "Correct, well-documented implementation with pre-validated constructor, bisect plus bounded scans, linear two-pointer set ops and explicit __hash__=None; one self-test is malformed."
+  },
+  "C-bd1c": {
+    "correctness": 3, "robustness": 3, "concurrency": null, "performance": 5, "design": 3, "readability": 3, "tests": 3, "overall": 5,
+    "bugs": [
+      "Bisect helpers use magic sentinels ±10**18 inside tuples, so coordinates beyond that range break lookups: IntervalSet([(0, 10**19)]).contains(0) returns False, and add(-5, 0) after add(0, 10**19) fails to merge into one interval - spec explicitly allows very large ints.",
+      "remove/gaps compute hi as 'first start > end' rather than '>= end' (contrary to the comments); results happen to be correct but an extra interval is touched."
+    ],
+    "summary": "Mostly sound structure with linear set ops, but the ±10**18 sentinel hack makes contains/add/remove wrong for large coordinates that the spec requires to work."
+  }
+}
+JSON>>>
+
+--- stderr ---
+[0m
+> build · claude-fable-5-1
+[0m

@@ -1,0 +1,91 @@
+{
+ "label": "exl3",
+ "task": "json_stream",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 25926,
+ "reasoning_chars": 58441,
+ "wall_s": 484.5,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 484,
+ "hidden": {
+  "passed": 80,
+  "failed": 36,
+  "by_cat": {
+   "basic": [
+    8,
+    16
+   ],
+   "edge": [
+    71,
+    91
+   ],
+   "prop": [
+    0,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    1,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_single_object",
+   "test_basic_whitespace_separated_values",
+   "test_basic_back_to_back_containers_and_strings",
+   "test_basic_value_returned_by_completing_chunk",
+   "test_basic_scalar_terminated_by_value_start",
+   "test_basic_decoding_matches_json_loads",
+   "test_basic_split_inside_number_and_literal",
+   "test_basic_pending",
+   "test_edge_error_offsets[[1,]-3]",
+   "test_edge_error_offsets[{\"a\":1,}-7]",
+   "test_edge_error_offsets[[1 2]-3]",
+   "test_edge_error_offsets[[true false]-6]",
+   "test_edge_error_offsets[{\"a\":1}}-7]",
+   "test_edge_error_offsets[[1]x-3]",
+   "test_edge_error_offsets[{\"a\":1 \"b\":2}-7]",
+   "test_edge_error_offsets[[1,,2]-3]",
+   "test_edge_error_offsets[[1]]-3]",
+   "test_edge_error_offsets[{\"a\":1,\"b\"}-10]",
+   "test_edge_error_offsets[[1] 2 {\"k\": [3, x]}-16]",
+   "test_edge_error_offset_is_absolute_across_chunks",
+   "test_edge_error_raised_by_the_feed_that_delivers_the_bad_char",
+   "test_edge_close_incomplete[[1, 2-5]",
+   "test_edge_close_complete_scalars",
+   "test_edge_feed_or_close_after_close_raises",
+   "test_edge_buffer_limit_across_chunks",
+   "test_edge_buffer_limit_whitespace_and_total_not_counted",
+   "test_edge_nesting_depth_1000",
+   "test_edge_values_from_earlier_feeds_survive_later_error",
+   "test_prop_random_streams_random_chunks",
+   "test_prop_every_split_point",
+   "test_prop_every_three_way_split",
+   "test_prop_error_offsets_independent_of_chunking",
+   "test_prop_streams_with_error_after_valid_prefix",
+   "test_stress_many_small_values_in_one_chunk",
+   "test_stress_one_character_feeds",
+   "test_stress_large_array_of_numbers_in_chunks"
+  ],
+  "tail": "36 failed, 80 passed in 1.41s"
+ },
+ "own_tests": {
+  "passed": 83,
+  "failed": 12,
+  "error": null
+ },
+ "bench_s": "error: solution.JSONStreamError: unexpected ',' in container",
+ "perf_ratio": null,
+ "ruff": 14,
+ "ruff_serious": 14,
+ "ruff_codes": [
+  "F541",
+  "F841"
+ ],
+ "mypy_errors": 1
+}

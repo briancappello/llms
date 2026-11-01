@@ -1,0 +1,53 @@
+{
+ "label": "llama",
+ "task": "interval_set",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 13297,
+ "reasoning_chars": 19705,
+ "wall_s": 444.5,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 195,
+ "hidden": {
+  "passed": 39,
+  "failed": 0,
+  "by_cat": {
+   "basic": [
+    16,
+    16
+   ],
+   "edge": [
+    14,
+    14
+   ],
+   "prop": [
+    4,
+    4
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    5,
+    5
+   ]
+  },
+  "failures": [],
+  "tail": "39 passed in 1.39s"
+ },
+ "own_tests": {
+  "passed": 96,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": 0.507847080938518,
+ "perf_ratio": 1.22,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

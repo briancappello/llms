@@ -1,0 +1,61 @@
+{
+ "label": "strata",
+ "task": "dag_scheduler",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 15925,
+ "reasoning_chars": 33218,
+ "wall_s": 215.9,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 249,
+ "hidden": {
+  "passed": 36,
+  "failed": 7,
+  "by_cat": {
+   "basic": [
+    12,
+    15
+   ],
+   "edge": [
+    12,
+    13
+   ],
+   "prop": [
+    2,
+    5
+   ],
+   "conc": [
+    6,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_failure_propagates_to_transitive_dependents",
+   "test_basic_multiple_failures_and_order_contains_failed",
+   "test_basic_without_fail_fast_independent_tasks_run",
+   "test_edge_failure_in_diamond_skips_join_only",
+   "test_prop_run_matches_sequential_evaluation",
+   "test_prop_single_worker_order_equals_topological_order",
+   "test_prop_fail_fast_single_worker_model"
+  ],
+  "tail": "7 failed, 36 passed in 2.44s"
+ },
+ "own_tests": {
+  "passed": 53,
+  "failed": 9,
+  "error": null
+ },
+ "bench_s": "error: AssertionError: tasks unaccounted for",
+ "perf_ratio": null,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 2
+}

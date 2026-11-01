@@ -1,0 +1,60 @@
+{
+ "label": "exl3",
+ "task": "json_stream",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 42578,
+ "reasoning_chars": 110892,
+ "wall_s": 787.2,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 455,
+ "hidden": {
+  "passed": 112,
+  "failed": 4,
+  "by_cat": {
+   "basic": [
+    16,
+    16
+   ],
+   "edge": [
+    89,
+    91
+   ],
+   "prop": [
+    3,
+    5
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_edge_error_offsets[{\"a\":1,}-7]",
+   "test_edge_strict_rfc8259",
+   "test_prop_error_offsets_independent_of_chunking",
+   "test_prop_streams_with_error_after_valid_prefix"
+  ],
+  "tail": "4 failed, 112 passed in 2.43s"
+ },
+ "own_tests": {
+  "passed": 109,
+  "failed": 4,
+  "error": null
+ },
+ "bench_s": 1.0788966480176896,
+ "perf_ratio": 3.17,
+ "ruff": 42,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "E702",
+  "PLR5501",
+  "SIM114"
+ ],
+ "mypy_errors": 0
+}

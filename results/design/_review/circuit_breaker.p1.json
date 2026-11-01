@@ -1,0 +1,151 @@
+{
+ "task": "circuit_breaker",
+ "pass": 1,
+ "order": [
+  "C-f3b7",
+  "C-9b05",
+  "C-1bb9",
+  "C-4a2a",
+  "C-8c81",
+  "C-c923",
+  "C-40e5",
+  "C-5966",
+  "C-61a5"
+ ],
+ "model": "anthropic/claude-fable-5-1",
+ "scores": {
+  "C-f3b7": {
+   "correctness": 5,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 8,
+   "bugs": [],
+   "summary": "Clean generation-based breaker that correctly handles stale outcomes and slot release, with an O(1) iterative capped backoff and the correct explicit-only CircuitOpenError rule; a solid, mergeable implementation."
+  },
+  "C-9b05": {
+   "correctness": 3,
+   "robustness": 4,
+   "concurrency": 3,
+   "performance": 5,
+   "design": 3,
+   "readability": 3,
+   "tests": 3,
+   "overall": 5,
+   "bugs": [
+    "Stale outcomes decrement _half_open_in_flight when the breaker is HALF_OPEN in a newer generation (HALF_OPEN max=2: A,B admitted; A fails -> OPEN -> lazy HALF_OPEN resets to 0; C admitted; B completes stale and decrements -> two more trial calls admitted, exceeding half_open_max_calls).",
+    "CircuitOpenError retry rule checks only issubclass(cls, CircuitOpenError) without isinstance(exc, cls): retry_on=(MyCircuitError,) wrongly retries a plain CircuitOpenError."
+   ],
+   "summary": "Mostly works but the stale-call slot decrement can over-admit trial calls and the subclass check for CircuitOpenError is too loose; tests contain dead code and weak stale-trial assertions."
+  },
+  "C-1bb9": {
+   "correctness": 2,
+   "robustness": 3,
+   "concurrency": 3,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 2,
+   "overall": 3,
+   "bugs": [
+    "retry has no CircuitOpenError special rule: with default retry_on=(Exception,) a CircuitOpenError is retried (sleeps and burns attempts) instead of failing fast; the candidate's own test_circuit_open_not_retried_by_default fails.",
+    "Stale outcomes in call() decrement _in_flight when admitted in HALF_OPEN even though the generation changed, allowing over-admission of trial calls in a later HALF_OPEN period.",
+    "retry_on validation uses issubclass() on each item without an isinstance(type) guard, so retry_on=('x',) raises TypeError instead of ValueError."
+   ],
+   "summary": "Readable three-phase breaker and a nice log-based overflow-safe delay, but it omits the core CircuitOpenError composition rule and mishandles stale slot accounting."
+  },
+  "C-4a2a": {
+   "correctness": 5,
+   "robustness": 5,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 5,
+   "readability": 5,
+   "tests": 4,
+   "overall": 9,
+   "bugs": [],
+   "summary": "Best of the set: reads the clock once per admission, ignores stale outcomes entirely (no slot corruption), correct explicit-only CircuitOpenError rule, log-based O(1) capped delay, shared validation helpers that also reject bools, and thorough tests."
+  },
+  "C-8c81": {
+   "correctness": 3,
+   "robustness": 3,
+   "concurrency": 3,
+   "performance": 3,
+   "design": 4,
+   "readability": 4,
+   "tests": 3,
+   "overall": 4,
+   "bugs": [
+    "_half_open_inflight is decremented before the stale check and _apply_lazy_transition never resets it: after a HALF_OPEN trial fails (_do_open sets 0) a second stale trial completing drives it to -1, which persists into the next HALF_OPEN period and admits max+1 trial calls.",
+    "_is_retryable retries any CircuitOpenError if any subclass of CircuitOpenError is in retry_on, without isinstance(exc, cls); retry_on=(MyOpen,) retries a plain CircuitOpenError.",
+    "_compute_delay loops i times per attempt; with multiplier==1 (or near 1) and base_delay<max_delay the early exit never triggers, giving O(attempts^2) work (~5e9 iterations for attempts=100_000).",
+    "recovery_timeout/base_delay/max_delay validation calls math.isfinite without a type check, so a non-numeric argument raises TypeError instead of ValueError."
+   ],
+   "summary": "Reasonable structure but the half-open slot counter can go negative and leak across periods, the CircuitOpenError subclass rule is too loose, and the delay computation is quadratic for multiplier=1."
+  },
+  "C-c923": {
+   "correctness": 3,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 3,
+   "overall": 5,
+   "bugs": [
+    "First backoff delay is not capped: d starts at base_delay and jitter(d) is called before min(max_delay, ...) is applied, so base_delay=5, max_delay=2 sleeps 5.0 on the first retry; the candidate's own test_max_delay_less_than_base fails.",
+    "Final failure is re-raised via `raise last_exc` after the loop rather than a bare raise inside the handler, adding an extra frame to the traceback (object identity is preserved)."
+   ],
+   "summary": "The breaker is correct and stale-safe, but retry mis-computes d_0 (uncapped) and the dual except-clause structure duplicates the retry bookkeeping; its own test suite does not pass."
+  },
+  "C-40e5": {
+   "correctness": 5,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 4,
+   "design": 4,
+   "readability": 5,
+   "tests": 5,
+   "overall": 8,
+   "bugs": [
+    "_compute_delay is O(i) per attempt with an early exit only when d reaches max_delay; with multiplier==1 (or close to 1) and base_delay<max_delay this is O(attempts^2) (attempts=100_000 -> ~5e9 iterations)."
+   ],
+   "summary": "Correct, stale-safe breaker with clear transition helpers and the right CircuitOpenError rule, backed by the most deterministic (barrier-based) test suite; only weakness is the quadratic delay loop in the multiplier=1 edge case."
+  },
+  "C-5966": {
+   "correctness": 2,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 2,
+   "overall": 3,
+   "bugs": [
+    "retry uses `except retry_on` with no CircuitOpenError special-casing: default retry_on=(Exception,) retries CircuitOpenError, sleeping and burning attempts; the candidate's own test_circuit_open_not_retried_by_default fails.",
+    "test_solution.py defines class TestCircuitBreakerThreadSafety twice; the second (helper-only) definition shadows the first, so test_concurrent_opens_once, test_concurrent_half_open_closes_once and test_fn_can_use_breaker are never collected.",
+    "test_no_overflow_large_attempts does not exercise large attempts (uses attempts=5), so the overflow requirement is untested."
+   ],
+   "summary": "The circuit breaker itself is correct and stale-safe, but retry ignores the mandated CircuitOpenError composition rule and the test file silently drops its concurrency tests."
+  },
+  "C-61a5": {
+   "correctness": 2,
+   "robustness": 4,
+   "concurrency": 3,
+   "performance": 3,
+   "design": 4,
+   "readability": 4,
+   "tests": 2,
+   "overall": 3,
+   "bugs": [
+    "_compute_delay evaluates float(multiplier) ** i directly; float pow raises OverflowError (not inf) once 2.0**i exceeds ~1e308 (i>=1024), so attempts=100_000 with multiplier=2 crashes - the inline comment is wrong and the candidate's own overflow test fails.",
+    "Stale outcomes decrement _half_open_in_flight when admitted in HALF_OPEN even after the epoch changed (HALF_OPEN->OPEN does not zero the counter; lazy transition does), so a late stale trial can free a slot in a later HALF_OPEN period and over-admit trial calls.",
+    "test_stale_half_open_success_ignored uses a 3-party barrier2 that only two threads ever wait on, so the test hangs forever; test_open_does_not_invoke_fn is a no-op placeholder."
+   ],
+   "summary": "Well-validated API and clear code, but the delay computation overflows exactly where the spec says it must not, stale slot accounting is wrong, and the test suite hangs."
+  }
+ }
+}

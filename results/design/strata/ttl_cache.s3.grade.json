@@ -1,0 +1,59 @@
+{
+ "label": "strata",
+ "task": "ttl_cache",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 18135,
+ "reasoning_chars": 34978,
+ "wall_s": 188.0,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 308,
+ "hidden": {
+  "passed": 51,
+  "failed": 3,
+  "by_cat": {
+   "basic": [
+    21,
+    22
+   ],
+   "edge": [
+    19,
+    19
+   ],
+   "prop": [
+    1,
+    3
+   ],
+   "conc": [
+    7,
+    7
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [
+   "test_basic_get_or_compute_ttl_and_refresh",
+   "test_prop_random_ops_match_model",
+   "test_prop_long_sequences_match_model"
+  ],
+  "tail": "3 failed, 51 passed in 1.35s"
+ },
+ "own_tests": {
+  "passed": 67,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": 0.40449939598329365,
+ "perf_ratio": 0.97,
+ "ruff": 4,
+ "ruff_serious": 2,
+ "ruff_codes": [
+  "B007",
+  "PLR5501",
+  "UP035"
+ ],
+ "mypy_errors": 1
+}

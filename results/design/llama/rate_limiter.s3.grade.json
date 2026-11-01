@@ -1,0 +1,63 @@
+{
+ "label": "llama",
+ "task": "rate_limiter",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 10592,
+ "reasoning_chars": 12059,
+ "wall_s": 353.4,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 161,
+ "hidden": {
+  "passed": 52,
+  "failed": 9,
+  "by_cat": {
+   "basic": [
+    14,
+    17
+   ],
+   "edge": [
+    30,
+    31
+   ],
+   "prop": [
+    2,
+    3
+   ],
+   "conc": [
+    4,
+    7
+   ],
+   "stress": [
+    2,
+    3
+   ]
+  },
+  "failures": [
+   "test_basic_acquire_immediate_does_not_sleep",
+   "test_basic_acquire_sleeps_exact_computed_wait_once",
+   "test_basic_acquire_none_timeout_waits_as_long_as_needed",
+   "test_edge_tokens_equal_capacity_allowed",
+   "test_prop_bucket_vs_model",
+   "test_conc_blocking_acquire_threads_with_shared_fake_clock",
+   "test_conc_sleep_does_not_hold_lock",
+   "test_conc_keyed_sleep_does_not_block_other_keys",
+   "test_stress_long_waits_never_busy_spin"
+  ],
+  "tail": "9 failed, 52 passed, 2 warnings in 10.51s"
+ },
+ "own_tests": {
+  "passed": null,
+  "failed": null,
+  "error": "suite timeout"
+ },
+ "bench_s": "error: TypeError: unsupported operand type(s) for +: 'float' and 'NoneType'",
+ "perf_ratio": null,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 1
+}

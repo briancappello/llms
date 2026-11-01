@@ -1,0 +1,169 @@
+{
+ "task": "rate_limiter",
+ "pass": 2,
+ "order": [
+  "C-0f84",
+  "C-949f",
+  "C-1cdc",
+  "C-e3af",
+  "C-b67a",
+  "C-6b27",
+  "C-4321",
+  "C-bfd5",
+  "C-a286"
+ ],
+ "model": "anthropic/claude-fable-5-1",
+ "scores": {
+  "C-0f84": {
+   "correctness": 5,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 8,
+   "bugs": [
+    "Deadline check adds a 1e-9 s slack (`now + wait > deadline + _TOL`) that the spec does not define; with a very high rate (wait < 1e-9 s) acquire(timeout=0) can call sleep, contradicting 'timeout=0 behaves like try_acquire / never sleeps' (nano edge case).",
+    "Token/timeout validation is duplicated verbatim in TokenBucket and KeyedRateLimiter instead of shared helpers (maintenance hazard, not a behavioural bug).",
+    "bool is accepted as a numeric rate/capacity/tokens value (True == 1)."
+   ],
+   "summary": "Clean, spec-faithful implementation with correct lock scoping (sleep outside lock, limiter lock released before bucket.acquire), O(1) LRU via OrderedDict, and a solid deterministic test suite; only nits."
+  },
+  "C-949f": {
+   "correctness": 2,
+   "robustness": 2,
+   "concurrency": 4,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 2,
+   "overall": 3,
+   "bugs": [
+    "TokenBucket.acquire(tokens) with the default timeout=None raises TypeError: `deadline = self._clock() + timeout` adds None; the primary 'wait as long as needed' path and KeyedRateLimiter.acquire(key) with no timeout are unusable.",
+    "timeout=float('inf') is rejected by _validate_timeout (isfinite check) although the spec only forbids negative/nan; the candidate's own test_timeout_inf_is_valid asserts the opposite and fails.",
+    "Own tests test_sleep_never_zero and test_timeout_none_blocks_indefinitely call acquire with timeout=None and crash with TypeError.",
+    "test_failed_acquire_counts_as_use calls try_acquire('A', 11) with capacity 10, which raises ValueError uncaught (the test's premise also contradicts the spec: invalid calls must not touch recency).",
+    "test_no_sleep_under_lock pairs a frozen FakeClock with real time.sleep: wait is always 1 s and the clock never advances, so the worker thread loops forever (non-daemon) and the test fails/hangs.",
+    "bool accepted for rate/capacity/tokens/max_keys."
+   ],
+   "summary": "Mostly reasonable structure, but acquire crashes on its default timeout=None and the test suite contains several failing tests and one that hangs, so it is not shippable."
+  },
+  "C-1cdc": {
+   "correctness": 5,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 8,
+   "bugs": [
+    "test_failed_try_acquire_still_counts_as_use is an abandoned stub containing stream-of-consciousness comments ('Hmm... Let me restructure.') and `pass`; it should have been removed.",
+    "bool is accepted as rate/capacity/tokens (isinstance(True, int)); max_keys correctly rejects bool but the other validators do not.",
+    "_validate_timeout returns a normalised float that acquire ignores (harmless inconsistency)."
+   ],
+   "summary": "Correct and well-structured implementation (exact deadline semantics, sleep outside both locks, O(1) LRU) with a broad, thread-safe-fake-clock test suite marred only by a leftover stub test."
+  },
+  "C-e3af": {
+   "correctness": 5,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 4,
+   "overall": 7,
+   "bugs": [
+    "Validation uses float(tokens)/float(timeout) so numeric strings such as '3' or '0.5' are silently accepted as token counts/timeouts; non-numeric rate/capacity raise TypeError from math.isfinite rather than ValueError.",
+    "max_keys=True passes the isinstance(int) check and is treated as 1.",
+    "Deadline check adds a 1e-9 s slack, so for sub-nanosecond waits acquire(timeout=0) could call sleep (nano edge case).",
+    "_validate_tokens/_validate_timeout are copy-pasted into both classes."
+   ],
+   "summary": "Behaviourally correct and thread-safe with good tests, but the validation layer is lax (coerces strings, TypeError paths) and duplicated between the two classes."
+  },
+  "C-b67a": {
+   "correctness": 4,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 3,
+   "overall": 6,
+   "bugs": [
+    "timeout=float('inf') raises ValueError (isfinite check) although the spec only forbids negative/nan timeouts.",
+    "max_keys=True is accepted (isinstance(True, int) and True >= 1); the candidate's own test_invalid_max_keys[True] therefore fails.",
+    "test_keyed_limiter_contains_non_hashable asserts `[1, 2] not in lr`, which raises TypeError (unhashable list) inside __contains__; the author even notes this in a comment and leaves the failing line in.",
+    "Non-numeric rate/capacity/tokens produce TypeError from math.isfinite rather than ValueError.",
+    "test_concurrent_try_acquire_no_overadmission uses a meaningless bound (`capacity + rate*10`) and dead variables, so it does not test over-admission."
+   ],
+   "summary": "Core bucket and LRU logic are correct and lock scoping is right, but inf timeouts are wrongly rejected, bool max_keys slips through, and the test file ships two knowingly failing tests."
+  },
+  "C-6b27": {
+   "correctness": 5,
+   "robustness": 5,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 8,
+   "bugs": [
+    "Real-clock concurrency tests (test_no_over_admission, test_concurrent_same_key) assume the run completes within 0.1-0.2 s wall time; on a loaded CI box they can fail spuriously.",
+    "KeyedRateLimiter validates tokens then discards the normalised value, so each bucket re-validates (harmless redundancy)."
+   ],
+   "summary": "Strict validators (reject bool/nan/inf), exact spec semantics for refill/deadline/tolerance, sleep outside all locks, O(1) LRU, and a tidy parametrised test suite; the best-rounded submission."
+  },
+  "C-4321": {
+   "correctness": 5,
+   "robustness": 5,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 2,
+   "overall": 7,
+   "bugs": [
+    "test_solution.py contains no KeyedRateLimiter tests at all (no LRU, eviction, recency, available(), len/in, validation-before-creation) and no thread-safety tests.",
+    "test_repeated_sleeps_when_early_wake is littered with dead code (unused early_sleep/half_sleep/clk2/s2 and a rambling comment about an infinite loop).",
+    "Deadline check adds a 1e-9 s slack, so for sub-nanosecond waits acquire(timeout=0) could call sleep (nano edge case)."
+   ],
+   "summary": "The implementation itself is correct, strict and thread-safe, but half of the deliverable (KeyedRateLimiter) is completely untested and the existing tests are sloppy."
+  },
+  "C-bfd5": {
+   "correctness": 3,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 3,
+   "readability": 4,
+   "tests": 3,
+   "overall": 5,
+   "bugs": [
+    "KeyedRateLimiter._validate_tokens deliberately skips the tokens <= capacity check ('checked by the bucket itself'), so try_acquire/acquire(key, tokens > capacity) creates the key (possibly evicting another key) and bumps its recency before the bucket raises ValueError \u2014 violates 'invalid call raises without creating the key or changing its recency'.",
+    "acquire sleeps min(wait, deadline - now) instead of 'exactly the computed wait'; because the deadline check allows 1e-9 s slack this can produce a sleep slightly shorter than needed followed by a second tiny sleep (minor spec deviation).",
+    "`if sleep_dur <= 0: continue` is unreachable but if it ever fired it would busy-loop without sleeping.",
+    "Deadline slack of 1e-9 s means acquire(timeout=0) could call sleep for sub-nanosecond waits (nano edge case)."
+   ],
+   "summary": "TokenBucket is sound, but the keyed limiter breaks the explicit validation-before-side-effects rule for over-capacity requests, and the sleep logic is more convoluted than the spec asks for."
+  },
+  "C-a286": {
+   "correctness": 5,
+   "robustness": 4,
+   "concurrency": 5,
+   "performance": 5,
+   "design": 4,
+   "readability": 4,
+   "tests": 3,
+   "overall": 7,
+   "bugs": [
+    "test_concurrent_try_acquire_no_overadmission executes `TokenBucket(0, 100, clock=clk)` (leftover line) which raises ValueError, so the test errors before running.",
+    "test_clock_goes_backwards expects available()==5 after the clock goes 100->50->55, contradicting the spec (and the implementation, which keeps last_time=100 and returns 0); the test fails.",
+    "max_keys=True is accepted (isinstance(True, int)); bool also accepted for rate/capacity/tokens.",
+    "Deadline check adds a 1e-9 s slack, so for sub-nanosecond waits acquire(timeout=0) could call sleep (nano edge case); the `if wait <= 0: continue` guard is dead code."
+   ],
+   "summary": "Correct, clearly written implementation with proper lock scoping and O(1) LRU, but the test file ships two tests that fail (one from a leftover line, one asserting non-spec clock behaviour)."
+  }
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "label": "strata",
+ "task": "rate_limiter",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 11050,
+ "reasoning_chars": 17725,
+ "wall_s": 128.2,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 176,
+ "hidden": {
+  "passed": 60,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    17,
+    17
+   ],
+   "edge": [
+    30,
+    31
+   ],
+   "prop": [
+    3,
+    3
+   ],
+   "conc": [
+    7,
+    7
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [
+   "test_edge_keyed_invalid_tokens_do_not_create_or_touch_key"
+  ],
+  "tail": "1 failed, 60 passed in 0.50s"
+ },
+ "own_tests": {
+  "passed": 52,
+  "failed": 0,
+  "error": null
+ },
+ "bench_s": 0.44910040916875005,
+ "perf_ratio": 1.17,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

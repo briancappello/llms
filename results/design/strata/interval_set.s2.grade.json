@@ -1,0 +1,56 @@
+{
+ "label": "strata",
+ "task": "interval_set",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 11591,
+ "reasoning_chars": 10066,
+ "wall_s": 130.0,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 253,
+ "hidden": {
+  "passed": 38,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    16,
+    16
+   ],
+   "edge": [
+    14,
+    14
+   ],
+   "prop": [
+    3,
+    4
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    5,
+    5
+   ]
+  },
+  "failures": [
+   "test_prop_set_algebra_vs_model"
+  ],
+  "tail": "1 failed, 38 passed in 1.72s"
+ },
+ "own_tests": {
+  "passed": 112,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": "error: AssertionError",
+ "perf_ratio": null,
+ "ruff": 3,
+ "ruff_serious": 2,
+ "ruff_codes": [
+  "F841",
+  "UP035"
+ ],
+ "mypy_errors": 1
+}

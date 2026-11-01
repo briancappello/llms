@@ -1,0 +1,35 @@
+{
+ "label": "llama",
+ "task": "ttl_cache",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 10871,
+ "reasoning_chars": 10007,
+ "wall_s": 363.8,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 300,
+ "hidden": {
+  "passed": 0,
+  "failed": 54,
+  "error": "deadlock: every hidden test hangs past the 30 s per-test timeout (suite > 70 min)",
+  "by_cat": {},
+  "failures": [
+   "(all: hang)"
+  ]
+ },
+ "own_tests": {
+  "passed": null,
+  "failed": null,
+  "error": "suite timeout"
+ },
+ "bench_s": "error: AssertionError: get_or_compute(1) returned None",
+ "perf_ratio": null,
+ "ruff": 3,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "SIM102",
+  "UP035"
+ ],
+ "mypy_errors": 5
+}

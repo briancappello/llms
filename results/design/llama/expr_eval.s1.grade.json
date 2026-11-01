@@ -1,0 +1,11 @@
+{
+ "label": "llama",
+ "task": "expr_eval",
+ "sample": 1,
+ "finish_reason": "length",
+ "completion_tokens": 32768,
+ "reasoning_chars": 105202,
+ "wall_s": 1123.4,
+ "has_solution": false,
+ "has_tests": false
+}

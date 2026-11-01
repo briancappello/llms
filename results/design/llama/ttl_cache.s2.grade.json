@@ -1,0 +1,55 @@
+{
+ "label": "llama",
+ "task": "ttl_cache",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 13281,
+ "reasoning_chars": 20038,
+ "wall_s": 445.1,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 297,
+ "hidden": {
+  "passed": 53,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    22,
+    22
+   ],
+   "edge": [
+    18,
+    19
+   ],
+   "prop": [
+    3,
+    3
+   ],
+   "conc": [
+    7,
+    7
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [
+   "test_edge_on_evict_called_outside_lock"
+  ],
+  "tail": "1 failed, 53 passed in 6.62s"
+ },
+ "own_tests": {
+  "passed": 54,
+  "failed": 3,
+  "error": null
+ },
+ "bench_s": 0.4560683178715408,
+ "perf_ratio": 1.1,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

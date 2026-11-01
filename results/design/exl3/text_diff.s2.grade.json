@@ -1,0 +1,11 @@
+{
+ "label": "exl3",
+ "task": "text_diff",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 45460,
+ "reasoning_chars": 159645,
+ "wall_s": 868.6,
+ "has_solution": false,
+ "has_tests": false
+}

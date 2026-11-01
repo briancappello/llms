@@ -1,0 +1,165 @@
+{
+ "task": "expr_eval",
+ "pass": 2,
+ "order": [
+  "C-7ed1",
+  "C-4f67",
+  "C-dad9",
+  "C-70ac",
+  "C-4bd7",
+  "C-d774",
+  "C-25c9",
+  "C-85a4",
+  "C-6117"
+ ],
+ "model": "anthropic/claude-fable-5-1",
+ "scores": {
+  "C-7ed1": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 2,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "Module is incomplete: no Expr class, no compile_expr, no evaluate, no evaluator \u2013 the required interface does not exist",
+    "Parser is half-written and self-inconsistent (frame[5] reused as both has_cmp flag and args list; `fa`/`fa2` states and _propagate disagree on who consumes the child result); no non-associativity check for comparisons",
+    "peek_kind() fallback computes len() of an int and would raise TypeError"
+   ],
+   "summary": "Unfinished submission consisting of a tokenizer and a broken partial parser with none of the public API implemented."
+  },
+  "C-4f67": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 1,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "No solution delivered"
+   ],
+   "summary": "Nothing submitted."
+  },
+  "C-dad9": {
+   "correctness": 2,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 4,
+   "readability": 4,
+   "tests": 1,
+   "overall": 4,
+   "bugs": [
+    "Chained comparisons are accepted: after popping the 'c' frame min_prec is restored to 1 and BINARY mode consumes another comparison, so `1 < 2 < 3` parses as `(1<2)<3` instead of raising ExprSyntaxError at 6",
+    "No finite check on + - * /: `1e308 * 10` and `-1e308 - 1e308` return inf/-inf instead of raising ExprEvalError (only POW checks)",
+    "Malformed/infinite numbers raise inside the tokenizer before parsing, so `1 2 1e+` reports 4 instead of the leftmost problem at 2",
+    "Function errors are reported in completion order (inner call first), not by leftmost name: `abs(round(1,2,3), 2)` reports round at 4 rather than abs at 0; `foo(abs())` gives ExprSyntaxError instead of ExprNameError for foo"
+   ],
+   "summary": "Clean iterative bytecode compiler with correct precedence and lazy if, but accepts chained comparisons and silently lets arithmetic overflow produce inf."
+  },
+  "C-70ac": {
+   "correctness": 3,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 4,
+   "readability": 4,
+   "tests": 4,
+   "overall": 5,
+   "bugs": [
+    "Trailing comma accepted: F_FUNC treats ')' after a ',' as end of args, so `max(1,)` compiles to max(1) instead of ExprSyntaxError at 6 (its own test expects 6)",
+    "`10^400`: a ** b raises Python OverflowError which is not caught in _do_binop, so an OverflowError escapes instead of ExprEvalError",
+    "Tokenizer raises eagerly on invalid chars/malformed numbers, so `1 2 $` reports position 4 instead of the spec-mandated 2 (leftmost problem rule violated)",
+    "Non-numeric variable values (e.g. a str) leak ValueError/TypeError from float() rather than an ExprError"
+   ],
+   "summary": "Well-structured iterative Pratt parser and tree-walking evaluator with enforced immutability and a strong test suite, marred by a trailing-comma grammar bug, an uncaught OverflowError and non-leftmost error positions; evaluation is tuple-heavy and likely slow for the 100k-eval target."
+  },
+  "C-4bd7": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 3,
+   "performance": 2,
+   "design": 2,
+   "readability": 3,
+   "tests": 3,
+   "overall": 1,
+   "bugs": [
+    "Parser is non-functional: parent frames read `fdata[0]` from an empty list in every have_lhs/have_base state (child results are passed via `result`, never stored), raising IndexError on any input, which compile_expr converts into ExprSyntaxError('unexpected end of input') \u2013 nothing compiles",
+    "Even if parsing worked, _ast_to_bytecode emits ('+',), ('*',) etc. while the evaluator dispatches on 'add', 'mul', ... so every binary operation would raise ExprEvalError 'unknown opcode'",
+    "_tokenize returns a bare tuple instead of a token list on malformed numbers \u2013 a fragile sentinel protocol",
+    "All 'invalid' tokens are checked before parsing, violating the leftmost-problem rule (`1 2 $` \u2192 4)"
+   ],
+   "summary": "Elaborate design that was clearly never executed: the explicit-stack parser cannot parse anything and the bytecode opcodes don't match the evaluator."
+  },
+  "C-d774": {
+   "correctness": 4,
+   "robustness": 3,
+   "concurrency": 5,
+   "performance": 4,
+   "design": 4,
+   "readability": 4,
+   "tests": 1,
+   "overall": 6,
+   "bugs": [
+    "`10^400` (and e.g. `(-2)^1e300`): `l ** r` raises Python OverflowError which is not caught, so OverflowError escapes instead of ExprEvalError despite the isfinite check that follows",
+    "`if` with wrong arity is parsed structurally rather than as a generic call: `if(1,2)` reports ExprSyntaxError at the ')' (5) and `if(1,2,3,4)` at the comma, instead of position 0 (the name), and such errors preempt leftmost-call ordering",
+    "ExprNameError message always says 'unknown function' even for missing variables (cosmetic)"
+   ],
+   "summary": "Best submission: lazy tokenizer gives correct leftmost error positions, grammar-mirroring iterative parser compiles to a tight bytecode stack machine with lazy if, correct precedence and overflow checks, with only the uncaught pow OverflowError and if-arity position deviations."
+  },
+  "C-25c9": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 3,
+   "performance": 2,
+   "design": 2,
+   "readability": 2,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "Any function call crashes: closing ')' of a func frame calls undefined `_find_func_name_pos` (NameError); `if` relies on undefined `_build_if`; the file literally contains 'Need to fix ... Let me redesign the func frame'",
+    "No finite checks on + - * /, and `10^400` raises uncaught OverflowError",
+    "Tokenizer uses str.isdigit()/isalpha()/isalnum(), accepting non-ASCII letters and digits as identifiers/numbers",
+    "Unknown function names raise ExprNameError during parsing before the whole input is known to be grammatical; arity errors on ',' are reported at the wrong position"
+   ],
+   "summary": "Abandoned mid-rewrite: pure arithmetic may work but function calls and `if` reference undefined helpers and crash."
+  },
+  "C-85a4": {
+   "correctness": 1,
+   "robustness": 1,
+   "concurrency": 1,
+   "performance": 1,
+   "design": 1,
+   "readability": 1,
+   "tests": 1,
+   "overall": 1,
+   "bugs": [
+    "No solution delivered"
+   ],
+   "summary": "Nothing submitted."
+  },
+  "C-6117": {
+   "correctness": 2,
+   "robustness": 2,
+   "concurrency": 5,
+   "performance": 3,
+   "design": 3,
+   "readability": 2,
+   "tests": 3,
+   "overall": 3,
+   "bugs": [
+    "EOF sentinel is appended with position 0, so every 'input ends early' error reports 0: `1 +`, `1 + + ` give 0 instead of len(src); unmatched '(' reports 0 (`(1+2` \u2192 0 instead of 4) and unmatched `abs(1` reports the name position",
+    "')' / ',' pop pending operators without checking expect_operand, so `1+)`, `(1+)`, `(+)`, `max(1+)` raise a raw IndexError from output.pop() instead of ExprSyntaxError",
+    "Empty-arg call steals an operand: `1 + max()` takes the `1` as max's argument then IndexErrors on '+'; `abs()` reports 'Empty argument' at 4 instead of an arity error at 0",
+    "`1e999` tokenizes as inf and compiles; the error only surfaces as ExprEvalError at evaluate time instead of ExprSyntaxError at compile time (own test enshrines the wrong behaviour)",
+    "`10^400`: `l ** r` OverflowError is not caught, escaping as a non-ExprError",
+    "Unknown function names raise ExprNameError during parsing even when the input is later found ungrammatical"
+   ],
+   "summary": "Shunting-yard parser gets precedence/associativity right but has several crash paths and wrong error positions, plus uncaught OverflowError and a messy tokenizer with dead code."
+  }
+ }
+}

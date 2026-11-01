@@ -1,0 +1,87 @@
+{
+ "label": "llama",
+ "task": "expr_eval",
+ "sample": 2,
+ "finish_reason": "stop",
+ "completion_tokens": 27678,
+ "reasoning_chars": 53378,
+ "wall_s": 943.7,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 488,
+ "hidden": {
+  "passed": 133,
+  "failed": 25,
+  "by_cat": {
+   "basic": [
+    52,
+    52
+   ],
+   "edge": [
+    69,
+    93
+   ],
+   "prop": [
+    6,
+    6
+   ],
+   "conc": [
+    1,
+    1
+   ],
+   "stress": [
+    5,
+    6
+   ]
+  },
+  "failures": [
+   "test_edge_syntax_error_positions[   -3]",
+   "test_edge_syntax_error_positions[1 +-3]",
+   "test_edge_syntax_error_positions[(1+2-4]",
+   "test_edge_syntax_error_positions[1 ^-3]",
+   "test_edge_syntax_error_positions[--1]",
+   "test_edge_syntax_error_positions[(1 < 2-6]",
+   "test_edge_syntax_error_positions[abs(1-5]",
+   "test_edge_syntax_error_positions[a <-3]",
+   "test_edge_syntax_error_positions[((1)-4]",
+   "test_edge_syntax_error_positions[(-1]",
+   "test_edge_syntax_error_positions[1 + + -6]",
+   "test_edge_syntax_error_positions[if(1, 2, 3-10]",
+   "test_edge_syntax_error_positions[foo(1) +-8]",
+   "test_edge_syntax_error_positions[4 % -4]",
+   "test_edge_syntax_error_positions[1e999-0]",
+   "test_edge_syntax_error_positions[2 + 1e400 * 0-4]",
+   "test_edge_arity_is_compile_time_syntax_error[abs()-0]",
+   "test_edge_arity_is_compile_time_syntax_error[min()-0]",
+   "test_edge_arity_is_compile_time_syntax_error[max()-0]",
+   "test_edge_arity_is_compile_time_syntax_error[max(1, sqrt())-7]",
+   "test_edge_arity_is_compile_time_syntax_error[round()-0]",
+   "test_edge_syntax_errors_take_precedence_over_call_errors",
+   "test_edge_evaluation_errors[10^400]",
+   "test_edge_evaluation_errors[2^1024]",
+   "test_stress_deep_parentheses"
+  ],
+  "tail": "25 failed, 133 passed in 1.96s"
+ },
+ "own_tests": {
+  "passed": 155,
+  "failed": 10,
+  "error": null
+ },
+ "bench_s": 0.5038968990556896,
+ "perf_ratio": 1.84,
+ "ruff": 34,
+ "ruff_serious": 4,
+ "ruff_codes": [
+  "E702",
+  "E741",
+  "F541",
+  "F841",
+  "PLR5501",
+  "SIM102",
+  "SIM108",
+  "SIM116",
+  "UP035"
+ ],
+ "mypy_errors": 2
+}

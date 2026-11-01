@@ -1,0 +1,73 @@
+{
+ "label": "llama",
+ "task": "interval_set",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 9621,
+ "reasoning_chars": 12216,
+ "wall_s": 319.9,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 160,
+ "hidden": {
+  "passed": 22,
+  "failed": 17,
+  "by_cat": {
+   "basic": [
+    9,
+    16
+   ],
+   "edge": [
+    11,
+    14
+   ],
+   "prop": [
+    0,
+    4
+   ],
+   "conc": [
+    0,
+    0
+   ],
+   "stress": [
+    2,
+    5
+   ]
+  },
+  "failures": [
+   "test_basic_add_adjacent_merges",
+   "test_basic_add_bridges_many",
+   "test_basic_covers",
+   "test_basic_gaps_example",
+   "test_basic_equality",
+   "test_basic_union_merges_adjacent_across_operands",
+   "test_basic_constructor_iterable",
+   "test_edge_touching_not_overlapping_but_covers_merged",
+   "test_edge_remove_one_from_middle_then_readd",
+   "test_edge_intersection_touching_is_empty",
+   "test_prop_random_ops_vs_model",
+   "test_prop_state_after_each_op",
+   "test_prop_set_algebra_vs_model",
+   "test_prop_order_independence_and_eq",
+   "test_stress_many_adds_removes",
+   "test_stress_range_queries_many_intervals",
+   "test_stress_set_algebra_large"
+  ],
+  "tail": "17 failed, 22 passed in 1.45s"
+ },
+ "own_tests": {
+  "passed": 56,
+  "failed": 15,
+  "error": null
+ },
+ "bench_s": "error: AssertionError: not normalized",
+ "perf_ratio": null,
+ "ruff": 12,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "SIM103",
+  "UP035",
+  "UP037"
+ ],
+ "mypy_errors": 3
+}

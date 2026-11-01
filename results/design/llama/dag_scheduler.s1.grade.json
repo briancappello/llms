@@ -1,0 +1,55 @@
+{
+ "label": "llama",
+ "task": "dag_scheduler",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 12781,
+ "reasoning_chars": 23259,
+ "wall_s": 428.1,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 217,
+ "hidden": {
+  "passed": 42,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    15,
+    15
+   ],
+   "edge": [
+    13,
+    13
+   ],
+   "prop": [
+    5,
+    5
+   ],
+   "conc": [
+    5,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_conc_no_level_barrier"
+  ],
+  "tail": "1 failed, 42 passed in 3.03s"
+ },
+ "own_tests": {
+  "passed": 47,
+  "failed": 2,
+  "error": null
+ },
+ "bench_s": 0.45650133094750345,
+ "perf_ratio": 1.5,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

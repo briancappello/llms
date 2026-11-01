@@ -1,0 +1,55 @@
+{
+ "label": "exl3",
+ "task": "dag_scheduler",
+ "sample": 1,
+ "finish_reason": "stop",
+ "completion_tokens": 15096,
+ "reasoning_chars": 35966,
+ "wall_s": 300.4,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 223,
+ "hidden": {
+  "passed": 42,
+  "failed": 1,
+  "by_cat": {
+   "basic": [
+    14,
+    15
+   ],
+   "edge": [
+    13,
+    13
+   ],
+   "prop": [
+    5,
+    5
+   ],
+   "conc": [
+    6,
+    6
+   ],
+   "stress": [
+    4,
+    4
+   ]
+  },
+  "failures": [
+   "test_basic_fail_fast_stops_new_tasks_running_ones_finish"
+  ],
+  "tail": "1 failed, 42 passed in 2.29s"
+ },
+ "own_tests": {
+  "passed": 44,
+  "failed": 3,
+  "error": null
+ },
+ "bench_s": 0.1793273468501866,
+ "perf_ratio": 0.63,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}

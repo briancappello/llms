@@ -1,0 +1,53 @@
+{
+ "label": "exl3",
+ "task": "rate_limiter",
+ "sample": 3,
+ "finish_reason": "stop",
+ "completion_tokens": 11464,
+ "reasoning_chars": 16781,
+ "wall_s": 215.1,
+ "has_solution": true,
+ "has_tests": true,
+ "loc": 153,
+ "hidden": {
+  "passed": 61,
+  "failed": 0,
+  "by_cat": {
+   "basic": [
+    17,
+    17
+   ],
+   "edge": [
+    31,
+    31
+   ],
+   "prop": [
+    3,
+    3
+   ],
+   "conc": [
+    7,
+    7
+   ],
+   "stress": [
+    3,
+    3
+   ]
+  },
+  "failures": [],
+  "tail": "61 passed in 0.49s"
+ },
+ "own_tests": {
+  "passed": 55,
+  "failed": 3,
+  "error": null
+ },
+ "bench_s": 0.45485885185189545,
+ "perf_ratio": 1.18,
+ "ruff": 1,
+ "ruff_serious": 0,
+ "ruff_codes": [
+  "UP035"
+ ],
+ "mypy_errors": 0
+}
