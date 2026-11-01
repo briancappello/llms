@@ -1,0 +1,107 @@
+[12:01:04] ############ coder-3.8fn / production
+[12:01:26]   loaded in 21.7s
+[12:02:06]   solo s0 t1: prompt 65671 (cached 0) ttft 25.7s | 512 tok at 80.79 t/s | max gap 0.04s
+[12:02:06]   solo s0 t2: prompt 68804 (cached 65666) ttft 1.78s | 512 tok at 87.06 t/s | max gap 0.04s
+[12:02:06]   solo: 1024 tokens in 39.7s = 25.8 tok/s aggregate | peak vram 31940 gtt 30 ram 56547 MiB
+[12:03:30]   conc2 s0 t1: prompt 65670 (cached 0) ttft 24.83s | 512 tok at 74.73 t/s | max gap 0.04s
+[12:03:30]   conc2 s0 t2: prompt 68803 (cached 65665) ttft 33.15s | 512 tok at 87.65 t/s | max gap 0.04s
+[12:03:30]   conc2 s1 t1: prompt 65669 (cached 0) ttft 57.29s | 512 tok at 94.87 t/s | max gap 0.25s
+[12:03:30]   conc2 s1 t2: prompt 68802 (cached 65664) ttft 9.65s | 512 tok at 45.69 t/s | max gap 6.12s
+[12:03:30]   conc2: 2048 tokens in 83.5s = 24.5 tok/s aggregate | peak vram 31954 gtt 30 ram 63562 MiB
+[12:06:10]   conc3 s0 t1: prompt 65669 (cached 0) ttft 128.56s | 512 tok at 71.32 t/s | max gap 1.03s
+[12:06:10]   conc3 s0 t2: prompt 68802 (cached 65664) ttft 19.11s | 512 tok at 89.94 t/s | max gap 0.04s
+[12:06:10]   conc3 s1 t1: prompt 65671 (cached 0) ttft 92.02s | 512 tok at 69.25 t/s | max gap 1.66s
+[12:06:10]   conc3 s1 t2: prompt 68804 (cached 65666) ttft 39.08s | 512 tok at 90.64 t/s | max gap 0.25s
+[12:06:10]   conc3 s2 t1: prompt 65675 (cached 0) ttft 28.02s | 512 tok at 76.41 t/s | max gap 1.03s
+[12:06:10]   conc3 s2 t2: prompt 69018 (cached 65670) ttft 111.2s | 512 tok at 75.6 t/s | max gap 0.33s
+[12:06:10]   conc3: 3072 tokens in 160.6s = 19.1 tok/s aggregate | peak vram 31967 gtt 30 ram 66676 MiB
+[12:07:42]   join s0 t1: prompt 62 (cached 0) ttft 0.52s | 3000 tok at 86.67 t/s | max gap 1.19s
+[12:07:42]   join: while the 131113-token prompt was read (80.2s) the stream got 2505 chunks (31.2/s), longest stop 0.64s (the stream ended during the read)
+[12:07:42]   join s1 t1: prompt 131113 (cached 0) ttft 80.17s | 512 tok at 78.3 t/s | max gap 0.04s
+[12:07:44] ############ coder-3.8fn / p2
+[12:08:46]   loaded in 62.0s
+[12:09:33]   solo s0 t1: prompt 65669 (cached 0) ttft 31.93s | 512 tok at 85.96 t/s | max gap 0.04s
+[12:09:33]   solo s0 t2: prompt 68802 (cached 65664) ttft 1.77s | 512 tok at 81.09 t/s | max gap 0.49s
+[12:09:33]   solo: 1024 tokens in 46.0s = 22.3 tok/s aggregate | peak vram 31987 gtt 30 ram 74419 MiB
+[12:11:08]   conc2 s0 t1: prompt 65672 (cached 0) ttft 67.95s | 512 tok at 27.38 t/s | max gap 3.01s
+[12:11:08]   conc2 s0 t2: prompt 68805 (cached 65667) ttft 1.71s | 512 tok at 77.92 t/s | max gap 0.35s
+[12:11:08]   conc2 s1 t1: prompt 65671 (cached 0) ttft 27.97s | 512 tok at 12.71 t/s | max gap 7.81s
+[12:11:08]   conc2 s1 t2: prompt 68804 (cached 65666) ttft 1.95s | 512 tok at 30.93 t/s | max gap 3.01s
+[12:11:08]   conc2: 2048 tokens in 94.9s = 21.6 tok/s aggregate | peak vram 31993 gtt 30 ram 78123 MiB
+[12:13:29]   conc3 s0 t1: prompt 65668 (cached 0) ttft 68.65s | 512 tok at 29.57 t/s | max gap 2.74s
+[12:13:29]   conc3 s0 t2: prompt 68801 (cached 65663) ttft 33.44s | 512 tok at 36.76 t/s | max gap 0.79s
+[12:13:29]   conc3 s1 t1: prompt 65669 (cached 0) ttft 29.61s | 512 tok at 13.29 t/s | max gap 7.08s
+[12:13:29]   conc3 s1 t2: prompt 68802 (cached 65664) ttft 3.39s | 512 tok at 35.29 t/s | max gap 1.15s
+[12:13:29]   conc3 s2 t1: prompt 65673 (cached 0) ttft 117.35s | 512 tok at 32.11 t/s | max gap 1.98s
+[12:13:29]   conc3 s2 t2: prompt 68806 (cached 65668) ttft 1.69s | 512 tok at 83.88 t/s | max gap 0.22s
+[12:13:29]   conc3: 3072 tokens in 141.1s = 21.8 tok/s aggregate | peak vram 31996 gtt 30 ram 80061 MiB
+[12:15:20]   join s0 t1: prompt 61 (cached 0) ttft 0.61s | 3000 tok at 27.12 t/s | max gap 11.42s
+[12:15:20]   join: while the 131115-token prompt was read (84.9s) the stream got 1243 chunks (14.6/s), longest stop 11.42s
+[12:15:20]   join s1 t1: prompt 131115 (cached 0) ttft 84.87s | 512 tok at 39.56 t/s | max gap 0.28s
+[12:15:22] ############ coder-3.8fn / p3
+[12:16:42]   loaded in 80.1s
+[12:17:31]   solo s0 t1: prompt 65673 (cached 0) ttft 33.59s | 512 tok at 75.29 t/s | max gap 0.23s
+[12:17:31]   solo s0 t2: prompt 68806 (cached 65668) ttft 1.89s | 512 tok at 84.65 t/s | max gap 0.03s
+[12:17:31]   solo: 1024 tokens in 48.3s = 21.2 tok/s aggregate | peak vram 31990 gtt 30 ram 80568 MiB
+[12:19:00]   conc2 s0 t1: prompt 65668 (cached 0) ttft 64.88s | 512 tok at 33.5 t/s | max gap 2.23s
+[12:19:00]   conc2 s0 t2: prompt 68801 (cached 65663) ttft 1.91s | 512 tok at 82.09 t/s | max gap 0.03s
+[12:19:00]   conc2 s1 t1: prompt 65670 (cached 0) ttft 26.05s | 512 tok at 13.43 t/s | max gap 6.75s
+[12:19:00]   conc2 s1 t2: prompt 68803 (cached 65665) ttft 3.0s | 512 tok at 39.16 t/s | max gap 0.25s
+[12:19:00]   conc2: 2048 tokens in 88.3s = 23.2 tok/s aggregate | peak vram 31997 gtt 30 ram 84345 MiB
+[12:21:15]   conc3 s0 t1: prompt 65667 (cached 0) ttft 108.25s | 512 tok at 31.25 t/s | max gap 2.07s
+[12:21:15]   conc3 s0 t2: prompt 68800 (cached 65662) ttft 2.16s | 512 tok at 57.88 t/s | max gap 0.29s
+[12:21:15]   conc3 s1 t1: prompt 65672 (cached 0) ttft 25.29s | 512 tok at 14.74 t/s | max gap 10.76s
+[12:21:15]   conc3 s1 t2: prompt 68805 (cached 65667) ttft 10.18s | 512 tok at 12.01 t/s | max gap 6.79s
+[12:21:15]   conc3 s2 t1: prompt 65673 (cached 0) ttft 68.07s | 512 tok at 11.46 t/s | max gap 6.79s
+[12:21:15]   conc3 s2 t2: prompt 68806 (cached 65668) ttft 1.98s | 512 tok at 32.64 t/s | max gap 1.87s
+[12:21:15]   conc3: 3072 tokens in 135.6s = 22.7 tok/s aggregate | peak vram 32007 gtt 30 ram 84374 MiB
+[12:23:09]   join s0 t1: prompt 61 (cached 0) ttft 0.52s | 3000 tok at 26.42 t/s | max gap 9.15s
+[12:23:09]   join: while the 131112-token prompt was read (76.9s) the stream got 1098 chunks (14.3/s), longest stop 7.49s
+[12:23:09]   join s1 t1: prompt 131112 (cached 0) ttft 76.88s | 512 tok at 38.98 t/s | max gap 0.45s
+[12:23:11] ############ coder-3.8fn / p2-bmtp
+[12:24:27]   loaded in 75.4s
+[12:25:21]   solo s0 t1: prompt 65669 (cached 0) ttft 37.08s | 512 tok at 82.95 t/s | max gap 0.04s
+[12:25:21]   solo s0 t2: prompt 68802 (cached 65664) ttft 3.29s | 512 tok at 83.76 t/s | max gap 0.03s
+[12:25:21]   solo: 1024 tokens in 52.6s = 19.5 tok/s aggregate | peak vram 32053 gtt 30 ram 73621 MiB
+[12:26:46]   conc2 s0 t1: prompt 65671 (cached 0) ttft 26.22s | 512 tok at 14.52 t/s | max gap 6.77s
+[12:26:46]   conc2 s0 t2: prompt 68804 (cached 65666) ttft 3.07s | 512 tok at 35.98 t/s | max gap 2.63s
+[12:26:46]   conc2 s1 t1: prompt 65670 (cached 0) ttft 62.19s | 512 tok at 40.29 t/s | max gap 2.33s
+[12:26:46]   conc2 s1 t2: prompt 68803 (cached 65665) ttft 1.95s | 512 tok at 62.82 t/s | max gap 0.73s
+[12:26:46]   conc2: 2048 tokens in 85.0s = 24.1 tok/s aggregate | peak vram 32061 gtt 30 ram 77047 MiB
+[12:28:55]   conc3 s0 t1: prompt 65666 (cached 0) ttft 25.16s | 512 tok at 18.86 t/s | max gap 6.38s
+[12:28:55]   conc3 s0 t2: prompt 68799 (cached 65661) ttft 60.81s | 512 tok at 32.9 t/s | max gap 2.07s
+[12:28:55]   conc3 s1 t1: prompt 65672 (cached 0) ttft 60.21s | 512 tok at 18.92 t/s | max gap 6.56s
+[12:28:55]   conc3 s1 t2: prompt 68805 (cached 65667) ttft 9.18s | 512 tok at 37.3 t/s | max gap 1.09s
+[12:28:55]   conc3 s2 t1: prompt 65673 (cached 0) ttft 94.4s | 512 tok at 26.67 t/s | max gap 3.11s
+[12:28:55]   conc3 s2 t2: prompt 68909 (cached 65668) ttft 1.84s | 512 tok at 36.63 t/s | max gap 1.16s
+[12:28:55]   conc3: 3072 tokens in 129.4s = 23.7 tok/s aggregate | peak vram 32066 gtt 30 ram 78273 MiB
+[12:30:34]   join s0 t1: prompt 61 (cached 0) ttft 0.5s | 3000 tok at 30.56 t/s | max gap 6.71s
+[12:30:34]   join: while the 131110-token prompt was read (75.4s) the stream got 1413 chunks (18.7/s), longest stop 6.71s
+[12:30:34]   join s1 t1: prompt 131110 (cached 0) ttft 75.42s | 512 tok at 45.67 t/s | max gap 0.33s
+[12:30:35] ############ coder-3.8fn / p3-bmtp
+[12:33:26]   loaded in 170.7s
+[12:34:17]   solo s0 t1: prompt 65669 (cached 0) ttft 35.97s | 512 tok at 84.81 t/s | max gap 0.04s
+[12:34:17]   solo s0 t2: prompt 68802 (cached 65664) ttft 1.87s | 512 tok at 90.8 t/s | max gap 0.04s
+[12:34:17]   solo: 1024 tokens in 49.5s = 20.7 tok/s aggregate | peak vram 32100 gtt 30 ram 79055 MiB
+[12:38:59]   conc2 s0 t1: prompt NA (cached NA) ttft NAs | 0 tok at NA t/s | max gap NAs
+[12:38:59]   conc2 s0 t2: prompt 68803 (cached 0) ttft 199.21s | 512 tok at 67.75 t/s | max gap 0.67s
+[12:38:59]   conc2 s1 t1: prompt NA (cached NA) ttft 25.22s | 240 tok at 9.28 t/s | max gap 6.41s
+[12:38:59]   conc2 s1 t2: prompt 68803 (cached 0) ttft 155.72s | 512 tok at 14.6 t/s | max gap 12.53s
+[12:38:59]   conc2: 1264 tokens in 282.2s = 4.5 tok/s aggregate | peak vram 32102 gtt 30 ram 81474 MiB
+Traceback (most recent call last):
+  File "/home/brian/dev/llms/bench/speed/concurrent_sessions.py", line 303, in <module>
+    main()
+  File "/home/brian/dev/llms/bench/speed/concurrent_sessions.py", line 299, in main
+    run(parser.parse_args())
+  File "/home/brian/dev/llms/bench/speed/concurrent_sessions.py", line 240, in run
+    sessions(n, f"conc{n}")
+  File "/home/brian/dev/llms/bench/speed/concurrent_sessions.py", line 226, in sessions
+    thread.join()
+  File "/home/brian/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/threading.py", line 1149, in join
+    self._wait_for_tstate_lock()
+  File "/home/brian/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/threading.py", line 1169, in _wait_for_tstate_lock
+    if lock.acquire(block, timeout):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/dev/llms/bench/lib/stack.py", line 226, in _on_signal
+    raise KeyboardInterrupt(f"signal {signum}")
+KeyboardInterrupt: signal 15
