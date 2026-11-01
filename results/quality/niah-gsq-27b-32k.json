@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "model": "gsq-27b",
+    "total": 3,
+    "found": 3,
+    "recall_pct": 100.0,
+    "recall_by_depth": {
+      "32768": "3/3"
+    },
+    "elapsed_s": 111.5
+  },
+  "results": [
+    {
+      "depth": 32768,
+      "position": 0.1,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 32834,
+      "answer": "7429-XKQ",
+      "latency_s": 37.1
+    },
+    {
+      "depth": 32768,
+      "position": 0.5,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 32834,
+      "answer": "7429-XKQ",
+      "latency_s": 37.3
+    },
+    {
+      "depth": 32768,
+      "position": 0.9,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 32834,
+      "answer": "7429-XKQ",
+      "latency_s": 36.5
+    }
+  ]
+}
