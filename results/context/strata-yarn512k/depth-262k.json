@@ -1,0 +1,59 @@
+[
+ {
+  "label": "yarn2-512k",
+  "target": 262000,
+  "word": "cobalt-lantern-673",
+  "prompt_tokens": 250461,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 947.0,
+  "prefill_s": 264.48,
+  "gen_tokens": 466,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 42.3,
+  "decode_s": 11.02,
+  "mtp_accepted": 235,
+  "mtp_rejected": 178,
+  "mtp_accept_pct": 56.9,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 264.95,
+  "wall_s": 276.0,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-lantern-673",
+  "answer_words": 253,
+  "mem_samples": 27,
+  "vram_peak_gib": 31.53,
+  "ram_used_peak_gib": 59.24,
+  "tabby_pss_peak_gib": 49.09,
+  "swap_used_peak_gib": 7.34,
+  "tabby_swap_peak_gib": 0.3,
+  "t_start": 1791421197.0,
+  "t_end": 1791421472.9,
+  "usage": {
+   "prompt_tokens": 250461,
+   "completion_tokens": 466,
+   "total_tokens": 250927,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 250461,
+   "prompt_ms": 264483.0,
+   "prompt_per_token_ms": 1.056,
+   "prompt_per_second": 947.0,
+   "predicted_n": 466,
+   "predicted_ms": 11020.6,
+   "predicted_per_token_ms": 23.649,
+   "predicted_per_second": 42.3,
+   "draft_n": 413,
+   "draft_n_accepted": 235
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-lantern-673\n\nThe provided documentation details **Strata**, a system for running the Qwen3.8-Flash-Next Mixture-of-Experts (MoE) model locally on consumer hardware. Strata optimizes performance by distributing the model\u2019s 24,576 experts across VRAM, system RAM, and SSDs, utilizing a sophisticated CPU/GPU hybrid inference engine.\n\n**Installation and Hardware:**\nSetup is automated via `START-HERE.bat` (Windows) or `setup.sh` (Linux), supporting NVIDIA RTX 20\u201350 series and specific AMD Radeon cards (RX 7900, 9070, etc.). It requires 32\u201364 GB RAM and ~70\u2013110 GB disk space. The system installs Python, CUDA/ROCm libraries, and the model into a local `Strata-data` directory.\n\n**Model Variants:**\nUsers select quantization sizes (Q2_0, IQ2_XS, IQ3_XXS, IQ3_S) based on RAM. Specialized variants include the \"Coder\" (expert-pruned for coding tasks, fitting 32 GB RAM) and \"Swift 1.5\" (optimized for shorter reasoning). Unsloth\u2019s 4-bit quantizations are supported for high-RAM systems.\n\n**Technical Architecture:**\nStrata employs speculative decoding (MTP) to accelerate token generation. The engine manages memory tiers: hot experts reside in VRAM, all experts in RAM (pinned), and a large n-gram lookup table on SSD. It supports layer splitting across multiple GPUs and batched decoding for concurrent requests. The C++ engine (`strata`) interfaces with a Python server (`serve/server.py`) exposing OpenAI, Anthropic, and Responses APIs.\n\n**Features and Configuration:**\nThe server supports vision (image encoding), MCP tool integration, and conversation caching to reduce prompt re-processing. Configuration is managed via JSON files (`strata-<model>.json`), allowing tuning of context length, KV cache precision (INT8/Q4), and parallelism. Documentation includes extensive troubleshooting for driver issues, memory limits, and performance calibration, alongside community benchmarks for Intel Arc and older GPUs."
+ }
+]

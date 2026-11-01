@@ -1,0 +1,53 @@
+[
+ {
+  "label": "coder-yarn512k",
+  "target": 522000,
+  "word": "meadow-juniper-885",
+  "prompt_tokens": 521948,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 2165.6,
+  "prefill_s": 241.02,
+  "gen_tokens": 322,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 57.7,
+  "decode_s": 5.58,
+  "mtp_accepted": 155,
+  "mtp_rejected": 144,
+  "mtp_accept_pct": 51.8,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 268.25,
+  "wall_s": 273.8,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "meadow-juniper-885",
+  "answer_words": 205,
+  "t_start": 1792929477.3,
+  "t_end": 1792929751.1,
+  "usage": {
+   "prompt_tokens": 521948,
+   "completion_tokens": 322,
+   "total_tokens": 522270,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 521948,
+   "prompt_ms": 241017.4,
+   "prompt_per_token_ms": 0.462,
+   "prompt_per_second": 2165.6,
+   "predicted_n": 322,
+   "predicted_ms": 5576.1,
+   "predicted_per_token_ms": 17.317,
+   "predicted_per_second": 57.7,
+   "draft_n": 299,
+   "draft_n_accepted": 155
+  },
+  "reasoning_text": "",
+  "answer_text": "meadow-juniper-885\n\nThe provided documentation describes **Strata**, an open-source engine designed to run the large Qwen3.8-Flash-Next model locally on consumer hardware by distributing computational load across GPU VRAM, system RAM, and SSD storage. The core architecture utilizes a sparse Mixture-of-Experts (MoE) design with 24,576 experts, where only ten are active per token. Strata optimizes performance by caching the most frequently used experts in VRAM while computing less-used ones on the CPU using AVX-512/AVX2 kernels, and reading a massive n-gram lookup table (PLE) from SSDs via unbuffered I/O.\n\nThe system supports multiple quantization formats (Q2_0, IQ2_XS, IQ3_S, etc.) and hardware backends including NVIDIA CUDA, AMD HIP, and an experimental Intel SYCL port. Key technical features include speculative decoding via a Multi-Token Prediction (MTP) draft layer, KV cache streaming to manage memory limits, and conversation caching for efficient multi-turn interactions. The documentation details extensive validation protocols, including bitwise parity tests against reference implementations (like llama.cpp/ggml), rigorous CPU/GPU overlap measurements, and detailed troubleshooting guides for driver compatibility and memory constraints. It also covers API integration for OpenAI/Anthropic clients, MCP server management, and community benchmarking standards, emphasizing that Strata achieves high throughput by overlapping PCIe transfers with CPU expert computation, effectively bypassing traditional VRAM limitations through sophisticated tiered memory management."
+ }
+]

@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-yarn512k",
+  "target": 522000,
+  "word": "meadow-juniper-885",
+  "prompt_tokens": 521945,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 672.6,
+  "prefill_s": 776.01,
+  "gen_tokens": 360,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 39.3,
+  "decode_s": 9.17,
+  "mtp_accepted": 168,
+  "mtp_rejected": 148,
+  "mtp_accept_pct": 53.2,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 776.98,
+  "wall_s": 786.1,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "meadow-juniper-885",
+  "answer_words": 253,
+  "mem_samples": 76,
+  "vram_peak_gib": 31.52,
+  "ram_used_peak_gib": 50.91,
+  "tabby_pss_peak_gib": 82.1,
+  "swap_used_peak_gib": 7.71,
+  "tabby_swap_peak_gib": 0.02,
+  "t_start": 1791423702.8,
+  "t_end": 1791424488.9,
+  "usage": {
+   "prompt_tokens": 521945,
+   "completion_tokens": 360,
+   "total_tokens": 522305,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 521945,
+   "prompt_ms": 776013.7,
+   "prompt_per_token_ms": 1.487,
+   "prompt_per_second": 672.6,
+   "predicted_n": 360,
+   "predicted_ms": 9165.8,
+   "predicted_per_token_ms": 25.461,
+   "predicted_per_second": 39.3,
+   "draft_n": 316,
+   "draft_n_accepted": 168
+  },
+  "reasoning_text": "",
+  "answer_text": "meadow-juniper-885\n\nThe provided documentation describes Strata, a sophisticated local inference engine designed to run the Qwen3.8-Flash-Next model on consumer hardware by leveraging a hybrid CPU-GPU architecture. The system addresses the challenge of running large Mixture-of-Experts (MoE) models on GPUs with limited VRAM (12-24 GB) by distributing the model's 24,576 experts across three memory tiers: VRAM for frequently accessed experts and dense layers, system RAM for the full expert set, and SSD for a massive n-gram lookup table. A key innovation is the \"guess and check\" speculative decoding mechanism, where a lightweight Multi-Token Prediction (MTP) draft layer proposes tokens that the main model verifies in parallel, significantly boosting throughput.\n\nThe technical implementation relies on a custom C++ engine with CUDA and HIP backends, featuring highly optimized kernels for quantized expert computations (IQ2_XS, IQ3_S, etc.) using AVX-512 and AVX2 instructions. The CPU expert pool is meticulously managed with thread affinity and lock-free synchronization to overlap CPU expert computation with GPU attention operations via a \"doorbell\" protocol using pinned memory. The documentation details complex memory management strategies, including low-RAM modes that map experts from disk, adaptive expert caching that learns from conversation patterns, and KV cache streaming to fit long contexts. It also covers extensive validation procedures, including bitwise parity tests against reference implementations, performance benchmarks on various NVIDIA and AMD GPUs, and support for experimental features like rope scaling for contexts beyond 262K tokens and Intel Arc SYCL ports. The system exposes OpenAI and Anthropic-compatible APIs, enabling integration with standard coding agents and chat interfaces."
+ }
+]

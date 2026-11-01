@@ -1,0 +1,59 @@
+[
+ {
+  "label": "yarn2-512k",
+  "target": 8000,
+  "word": "cobalt-falcon-894",
+  "prompt_tokens": 7745,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 1481.8,
+  "prefill_s": 5.23,
+  "gen_tokens": 400,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 52.8,
+  "decode_s": 7.58,
+  "mtp_accepted": 232,
+  "mtp_rejected": 116,
+  "mtp_accept_pct": 66.7,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 5.37,
+  "wall_s": 12.9,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-falcon-894",
+  "answer_words": 244,
+  "mem_samples": 1,
+  "vram_peak_gib": 31.51,
+  "ram_used_peak_gib": 55.32,
+  "tabby_pss_peak_gib": 48.19,
+  "swap_used_peak_gib": 7.18,
+  "tabby_swap_peak_gib": 0.0,
+  "t_start": 1791421163.7,
+  "t_end": 1791421176.6,
+  "usage": {
+   "prompt_tokens": 7745,
+   "completion_tokens": 400,
+   "total_tokens": 8145,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 7745,
+   "prompt_ms": 5226.7,
+   "prompt_per_token_ms": 0.675,
+   "prompt_per_second": 1481.8,
+   "predicted_n": 400,
+   "predicted_ms": 7580.2,
+   "predicted_per_token_ms": 18.95,
+   "predicted_per_second": 52.8,
+   "draft_n": 348,
+   "draft_n_accepted": 232
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-falcon-894\n\nThe provided documentation outlines the installation, configuration, and technical specifications for Strata, a local AI server running the Qwen3.8-Flash-Next model. Designed for AI agents, the setup guide emphasizes strict security protocols, mandating that servers remain bound to `127.0.0.1` unless protected by API keys. It details hardware requirements, specifying support for NVIDIA RTX 20-50 series and specific AMD Radeon cards (RX 7900 XT, RX 9070, etc.) with minimum 12GB VRAM and 32GB RAM. The process involves cloning the repository, selecting a model quantization size (e.g., IQ2_XS, IQ3_S) based on available RAM, and executing setup scripts (`START-HERE.bat` on Windows, `setup.sh` on Linux) with flags for non-interactive installation.\n\nThe AMD-specific documentation elaborates on the HIP backend, which maps CUDA runtime calls to HIP/hipBLAS for RDNA2/3/4 architectures. On Linux, setup automatically installs ROCm into a virtual environment if system-wide ROCm is absent, compiling the engine for the specific GPU architecture. Windows support, introduced in version 0.1.34, utilizes a pre-built engine zip containing necessary ROCm libraries, requiring only a current AMD driver. Key technical nuances include handling Windows-specific driver conflicts with `amdhip64_7.dll`, managing VRAM budgets via WDDM, and addressing PCIe probe timing issues. The text also notes limitations, such as CPU-only image processing on AMD and single-card constraints on Windows. Finally, it describes the server\u2019s OpenAI and Anthropic-compatible API endpoints, verification steps via `curl`, and troubleshooting guides for common issues like driver mismatches, out-of-memory errors, and download interruptions, ensuring users can deploy a secure, local LLM environment efficiently."
+ }
+]

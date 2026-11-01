@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-stock262k",
+  "target": 262000,
+  "word": "cobalt-lantern-673",
+  "prompt_tokens": 250461,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 1183.8,
+  "prefill_s": 211.57,
+  "gen_tokens": 411,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 44.1,
+  "decode_s": 9.31,
+  "mtp_accepted": 212,
+  "mtp_rejected": 161,
+  "mtp_accept_pct": 56.8,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 212.08,
+  "wall_s": 221.4,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-lantern-673",
+  "answer_words": 288,
+  "mem_samples": 22,
+  "vram_peak_gib": 31.51,
+  "ram_used_peak_gib": 46.4,
+  "tabby_pss_peak_gib": 76.13,
+  "swap_used_peak_gib": 7.81,
+  "tabby_swap_peak_gib": 0.03,
+  "t_start": 1791422569.3,
+  "t_end": 1791422790.7,
+  "usage": {
+   "prompt_tokens": 250461,
+   "completion_tokens": 411,
+   "total_tokens": 250872,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 250461,
+   "prompt_ms": 211568.3,
+   "prompt_per_token_ms": 0.845,
+   "prompt_per_second": 1183.8,
+   "predicted_n": 411,
+   "predicted_ms": 9310.9,
+   "predicted_per_token_ms": 22.654,
+   "predicted_per_second": 44.1,
+   "draft_n": 373,
+   "draft_n_accepted": 212
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-lantern-673\n\nThe provided documentation details Strata, a sophisticated local inference engine designed to run the Qwen3.8-Flash-Next Mixture-of-Experts (MoE) model on consumer hardware by intelligently distributing computational loads across GPU VRAM, system RAM, and SSD storage. The core architecture relies on a dynamic expert cache that keeps frequently accessed experts in VRAM while streaming others from RAM or disk, supported by Multi-Token Prediction (MTP) speculative decoding to accelerate token generation. The system supports multiple model quantizations, including Q2_0, IQ2_XS, and specialized variants like the Coder and Swift 1.5, with specific RAM and VRAM requirements for each.\n\nStrata features a robust backend architecture supporting NVIDIA CUDA, AMD HIP, and an experimental Intel Arc SYCL port. The documentation provides extensive performance benchmarks across various GPUs, such as the RTX 5070, RX 7900 XTX, and Arc Pro B70, detailing prompt processing and decode speeds. It also covers advanced features like KV cache streaming for long contexts, hybrid K8V4 cache formats, and multi-GPU layer splitting for improved throughput on systems with multiple graphics cards. The engine includes a built-in web interface for monitoring and chatting, alongside OpenAI and Anthropic-compatible APIs for integration with external tools like Claude Code and Codex CLI.\n\nInstallation is streamlined via automated scripts for Windows and Linux, handling dependency management, model downloads, and engine compilation. The documentation emphasizes strict security practices, such as binding to localhost by default and requiring API keys for network exposure. Additionally, it describes an MCP server for AI-assisted management, allowing users to install, start, and monitor Strata through natural language commands. The technical deep-dive explains the memory hierarchy, speculative decoding mechanics, and troubleshooting steps for common issues like VRAM exhaustion or driver incompatibilities, positioning Strata as a high-performance, locally-hosted alternative to cloud-based LLM services."
+ }
+]

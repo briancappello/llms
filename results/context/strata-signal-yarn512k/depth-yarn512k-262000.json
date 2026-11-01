@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-yarn512k",
+  "target": 262000,
+  "word": "cobalt-lantern-673",
+  "prompt_tokens": 250461,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 1171.8,
+  "prefill_s": 213.74,
+  "gen_tokens": 335,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 42.5,
+  "decode_s": 7.87,
+  "mtp_accepted": 165,
+  "mtp_rejected": 138,
+  "mtp_accept_pct": 54.5,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 214.28,
+  "wall_s": 222.1,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-lantern-673",
+  "answer_words": 225,
+  "mem_samples": 22,
+  "vram_peak_gib": 31.52,
+  "ram_used_peak_gib": 50.26,
+  "tabby_pss_peak_gib": 82.82,
+  "swap_used_peak_gib": 7.99,
+  "tabby_swap_peak_gib": 0.03,
+  "t_start": 1791422919.3,
+  "t_end": 1791423141.5,
+  "usage": {
+   "prompt_tokens": 250461,
+   "completion_tokens": 335,
+   "total_tokens": 250796,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 250461,
+   "prompt_ms": 213742.0,
+   "prompt_per_token_ms": 0.853,
+   "prompt_per_second": 1171.8,
+   "predicted_n": 335,
+   "predicted_ms": 7873.2,
+   "predicted_per_token_ms": 23.502,
+   "predicted_per_second": 42.5,
+   "draft_n": 303,
+   "draft_n_accepted": 165
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-lantern-673\n\nThe provided documentation details Strata, a high-performance local inference engine designed to run the Qwen3.8-Flash-Next Mixture-of-Experts (MoE) model on consumer hardware. Strata\u2019s core innovation is a sophisticated memory hierarchy that distributes the model\u2019s 24,576 experts across VRAM, system RAM, and SSDs. It employs an adaptive expert cache that dynamically loads frequently accessed experts into GPU memory while computing less-used experts on the CPU in parallel with GPU operations, significantly reducing latency. The engine supports multiple quantization formats (Q2_0, IQ2_XS, IQ3_XXS, IQ3_S) and specialized variants like the expert-pruned Coder and the Swift 1.5 fine-tune, allowing users to balance quality, speed, and RAM requirements.\n\nStrata features a robust backend architecture supporting NVIDIA (CUDA), AMD (HIP), and experimental Intel Arc (SYCL) GPUs. It includes advanced speculative decoding via a Multi-Token Prediction (MTP) draft layer, which accelerates token generation by verifying multiple drafted tokens in a single pass. The system offers comprehensive API compatibility with OpenAI, Anthropic, and Responses standards, enabling seamless integration with tools like Claude Code and Codex CLI. Key features include conversation caching to preserve state across turns, batch processing for concurrent requests, and vision capabilities via an optional image encoder. The documentation also covers installation procedures, hardware requirements, troubleshooting, and performance benchmarks, emphasizing Strata\u2019s ability to deliver high throughput on modest hardware by optimizing memory bandwidth and computational overlap between CPU and GPU resources."
+ }
+]

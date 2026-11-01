@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-stock262k",
+  "target": 8000,
+  "word": "cobalt-falcon-894",
+  "prompt_tokens": 7745,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 887.7,
+  "prefill_s": 8.73,
+  "gen_tokens": 398,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 44.1,
+  "decode_s": 9.03,
+  "mtp_accepted": 222,
+  "mtp_rejected": 125,
+  "mtp_accept_pct": 64.0,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 8.79,
+  "wall_s": 17.8,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-falcon-894",
+  "answer_words": 255,
+  "mem_samples": 1,
+  "vram_peak_gib": 31.49,
+  "ram_used_peak_gib": 45.35,
+  "tabby_pss_peak_gib": 74.49,
+  "swap_used_peak_gib": 7.92,
+  "tabby_swap_peak_gib": 0.1,
+  "t_start": 1791422540.2,
+  "t_end": 1791422558.0,
+  "usage": {
+   "prompt_tokens": 7745,
+   "completion_tokens": 398,
+   "total_tokens": 8143,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 7745,
+   "prompt_ms": 8725.2,
+   "prompt_per_token_ms": 1.127,
+   "prompt_per_second": 887.7,
+   "predicted_n": 398,
+   "predicted_ms": 9033.9,
+   "predicted_per_token_ms": 22.698,
+   "predicted_per_second": 44.1,
+   "draft_n": 347,
+   "draft_n_accepted": 222
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-falcon-894\n\nThe provided documentation outlines the installation, configuration, and technical architecture of Strata, a local AI inference server designed to run the Qwen3.8-Flash-Next model on consumer hardware. The primary guide, `AI_SETUP.md`, targets AI agents, detailing a step-by-step process for verifying system compatibility, including specific requirements for NVIDIA (RTX 20-50 series) and AMD (RX 7000/9000 series) GPUs, minimum 32 GB RAM, and substantial disk space for model downloads ranging from 70 to 111 GB. It emphasizes security protocols, such as binding the server to `127.0.0.1` by default and mandating API keys for external access, while providing automated setup scripts for Windows and Linux that handle Python environments, driver checks, and model selection based on available RAM.\n\nThe `AMD_HIP.md` document elaborates on the backend implementation for AMD Radeon cards using the HIP runtime. It explains how Strata maps CUDA-shaped operations to HIP/hipBLAS, leveraging RDNA2/3/4 specific instructions for quantized kernels. The text details the automatic installation of ROCm libraries into a virtual environment if system-wide ROCm is absent, and describes the compilation process for the engine, which is architecture-specific (e.g., gfx1100, gfx1201). It also addresses platform-specific nuances, such as Windows requiring a pre-built engine zip and handling driver conflicts with `amdhip64_7.dll`, whereas Linux relies on kernel drivers and optional system ROCm. The documentation highlights performance tuning via hipBLASLt tables and notes current limitations, such as CPU-only image processing on AMD and single-card constraints on Windows. Together, these documents provide a comprehensive technical roadmap for deploying a high-performance, local LLM server with robust hardware support and strict security defaults."
+ }
+]

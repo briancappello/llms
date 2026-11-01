@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-yarn512k",
+  "target": 8000,
+  "word": "cobalt-falcon-894",
+  "prompt_tokens": 7745,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 1322.1,
+  "prefill_s": 5.86,
+  "gen_tokens": 446,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 59.5,
+  "decode_s": 7.49,
+  "mtp_accepted": 261,
+  "mtp_rejected": 118,
+  "mtp_accept_pct": 68.9,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 5.93,
+  "wall_s": 13.4,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "cobalt-falcon-894",
+  "answer_words": 284,
+  "mem_samples": 1,
+  "vram_peak_gib": 31.49,
+  "ram_used_peak_gib": 49.01,
+  "tabby_pss_peak_gib": 82.94,
+  "swap_used_peak_gib": 8.02,
+  "tabby_swap_peak_gib": 0.03,
+  "t_start": 1791422890.7,
+  "t_end": 1791422904.1,
+  "usage": {
+   "prompt_tokens": 7745,
+   "completion_tokens": 446,
+   "total_tokens": 8191,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 7745,
+   "prompt_ms": 5858.1,
+   "prompt_per_token_ms": 0.756,
+   "prompt_per_second": 1322.1,
+   "predicted_n": 446,
+   "predicted_ms": 7490.2,
+   "predicted_per_token_ms": 16.794,
+   "predicted_per_second": 59.5,
+   "draft_n": 379,
+   "draft_n_accepted": 261
+  },
+  "reasoning_text": "",
+  "answer_text": "cobalt-falcon-894\n\nThe provided documentation outlines the installation, configuration, and technical architecture of Strata, a local AI inference server designed to run the Qwen3.8-Flash-Next model on consumer hardware. The primary guide, `AI_SETUP.md`, targets AI coding assistants, detailing a step-by-step process for verifying system compatibility, including specific requirements for NVIDIA (RTX 20-50 series) and AMD (RX 6800-9070 series) GPUs, minimum 32 GB RAM, and sufficient disk space for 70-120 GB model files. It emphasizes security by mandating local-only binding (`127.0.0.1`) unless an API key is explicitly configured, and provides command-line flags for automated setup, such as `--yes` for non-interactive installation and `--no-start` to prevent blocking the agent\u2019s shell. The document also covers model selection based on RAM capacity, ranging from IQ1_M for 32 GB systems to UD-Q4_K_XL for high-end setups, and explains how to verify the server via HTTP health checks and connect it to OpenAI- or Anthropic-compatible applications.\n\nThe second document, `AMD_HIP.md`, delves into the technical implementation of the AMD backend using the HIP runtime. It explains that Strata maps CUDA-shaped runtime calls to HIP/hipBLAS, utilizing RDNA architecture-specific instructions for quantized kernels. The guide distinguishes between Linux and Windows workflows: Linux requires compiling the engine for the specific GPU architecture (e.g., gfx1100, gfx1201) and may install ROCm into a virtual environment, while Windows uses a pre-built engine zip that relies on the installed AMD driver. It details critical technical nuances, such as handling `hipMemGetInfo` inaccuracies on Windows regarding VRAM budgeting, clearing stale HIP errors after GEMM operations, and managing device visibility for integrated versus discrete GPUs. The document also notes current limitations, such as the lack of image support on Windows AMD and the requirement for specific ROCm versions for multi-GPU setups across different architectures."
+ }
+]

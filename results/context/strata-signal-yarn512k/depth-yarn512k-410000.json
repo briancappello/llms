@@ -1,0 +1,59 @@
+[
+ {
+  "label": "signal-yarn512k",
+  "target": 410000,
+  "word": "juniper-willow-542",
+  "prompt_tokens": 403351,
+  "prompt_tokens_est": null,
+  "cached_tokens": 0,
+  "prefill_tps": 802.9,
+  "prefill_s": 502.38,
+  "gen_tokens": 363,
+  "reasoning_tokens": null,
+  "answer_tokens": null,
+  "decode_tps": 40.4,
+  "decode_s": 9.0,
+  "mtp_accepted": 181,
+  "mtp_rejected": 155,
+  "mtp_accept_pct": 53.9,
+  "max_tokens": 600,
+  "finish_reason": "stop",
+  "ttft_s": 503.17,
+  "wall_s": 512.1,
+  "found": true,
+  "found_in_reasoning": false,
+  "first_line": "juniper-willow-542",
+  "answer_words": 236,
+  "mem_samples": 49,
+  "vram_peak_gib": 31.52,
+  "ram_used_peak_gib": 50.79,
+  "tabby_pss_peak_gib": 81.71,
+  "swap_used_peak_gib": 7.71,
+  "tabby_swap_peak_gib": 0.02,
+  "t_start": 1791423170.4,
+  "t_end": 1791423682.5,
+  "usage": {
+   "prompt_tokens": 403351,
+   "completion_tokens": 363,
+   "total_tokens": 403714,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 403351,
+   "prompt_ms": 502375.1,
+   "prompt_per_token_ms": 1.246,
+   "prompt_per_second": 802.9,
+   "predicted_n": 363,
+   "predicted_ms": 8995.5,
+   "predicted_per_token_ms": 24.781,
+   "predicted_per_second": 40.4,
+   "draft_n": 336,
+   "draft_n_accepted": 181
+  },
+  "reasoning_text": "",
+  "answer_text": "juniper-willow-542\n\nThe provided documentation details Strata, a high-performance local inference engine designed to run the Qwen3.8-Flash-Next Mixture-of-Experts (MoE) model on consumer hardware. Strata\u2019s core innovation is its tiered memory architecture, which distributes the model\u2019s 24,576 experts across VRAM, system RAM, and NVMe SSDs. By keeping only the most frequently accessed experts in VRAM and computing others on the CPU in parallel with GPU operations, it enables large models to run on GPUs with as little as 12GB of VRAM, provided sufficient system RAM (32-64GB) is available.\n\nThe system supports NVIDIA (CUDA) and AMD (HIP) backends, with experimental ports for Intel Arc (SYCL) and older architectures like Volta and RDNA2. It features sophisticated speculative decoding using a Multi-Token Prediction (MTP) draft layer to accelerate token generation, alongside a \"prompt lookup\" mechanism for code and repetitive text. The engine includes advanced features like KV cache streaming to manage long contexts (up to 262K tokens), adaptive expert caching that learns from conversation patterns, and multi-GPU layer splitting for distributed inference.\n\nStrata serves an OpenAI- and Anthropic-compatible API, allowing integration with tools like Claude Code, Codex, and Open WebUI. It offers various model quantizations (Q2_0, IQ2_XS, IQ3_S, and Unsloth\u2019s 4-bit variants) to balance speed and quality based on available RAM. The documentation also covers installation via automated scripts, troubleshooting common issues like VRAM exhaustion or driver incompatibilities, and performance tuning options such as calibration and batch processing for concurrent requests."
+ }
+]
