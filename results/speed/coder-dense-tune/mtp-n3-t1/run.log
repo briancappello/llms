@@ -1,0 +1,2 @@
+[turn1] wall=129.5s cache_n=0 prompt_n=61408 pp=695.2 t/s (88.3s) | gen_n=1388 tg=33.7 t/s | finish=tool_calls tool_calls=['grep {"pattern":"seq_pos_min"}', 'grep {"pattern":"state_clear"}', 'grep {"pattern":"state_read","path":"src/llama-kv-cache.cpp"}'] reasoning_len=4995 content_len=0
+[turn2] wall=12.5s cache_n=61404 prompt_n=3767 pp=543.8 t/s (6.9s) | gen_n=186 tg=33.6 t/s | finish=tool_calls tool_calls=['grep {"pattern":"seq_pos_min\\\\(seq_id\\\\)","path":"src/llama-context.cpp"}', 'grep {"pattern":"state_clear"}'] reasoning_len=479 content_len=0

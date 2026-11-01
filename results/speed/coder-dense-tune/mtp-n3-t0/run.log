@@ -1,0 +1,2 @@
+[turn1] wall=134.2s cache_n=0 prompt_n=61408 pp=695.5 t/s (88.3s) | gen_n=1776 tg=38.7 t/s | finish=tool_calls tool_calls=['grep {"pattern":"bool llama_kv_cache::seq_rm","path":"src"}', 'grep {"pattern":"seq_pos_min","path":"src"}'] reasoning_len=6698 content_len=0
+[turn2] wall=10.9s cache_n=61404 prompt_n=4188 pp=543.6 t/s (7.7s) | gen_n=128 tg=40.9 t/s | finish=tool_calls tool_calls=['grep {"pattern":"llama_kv_cache::seq_rm|llama_kv_cache::seq_add|llama_kv_cache::seq_div|llama_kv_cache::shift|swa_evict|evict'] reasoning_len=228 content_len=0
