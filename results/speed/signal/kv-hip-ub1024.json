@@ -1,0 +1,32 @@
+{
+  "tag": "hip-ub1024",
+  "summary": {
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 436.2,
+      "tg_med": 22.98,
+      "acc_med": 54.2
+    }
+  },
+  "records": [
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 411.3,
+      "tg_tok_s": 21.3,
+      "acc_pct": 49.1,
+      "wall_s": 92.0
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 461.1,
+      "tg_tok_s": 24.65,
+      "acc_pct": 59.3,
+      "wall_s": 81.7
+    }
+  ]
+}

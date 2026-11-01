@@ -1,0 +1,32 @@
+{
+  "tag": "hip-noopoff",
+  "summary": {
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 162.9,
+      "tg_med": 21.44,
+      "acc_med": 48.2
+    }
+  },
+  "records": [
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 160.4,
+      "tg_tok_s": 21.27,
+      "acc_pct": 46.9,
+      "wall_s": 217.1
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 165.4,
+      "tg_tok_s": 21.61,
+      "acc_pct": 49.6,
+      "wall_s": 210.7
+    }
+  ]
+}

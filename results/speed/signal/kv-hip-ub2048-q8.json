@@ -1,0 +1,32 @@
+{
+  "tag": "hip-ub2048-q8",
+  "summary": {
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 632.0,
+      "tg_med": 21.03,
+      "acc_med": 48.2
+    }
+  },
+  "records": [
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 575.6,
+      "tg_tok_s": 18.87,
+      "acc_pct": 41.4,
+      "wall_s": 70.7
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 688.4,
+      "tg_tok_s": 23.19,
+      "acc_pct": 55.0,
+      "wall_s": 58.8
+    }
+  ]
+}

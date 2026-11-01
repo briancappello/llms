@@ -1,0 +1,107 @@
+{
+  "tag": "final-combined-ub1024-f16",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4220,
+      "n": 2,
+      "pp_med": 453.1,
+      "tg_med": 23.91,
+      "acc_med": 52.5
+    },
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 424.2,
+      "tg_med": 21.62,
+      "acc_med": 50.5
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 435.8,
+      "tg_med": 16.59,
+      "acc_med": 44.6
+    },
+    "131072": {
+      "prompt_tok": 131196,
+      "n": 2,
+      "pp_med": 374.1,
+      "tg_med": 17.77,
+      "acc_med": 53.5
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4220,
+      "pp_tok_s": 452.4,
+      "tg_tok_s": 25.08,
+      "acc_pct": 56.6,
+      "wall_s": 19.5
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4220,
+      "pp_tok_s": 453.9,
+      "tg_tok_s": 22.74,
+      "acc_pct": 48.4,
+      "wall_s": 20.5
+    },
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 431.9,
+      "tg_tok_s": 20.53,
+      "acc_pct": 47.0,
+      "wall_s": 88.6
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 416.5,
+      "tg_tok_s": 22.71,
+      "acc_pct": 54.0,
+      "wall_s": 90.2
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 413.1,
+      "tg_tok_s": 18.7,
+      "acc_pct": 44.3,
+      "wall_s": 172.6
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 458.4,
+      "tg_tok_s": 14.49,
+      "acc_pct": 44.9,
+      "wall_s": 160.9
+    },
+    {
+      "depth": 131072,
+      "rep": 1,
+      "prompt_tok": 131196,
+      "pp_tok_s": 367.0,
+      "tg_tok_s": 16.68,
+      "acc_pct": 48.0,
+      "wall_s": 372.9
+    },
+    {
+      "depth": 131072,
+      "rep": 2,
+      "prompt_tok": 131196,
+      "pp_tok_s": 381.2,
+      "tg_tok_s": 18.85,
+      "acc_pct": 59.1,
+      "wall_s": 357.8
+    }
+  ]
+}

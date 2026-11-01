@@ -1,0 +1,107 @@
+{
+  "tag": "final-ub1024-f16",
+  "summary": {
+    "4096": {
+      "prompt_tok": 4220,
+      "n": 2,
+      "pp_med": 453.5,
+      "tg_med": 26.36,
+      "acc_med": 59.5
+    },
+    "32768": {
+      "prompt_tok": 32892,
+      "n": 2,
+      "pp_med": 486.1,
+      "tg_med": 21.7,
+      "acc_med": 49.2
+    },
+    "65536": {
+      "prompt_tok": 65660,
+      "n": 2,
+      "pp_med": 429.7,
+      "tg_med": 17.71,
+      "acc_med": 46.1
+    },
+    "131072": {
+      "prompt_tok": 131196,
+      "n": 2,
+      "pp_med": 381.9,
+      "tg_med": 17.53,
+      "acc_med": 52.5
+    }
+  },
+  "records": [
+    {
+      "depth": 4096,
+      "rep": 1,
+      "prompt_tok": 4220,
+      "pp_tok_s": 453.9,
+      "tg_tok_s": 25.23,
+      "acc_pct": 56.6,
+      "wall_s": 19.4
+    },
+    {
+      "depth": 4096,
+      "rep": 2,
+      "prompt_tok": 4220,
+      "pp_tok_s": 453.2,
+      "tg_tok_s": 27.49,
+      "acc_pct": 62.4,
+      "wall_s": 18.6
+    },
+    {
+      "depth": 32768,
+      "rep": 1,
+      "prompt_tok": 32892,
+      "pp_tok_s": 481.9,
+      "tg_tok_s": 20.91,
+      "acc_pct": 46.1,
+      "wall_s": 80.5
+    },
+    {
+      "depth": 32768,
+      "rep": 2,
+      "prompt_tok": 32892,
+      "pp_tok_s": 490.3,
+      "tg_tok_s": 22.49,
+      "acc_pct": 52.3,
+      "wall_s": 78.5
+    },
+    {
+      "depth": 65536,
+      "rep": 1,
+      "prompt_tok": 65660,
+      "pp_tok_s": 420.2,
+      "tg_tok_s": 15.35,
+      "acc_pct": 42.6,
+      "wall_s": 172.9
+    },
+    {
+      "depth": 65536,
+      "rep": 2,
+      "prompt_tok": 65660,
+      "pp_tok_s": 439.2,
+      "tg_tok_s": 20.08,
+      "acc_pct": 49.6,
+      "wall_s": 162.3
+    },
+    {
+      "depth": 131072,
+      "rep": 1,
+      "prompt_tok": 131196,
+      "pp_tok_s": 374.2,
+      "tg_tok_s": 17.46,
+      "acc_pct": 51.8,
+      "wall_s": 365.3
+    },
+    {
+      "depth": 131072,
+      "rep": 2,
+      "prompt_tok": 131196,
+      "pp_tok_s": 389.7,
+      "tg_tok_s": 17.6,
+      "acc_pct": 53.1,
+      "wall_s": 351.3
+    }
+  ]
+}
