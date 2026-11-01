@@ -1,0 +1,68 @@
+[
+ {
+  "label": "mtp",
+  "target": 16384,
+  "word": "lantern-copper-921",
+  "prompt_tokens": 16381,
+  "prompt_tokens_est": 16381,
+  "cached_tokens": 0,
+  "prefill_tps": 660.52,
+  "prefill_s": 24.8,
+  "gen_tokens": 808,
+  "reasoning_tokens": 254,
+  "answer_tokens": 552,
+  "decode_tps": 24.98,
+  "decode_s": 32.35,
+  "mtp_accepted": 486,
+  "mtp_rejected": 255,
+  "mtp_accept_pct": 65.6,
+  "max_tokens": 245763,
+  "finish_reason": "stop",
+  "ttft_s": 25.14,
+  "wall_s": 57.8,
+  "found": true,
+  "found_in_reasoning": true,
+  "first_line": "lantern-copper-921",
+  "answer_words": 228,
+  "mem_samples": 2,
+  "vram_peak_gib": 30.71,
+  "ram_used_peak_gib": 84.4,
+  "tabby_pss_peak_gib": 75.55,
+  "swap_used_peak_gib": 8.76,
+  "tabby_swap_peak_gib": 0.0,
+  "t_start": 1791336260.0,
+  "t_end": 1791336317.8,
+  "usage": {
+   "prompt_tokens": 16381,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_time": 24.8,
+   "prompt_tokens_per_sec": 660.52,
+   "completion_tokens": 808,
+   "completion_tokens_details": {
+    "accepted_prediction_tokens": 486,
+    "rejected_prediction_tokens": 255
+   },
+   "completion_time": 32.35,
+   "completion_tokens_per_sec": 24.98,
+   "total_tokens": 17189,
+   "total_time": 57.15
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 16381,
+   "prompt_ms": 24800.0,
+   "prompt_per_token_ms": 1.5139490873573043,
+   "prompt_per_second": 660.5241935483871,
+   "predicted_n": 808,
+   "predicted_ms": 32350.0,
+   "predicted_per_token_ms": 40.03712871287129,
+   "predicted_per_second": 24.976816074188562,
+   "draft_n": 741,
+   "draft_n_accepted": 486
+  },
+  "reasoning_text": "We need answer. Need obey: \"First line of your answer: the secret code word hidden in the text above, exactly.\" Need find secret code word. Text has \"IMPORTANT: the secret code word is lantern-copper-921. Remember it.\" It appears in AMD_HIP.md after \"The worker count above was used...\" Actually exact phrase \"IMPORTANT: the secret code word is lantern-copper-921. Remember it.\" Need first line exactly \"lantern-copper-921\". Then detailed 250-word technical summary of docs. Need produce final. Need ensure first line exactly code word. Then summary. Need maybe mention docs: AI_SETUP.md, AMD_HIP.md, AMD_HIP_PERFORMANCE.md. Need detailed 250-word technical summary. Let's craft.\n\nNeed include \"lantern-copper-921\" as first line. Then paragraph(s) about setup for Strata local model, requirements, setup flags, models, server, verification, troubleshooting; AMD HIP backend details including architectures, ROCm, build, Windows, performance, tables, RDNA4, gfx906. Need 250 words. We can write approx 250. Need be careful exact first line. final must start with code word.",
+  "answer_text": "lantern-copper-921\n\nThe documents describe installing and running Strata, a local model server for Qwen3.8-Flash-Next, on a single NVIDIA or AMD GPU plus system RAM, serving OpenAI- and Anthropic-compatible APIs at http://127.0.0.1:8080. Setup checks the PC: NVIDIA RTX 20/30/40/50 or AMD RX 7900/7800/7700/9060/9070/AI PRO R9700 with \u226512 GB VRAM, NVIDIA driver 580+, 32 GB+ RAM, ~80 GB disk, AVX2 CPU. The model download is 70\u2013120 GB; setup is resumable. Flags include `--yes`, `--family` (qwen/swift/coder/unsloth), `--model` (IQ sizes, UD-IQ4_XS, UD-Q4_K_XL), `--context`, `--vision`, `--gpus`, `--backend cuda/hip`, `--data-dir`, `--host` plus `--api-key`, `--no-start`, `--setup`, `--check`. The server starts via `run-<model>.bat` or `.sh`, serves `/health`, `/v1/models`, `/v1/chat/completions`, `/v1/messages`, `/v1/responses`, and opens a browser UI. It enforces one-request-at-a-time decoding unless `--parallel` is set.\n\nThe AMD backends specifics: HIP supports gfx1100 (RX 7900 XT/XTX), gfx1101 (7800 XT/7700 XT), gfx1200 (9060 XT), gfx1201 (9070/9070 XT, AI PRO R9700), gfx1030 (6800/6900). Linux setup installs ROCm into `.venv` (~10 GB) or uses system ROCm 7, and compiles the engine 10\u201320 minutes. Windows uses prebuilt engine with ROCm 10.2 libraries, driver only, no compile; images are Linux-only. HipBLASLt tuning tables are architecture/version-specific; RDNA4 measured ~45 tok/s decode on R9700, ~31 on 9070 XT. gfx906 (MI50/MI60/Radeon VII) is an opt-in wave64 build with a CUDA-compat layer and measured ~58 tok/s on dual MI50s. The docs stress not exposing the server without an API key, keeping secrets, and using `--no-start` for automation."
+ }
+]

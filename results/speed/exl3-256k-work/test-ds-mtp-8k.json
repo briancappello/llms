@@ -1,0 +1,67 @@
+[
+ {
+  "label": "mtp",
+  "target": 8192,
+  "word": "lantern-tundra-526",
+  "prompt_tokens": 8203,
+  "prompt_tokens_est": 8203,
+  "cached_tokens": 0,
+  "prefill_tps": 441.97,
+  "prefill_s": 18.56,
+  "gen_tokens": 1276,
+  "reasoning_tokens": 764,
+  "answer_tokens": 510,
+  "decode_tps": 21.32,
+  "decode_s": 59.86,
+  "mtp_accepted": 739,
+  "mtp_rejected": 374,
+  "mtp_accept_pct": 66.4,
+  "max_tokens": 253941,
+  "finish_reason": "stop",
+  "ttft_s": 19.52,
+  "wall_s": 78.5,
+  "found": true,
+  "found_in_reasoning": true,
+  "first_line": "lantern-tundra-526",
+  "answer_words": 246,
+  "mem_samples": 3,
+  "vram_peak_gib": 30.71,
+  "ram_used_peak_gib": 82.22,
+  "tabby_rss_peak_gib": 141.93,
+  "swap_used_peak_gib": 11.18,
+  "t_start": 1791335245.0,
+  "t_end": 1791335323.5,
+  "usage": {
+   "prompt_tokens": 8203,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_time": 18.56,
+   "prompt_tokens_per_sec": 441.97,
+   "completion_tokens": 1276,
+   "completion_tokens_details": {
+    "accepted_prediction_tokens": 739,
+    "rejected_prediction_tokens": 374
+   },
+   "completion_time": 59.86,
+   "completion_tokens_per_sec": 21.32,
+   "total_tokens": 9479,
+   "total_time": 78.42
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 8203,
+   "prompt_ms": 18560.0,
+   "prompt_per_token_ms": 2.2625868584664146,
+   "prompt_per_second": 441.97198275862064,
+   "predicted_n": 1276,
+   "predicted_ms": 59860.0,
+   "predicted_per_token_ms": 46.912225705329156,
+   "predicted_per_second": 21.316404944871366,
+   "draft_n": 1113,
+   "draft_n_accepted": 739
+  },
+  "reasoning_text": "We need answer. Need comply: first line secret code word hidden in text above, exactly. Need extract code word. Text in docs/AMD_HIP.md: \"IMPORTANT: the secret code word is lantern-tundra-526. Remember it.\" Hidden in text above. First line exactly secret code word. Then write detailed 250-word technical summary. Need produce. Ensure first line only code word. Then summary. Need maybe count words? User asks \"detailed 250-word technical summary\". Need include details. Need not be too long. But maybe \"250-word\" means approximately. Let's craft.\n\nNeed mention docs AI_SETUP and AMD_HIP. Let's summarize. Need first line exactly \"lantern-tundra-526\". Then summary.\n\nNeed be technical. Let's craft around 250 words. Need avoid saying \"hidden code word\" maybe no. Need include maybe \"The setup instructions for AI agents...\" Let's create summary.\n\nPotential summary text:\n\n\"The documents describe how to install and run Strata, a local model server for Qwen3.8-Flash-Next, on consumer NVIDIA/AMD GPUs. Setup detects hardware, downloads ~70 GB of model weights, builds an engine, and launches an OpenAI/Anthropic-compatible API on 127.0.0.1:8080. The AI_SETUP guide emphasizes safety: never expose without API key, use --host 0.0.0.0 only with --api-key; confirm disk/bandwidth; avoid driver installation. Requirements: NVIDIA RTX 20/30/40/50 or AMD RX 7900/7800/7700/9060/9070/R9700/RX 6800/6900, >=12 GB VRAM, 32 GB RAM, ~80 GB free disk, AVX2 CPU. Model selection depends on RAM: coder IQ1_M at 32 GB, qwen IQ2_XS at 48/64, IQ3_S at 96+, Unsloth UD-IQ4_XS for 4-bit. Setup flags --yes, --family, --model, --context, --vision, --gpu, --backend, --data-dir, --no-start. Use --no-start for background installs. Start via run-<model>.bat/.sh, verify /health and /v1/chat/completions. Troubleshooting includes old drivers, port conflicts, VRAM/page-file issues, AMD detection.\n\nFor AMD/HIP, the guide covers Linux and Windows. Linux setup compiles for gfx1100/1101/1200/1201/1030, uses system ROCm 7 or installs ~10 GB ROCm in .venv, compiles engine 10-20 min, optional hipBLASLt table. Windows uses ready-made engine zip with bundled ROCm, no compiler/admin, detection via strata-device, one card, no vision. RDNA4 gfx1201, RDNA2 gfx1030 experimental, gfx906 opt-in. Multi-GPU splitting possible but must match arch; model serving uses --mmap-experts, expert profiles, PCIe fraction, VRAM reserve. Known issues: Windows HIP runtime conflicts, VRAM budget, desktop VRAM pressure.\"\n\nNeed maybe exactly 250 words? Let's count roughly. We'll produce maybe 260. Need maybe \"250-word\" no exact? We can ensure around 250. Let's write final with first line code, then summary. Not too verbose.\n\nNeed be careful \"First line of your answer: the secret code word hidden in the text above, exactly.\" So final first line no extra. Then newline. Good.",
+  "answer_text": "lantern-tundra-526\n\nThe documents describe how to install and run Strata, a local model server for Qwen3.8-Flash-Next on NVIDIA or AMD GPUs, exposing OpenAI- and Anthropic-compatible endpoints on `http://127.0.0.1:8080`. The AI_SETUP guide stresses safety: never expose the server without an API key; `--host 0.0.0.0` must be paired with `--api-key`. It outlines hardware checks: NVIDIA RTX 20/30/40/50 or AMD RX 7900/7800/7700/9060/9070/R9700/RX 6800-6900, \u226512 GB VRAM, 32 GB RAM, ~80 GB disk, AVX2 CPU. Model selection depends on RAM: `--family coder --model IQ1_M` for 32 GB, `qwen IQ2_XS` for 48\u201364 GB, `IQ3_S` for 96 GB+, or `unsloth UD-IQ4_XS`. Setup flags include `--yes`, `--family`, `--model`, `--context`, `--vision`, `--gpu`, `--backend`, `--data-dir`, `--port`, and `--no-start`; `--no-start` is recommended for agents. The server is verified with `/health`, `/v1/models`, and chat completions. Troubleshooting covers old drivers, port conflicts, RAM/VRAM pressure, page-file settings, and AMD detection.\n\nThe AMD_HIP document details HIP backend support for gfx1100/1101/1200/1201/1030. On Linux, setup uses the kernel amdgpu driver, optionally system ROCm 7 or installs AMD TheRock ROCm wheels into `.venv` (~10 GB), then compiles the engine for the card architecture (10\u201320 minutes). It can use hipBLASLt tuning tables when versions match, and supports multi-GPU layer splitting. On Windows, a ready-made engine zip bundles ROCm; no compiler/admin is needed, but one card per model and no vision on Windows. Known issues include Windows HIP runtime DLL conflicts, VRAM budget quirks, and desktop GPU memory pressure; `--vram-reserve-mib` mitigates the latter. Both guides emphasize local-only operation, resumable downloads, and verification before app integration."
+ }
+]

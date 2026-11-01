@@ -1,0 +1,4 @@
+{"depth": 0, "pp_tokens": 512, "pp_tps": 1775.26, "tg_tps": 157.16, "draft_accept": 0.95, "vram_gib": 29.62}
+{"depth": 8192, "pp_tokens": 512, "pp_tps": 1705.39, "tg_tps": 146.91, "draft_accept": 0.75, "vram_gib": 29.63}
+{"depth": 32768, "pp_tokens": 512, "pp_tps": 1482.47, "tg_tps": 113.18, "draft_accept": 0.53, "vram_gib": 29.63}
+{"depth": 65536, "pp_tokens": 512, "pp_tps": 1288.6, "tg_tps": 108.33, "draft_accept": 0.57, "vram_gib": 29.65}

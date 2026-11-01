@@ -1,0 +1,58 @@
+[
+ {
+  "depth": 0,
+  "prompt_tps": 1842.3,
+  "tg_tps": 161.86,
+  "tg_tokens": 256,
+  "wall_s": 1.9,
+  "draft_accept": 0.952
+ },
+ {
+  "depth": 8192,
+  "prompt_tps": 3222.3,
+  "tg_tps": 167.72,
+  "tg_tokens": 256,
+  "wall_s": 4.3,
+  "draft_accept": 0.97
+ },
+ {
+  "depth": 32768,
+  "prompt_tps": 2786.9,
+  "tg_tps": 141.45,
+  "tg_tokens": 256,
+  "wall_s": 13.8,
+  "draft_accept": 0.959
+ },
+ {
+  "depth": 65536,
+  "prompt_tps": 2335.1,
+  "tg_tps": 120.4,
+  "tg_tokens": 256,
+  "wall_s": 30.4,
+  "draft_accept": 0.932
+ },
+ {
+  "depth": 131072,
+  "prompt_tps": 1765.7,
+  "tg_tps": 111.06,
+  "tg_tokens": 256,
+  "wall_s": 76.8,
+  "draft_accept": 0.896
+ },
+ {
+  "depth": 196608,
+  "prompt_tps": 1423.3,
+  "tg_tps": 86.5,
+  "tg_tokens": 256,
+  "wall_s": 141.5,
+  "draft_accept": 0.918
+ },
+ {
+  "depth": 245760,
+  "prompt_tps": 1243.6,
+  "tg_tps": 72.3,
+  "tg_tokens": 256,
+  "wall_s": 201.6,
+  "draft_accept": 0.937
+ }
+]

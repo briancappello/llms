@@ -1,0 +1,241 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.archlinux.org>
+  <https://debuginfod.cachyos.org>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+SIGINT is used by the debugger.
+Are you sure you want to change it? (y or n) [answered Y; input not from terminal]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+19:46:11.841 INFO:     Using config file
+                       /tmp/opencode/config-qwen-nomtp-probe.yml
+[92mSuccessfully preprocessed all matching files.[0m
+19:46:14.999 WARNING:  No sampler overrides are configured
+                       (sampling.override_preset or inline overrides in the
+                       sampling section), so sampling parameters have no
+                       fallback values. Requests that omit them run untruncated:
+                       temperature 1.0, top_k 0, top_p 1.0, min_p 0. Set
+                       override_preset to safe_defaults unless this is
+                       intentional.
+19:46:15.001 INFO:     exllamav3 version: 1.5.4
+19:46:16.534 INFO:     The provided model has vision capabilities, vision is
+                       disabled in config.
+19:46:16.534 INFO:     Disabling GPU split because one GPU is in use.
+19:46:16.534 INFO:     Context: max_seq_len 131,072 tokens (configured),
+                       cache_size 131,072 tokens
+19:46:16.599 INFO:     Using template "chat_template" for chat completions.
+19:46:16.600 INFO:     Response parsing: tool format qwen3_coder (template,
+                       tokenizer, architecture), reasoning tags <think> </think>
+                       (template)
+19:46:16.600 INFO:     Loading model
+                       /home/brian/models-nvme/Qwen3.8-Flash-Next-exl3-3.05bpw
+                       (manual GPU split)
+[92mSuccessfully preprocessed all matching files.[0m
+ -- CPU split experts (worker, dynamic): model.language_model.layers.0.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.1.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.2.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.3.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.4.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.5.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.6.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.7.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.8.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.9.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.10.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.11.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.12.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.13.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.14.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.15.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.16.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.17.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.18.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.19.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.20.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.21.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.22.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.23.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.24.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.25.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.26.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.27.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.28.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.29.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.30.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.31.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.32.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.33.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.34.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.35.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.36.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.37.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.38.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.39.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.40.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.41.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.42.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.43.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.44.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.45.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.46.mlp [212..512) of 512
+ -- CPU split experts (worker, dynamic): model.language_model.layers.47.mlp [212..512) of 512
+Loading model modules ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 53/53 0:00:00
+19:46:39.714 INFO:     Model loaded in 23.1 s
+
+19:46:39.715 WARNING:  Disabling authentication makes your instance vulnerable.
+                       Set the `disable_auth` flag to False in config.yml if you
+                       want to share this instance with others.
+19:46:39.715 WARNING:  With authentication disabled and `allowed_origins` left
+                       at ["*"], any website open in a browser on this machine
+                       can send requests to this instance and read the
+                       responses, including admin endpoints. Set
+                       `network.allowed_origins` to your own frontends (or [])
+                       unless you use a browser-based frontend that needs it.
+19:46:39.716 INFO:     Serving OAI API on http://127.0.0.1:5000 (docs at
+                       http://127.0.0.1:5000/redoc)
+19:46:44.580 WARNING:  Unable to switch model to x because
+                       "inline_model_loading" is not True in config.yml.
+19:46:44.581 INFO:     #1 chat/completions: 70 prompt tokens · max_tokens:
+                       131001 (auto)
+ -- moe_cpu prof (512 jobs, us/job): prep_gu 108.1 | gemv_gu 336.0 | act+prep_d 24.6 | gemv_d 156.2 | tf_d/finish 5.5 | accum 5.3
+ -- moe_cpu prof (1024 jobs, us/job): prep_gu 57.5 | gemv_gu 229.5 | act+prep_d 14.4 | gemv_d 109.3 | tf_d/finish 4.7 | accum 2.7
+ -- CPU MoE worker started: 48 layers, avx512-vbmi, 16 threads
+19:46:48.272 INFO:     #1 chat/completions: 26 tokens generated at 34.8 T/s ·
+                       prompt 70 tokens, none cached, 70 new in 2.94 s · first
+                       token 2.94 s, total 3.69 s
+19:46:48.280 WARNING:  Unable to switch model to x because
+                       "inline_model_loading" is not True in config.yml.
+19:46:48.281 INFO:     #2 chat/completions: 97 prompt tokens · top_p: 0.95
+                       (req), max_tokens: 130974 (auto)
+ -- moe_cpu prof (1536 jobs, us/job): prep_gu 65.9 | gemv_gu 280.6 | act+prep_d 16.4 | gemv_d 134.3 | tf_d/finish 5.7 | accum 4.8
+ -- moe_cpu prof (2048 jobs, us/job): prep_gu 51.6 | gemv_gu 242.1 | act+prep_d 13.8 | gemv_d 116.5 | tf_d/finish 5.2 | accum 3.6
+ -- moe_cpu prof (2560 jobs, us/job): prep_gu 42.7 | gemv_gu 219.1 | act+prep_d 12.1 | gemv_d 106.2 | tf_d/finish 5.0 | accum 2.9
+ -- moe_cpu prof (3072 jobs, us/job): prep_gu 37.0 | gemv_gu 203.2 | act+prep_d 10.8 | gemv_d 98.9 | tf_d/finish 4.8 | accum 2.4
+ -- moe_cpu prof (3584 jobs, us/job): prep_gu 32.5 | gemv_gu 191.8 | act+prep_d 9.9 | gemv_d 93.6 | tf_d/finish 4.6 | accum 2.0
+ -- moe_cpu prof (4096 jobs, us/job): prep_gu 29.2 | gemv_gu 183.7 | act+prep_d 9.2 | gemv_d 89.9 | tf_d/finish 4.6 | accum 1.8
+ -- moe_cpu prof (4608 jobs, us/job): prep_gu 26.8 | gemv_gu 176.7 | act+prep_d 8.6 | gemv_d 86.7 | tf_d/finish 4.4 | accum 1.6
+ -- moe_cpu prof (5120 jobs, us/job): prep_gu 24.7 | gemv_gu 171.3 | act+prep_d 8.2 | gemv_d 84.2 | tf_d/finish 4.4 | accum 1.4
+ -- moe_cpu prof (5632 jobs, us/job): prep_gu 23.0 | gemv_gu 167.2 | act+prep_d 7.8 | gemv_d 82.3 | tf_d/finish 4.3 | accum 1.3
+ -- moe_cpu prof (6144 jobs, us/job): prep_gu 21.6 | gemv_gu 163.6 | act+prep_d 7.5 | gemv_d 80.7 | tf_d/finish 4.3 | accum 1.2
+ -- moe_cpu prof (6656 jobs, us/job): prep_gu 20.4 | gemv_gu 160.2 | act+prep_d 7.2 | gemv_d 79.1 | tf_d/finish 4.2 | accum 1.1
+ -- moe_cpu prof (7168 jobs, us/job): prep_gu 19.4 | gemv_gu 157.6 | act+prep_d 7.0 | gemv_d 77.9 | tf_d/finish 4.2 | accum 1.0
+ -- moe_cpu prof (7680 jobs, us/job): prep_gu 18.5 | gemv_gu 155.0 | act+prep_d 6.8 | gemv_d 76.7 | tf_d/finish 4.2 | accum 1.0
+ -- moe_cpu prof (8192 jobs, us/job): prep_gu 17.7 | gemv_gu 153.2 | act+prep_d 6.7 | gemv_d 75.9 | tf_d/finish 4.1 | accum 0.9
+ -- moe_cpu prof (8704 jobs, us/job): prep_gu 17.1 | gemv_gu 151.5 | act+prep_d 6.6 | gemv_d 75.1 | tf_d/finish 4.1 | accum 0.8
+ -- moe_cpu prof (9216 jobs, us/job): prep_gu 16.5 | gemv_gu 149.9 | act+prep_d 6.5 | gemv_d 74.5 | tf_d/finish 4.1 | accum 0.8
+ -- moe_cpu prof (9728 jobs, us/job): prep_gu 16.0 | gemv_gu 148.6 | act+prep_d 6.3 | gemv_d 73.9 | tf_d/finish 4.1 | accum 0.8
+ -- moe_cpu prof (10240 jobs, us/job): prep_gu 15.6 | gemv_gu 147.5 | act+prep_d 6.2 | gemv_d 73.4 | tf_d/finish 4.1 | accum 0.7
+ -- moe_cpu prof (10752 jobs, us/job): prep_gu 15.2 | gemv_gu 146.4 | act+prep_d 6.2 | gemv_d 72.9 | tf_d/finish 4.0 | accum 0.7
+ -- moe_cpu prof (11264 jobs, us/job): prep_gu 14.7 | gemv_gu 145.2 | act+prep_d 6.1 | gemv_d 72.4 | tf_d/finish 4.0 | accum 0.7
+ -- moe_cpu prof (11776 jobs, us/job): prep_gu 14.4 | gemv_gu 144.2 | act+prep_d 6.0 | gemv_d 71.9 | tf_d/finish 4.0 | accum 0.6
+ -- moe_cpu prof (12288 jobs, us/job): prep_gu 14.3 | gemv_gu 143.1 | act+prep_d 6.0 | gemv_d 71.4 | tf_d/finish 4.0 | accum 0.6
+ -- moe_cpu prof (12800 jobs, us/job): prep_gu 14.0 | gemv_gu 142.1 | act+prep_d 5.9 | gemv_d 70.9 | tf_d/finish 4.0 | accum 0.6
+ -- moe_cpu prof (13312 jobs, us/job): prep_gu 13.7 | gemv_gu 141.2 | act+prep_d 5.8 | gemv_d 70.5 | tf_d/finish 3.9 | accum 0.6
+ -- moe_cpu prof (13824 jobs, us/job): prep_gu 13.5 | gemv_gu 140.7 | act+prep_d 5.8 | gemv_d 70.2 | tf_d/finish 3.9 | accum 0.5
+ -- moe_cpu prof (14336 jobs, us/job): prep_gu 13.3 | gemv_gu 139.8 | act+prep_d 5.7 | gemv_d 69.8 | tf_d/finish 3.9 | accum 0.5
+ -- moe_cpu prof (14848 jobs, us/job): prep_gu 13.1 | gemv_gu 139.3 | act+prep_d 5.7 | gemv_d 69.6 | tf_d/finish 3.9 | accum 0.5
+ -- moe_cpu prof (15360 jobs, us/job): prep_gu 12.9 | gemv_gu 138.7 | act+prep_d 5.7 | gemv_d 69.3 | tf_d/finish 3.9 | accum 0.5
+ -- moe_cpu prof (15872 jobs, us/job): prep_gu 12.7 | gemv_gu 138.1 | act+prep_d 5.6 | gemv_d 69.0 | tf_d/finish 3.9 | accum 0.5
+ -- moe_cpu prof (16384 jobs, us/job): prep_gu 12.5 | gemv_gu 137.5 | act+prep_d 5.6 | gemv_d 68.8 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (16896 jobs, us/job): prep_gu 12.4 | gemv_gu 136.9 | act+prep_d 5.6 | gemv_d 68.6 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (17408 jobs, us/job): prep_gu 12.3 | gemv_gu 136.5 | act+prep_d 5.6 | gemv_d 68.4 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (17920 jobs, us/job): prep_gu 12.2 | gemv_gu 136.1 | act+prep_d 5.5 | gemv_d 68.2 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (18432 jobs, us/job): prep_gu 12.0 | gemv_gu 135.6 | act+prep_d 5.5 | gemv_d 67.9 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (18944 jobs, us/job): prep_gu 11.8 | gemv_gu 135.2 | act+prep_d 5.4 | gemv_d 67.7 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (19456 jobs, us/job): prep_gu 11.8 | gemv_gu 135.0 | act+prep_d 5.4 | gemv_d 67.7 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (19968 jobs, us/job): prep_gu 11.7 | gemv_gu 134.7 | act+prep_d 5.4 | gemv_d 67.5 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (20480 jobs, us/job): prep_gu 11.6 | gemv_gu 134.2 | act+prep_d 5.4 | gemv_d 67.3 | tf_d/finish 3.9 | accum 0.4
+ -- moe_cpu prof (20992 jobs, us/job): prep_gu 11.4 | gemv_gu 133.9 | act+prep_d 5.3 | gemv_d 67.1 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (21504 jobs, us/job): prep_gu 11.3 | gemv_gu 133.5 | act+prep_d 5.3 | gemv_d 66.9 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (22016 jobs, us/job): prep_gu 11.3 | gemv_gu 133.3 | act+prep_d 5.3 | gemv_d 66.9 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (22528 jobs, us/job): prep_gu 11.2 | gemv_gu 132.9 | act+prep_d 5.3 | gemv_d 66.7 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (23040 jobs, us/job): prep_gu 11.2 | gemv_gu 132.7 | act+prep_d 5.3 | gemv_d 66.6 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (23552 jobs, us/job): prep_gu 11.2 | gemv_gu 132.4 | act+prep_d 5.3 | gemv_d 66.5 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (24064 jobs, us/job): prep_gu 11.1 | gemv_gu 132.3 | act+prep_d 5.3 | gemv_d 66.4 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (24576 jobs, us/job): prep_gu 11.0 | gemv_gu 132.0 | act+prep_d 5.2 | gemv_d 66.2 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (25088 jobs, us/job): prep_gu 11.0 | gemv_gu 131.7 | act+prep_d 5.3 | gemv_d 66.1 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (25600 jobs, us/job): prep_gu 11.0 | gemv_gu 131.3 | act+prep_d 5.3 | gemv_d 66.0 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (26112 jobs, us/job): prep_gu 10.9 | gemv_gu 130.9 | act+prep_d 5.2 | gemv_d 65.8 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (26624 jobs, us/job): prep_gu 11.0 | gemv_gu 130.5 | act+prep_d 5.2 | gemv_d 65.6 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (27136 jobs, us/job): prep_gu 10.9 | gemv_gu 130.2 | act+prep_d 5.2 | gemv_d 65.5 | tf_d/finish 4.0 | accum 0.3
+ -- moe_cpu prof (27648 jobs, us/job): prep_gu 10.9 | gemv_gu 129.8 | act+prep_d 5.2 | gemv_d 65.3 | tf_d/finish 4.0 | accum 0.3
+ -- moe_cpu prof (28160 jobs, us/job): prep_gu 10.8 | gemv_gu 129.5 | act+prep_d 5.2 | gemv_d 65.1 | tf_d/finish 4.0 | accum 0.3
+ -- moe_cpu prof (28672 jobs, us/job): prep_gu 10.7 | gemv_gu 129.2 | act+prep_d 5.2 | gemv_d 65.0 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (29184 jobs, us/job): prep_gu 10.7 | gemv_gu 128.9 | act+prep_d 5.2 | gemv_d 64.8 | tf_d/finish 3.9 | accum 0.3
+ -- moe_cpu prof (29696 jobs, us/job): prep_gu 10.6 | gemv_gu 128.6 | act+prep_d 5.2 | gemv_d 64.7 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (30208 jobs, us/job): prep_gu 10.6 | gemv_gu 128.3 | act+prep_d 5.1 | gemv_d 64.5 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (30720 jobs, us/job): prep_gu 10.5 | gemv_gu 128.0 | act+prep_d 5.1 | gemv_d 64.4 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (31232 jobs, us/job): prep_gu 10.4 | gemv_gu 127.7 | act+prep_d 5.1 | gemv_d 64.2 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (31744 jobs, us/job): prep_gu 10.4 | gemv_gu 127.3 | act+prep_d 5.1 | gemv_d 64.0 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (32256 jobs, us/job): prep_gu 10.3 | gemv_gu 127.0 | act+prep_d 5.1 | gemv_d 63.9 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (32768 jobs, us/job): prep_gu 10.2 | gemv_gu 126.8 | act+prep_d 5.1 | gemv_d 63.8 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (33280 jobs, us/job): prep_gu 10.1 | gemv_gu 126.5 | act+prep_d 5.1 | gemv_d 63.7 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (33792 jobs, us/job): prep_gu 10.1 | gemv_gu 126.3 | act+prep_d 5.1 | gemv_d 63.5 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (34304 jobs, us/job): prep_gu 10.0 | gemv_gu 125.9 | act+prep_d 5.1 | gemv_d 63.4 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (34816 jobs, us/job): prep_gu 9.9 | gemv_gu 125.7 | act+prep_d 5.1 | gemv_d 63.3 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (35328 jobs, us/job): prep_gu 9.9 | gemv_gu 125.4 | act+prep_d 5.0 | gemv_d 63.1 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (35840 jobs, us/job): prep_gu 9.8 | gemv_gu 125.3 | act+prep_d 5.0 | gemv_d 63.0 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (36352 jobs, us/job): prep_gu 9.8 | gemv_gu 125.0 | act+prep_d 5.0 | gemv_d 62.9 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (36864 jobs, us/job): prep_gu 9.7 | gemv_gu 124.9 | act+prep_d 5.0 | gemv_d 62.8 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (37376 jobs, us/job): prep_gu 9.7 | gemv_gu 124.6 | act+prep_d 5.0 | gemv_d 62.7 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (37888 jobs, us/job): prep_gu 9.7 | gemv_gu 124.4 | act+prep_d 5.0 | gemv_d 62.6 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (38400 jobs, us/job): prep_gu 9.6 | gemv_gu 124.2 | act+prep_d 5.0 | gemv_d 62.5 | tf_d/finish 3.9 | accum 0.2
+ -- moe_cpu prof (38912 jobs, us/job): prep_gu 9.6 | gemv_gu 124.0 | act+prep_d 5.0 | gemv_d 62.4 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (39424 jobs, us/job): prep_gu 9.6 | gemv_gu 123.9 | act+prep_d 5.0 | gemv_d 62.3 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (39936 jobs, us/job): prep_gu 9.5 | gemv_gu 123.8 | act+prep_d 5.0 | gemv_d 62.2 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (40448 jobs, us/job): prep_gu 9.5 | gemv_gu 123.6 | act+prep_d 4.9 | gemv_d 62.2 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (40960 jobs, us/job): prep_gu 9.5 | gemv_gu 123.5 | act+prep_d 4.9 | gemv_d 62.1 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (41472 jobs, us/job): prep_gu 9.4 | gemv_gu 123.4 | act+prep_d 4.9 | gemv_d 62.0 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (41984 jobs, us/job): prep_gu 9.4 | gemv_gu 123.2 | act+prep_d 4.9 | gemv_d 62.0 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (42496 jobs, us/job): prep_gu 9.4 | gemv_gu 123.1 | act+prep_d 4.9 | gemv_d 61.9 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (43008 jobs, us/job): prep_gu 9.4 | gemv_gu 123.0 | act+prep_d 4.9 | gemv_d 61.8 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (43520 jobs, us/job): prep_gu 9.4 | gemv_gu 122.9 | act+prep_d 4.9 | gemv_d 61.8 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (44032 jobs, us/job): prep_gu 9.3 | gemv_gu 122.7 | act+prep_d 4.9 | gemv_d 61.7 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (44544 jobs, us/job): prep_gu 9.3 | gemv_gu 122.7 | act+prep_d 4.9 | gemv_d 61.7 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (45056 jobs, us/job): prep_gu 9.3 | gemv_gu 122.5 | act+prep_d 4.9 | gemv_d 61.6 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (45568 jobs, us/job): prep_gu 9.3 | gemv_gu 122.4 | act+prep_d 4.9 | gemv_d 61.5 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (46080 jobs, us/job): prep_gu 9.3 | gemv_gu 122.3 | act+prep_d 4.9 | gemv_d 61.5 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (46592 jobs, us/job): prep_gu 9.3 | gemv_gu 122.2 | act+prep_d 4.9 | gemv_d 61.5 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (47104 jobs, us/job): prep_gu 9.2 | gemv_gu 122.2 | act+prep_d 4.9 | gemv_d 61.4 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (47616 jobs, us/job): prep_gu 9.2 | gemv_gu 122.1 | act+prep_d 4.9 | gemv_d 61.4 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (48128 jobs, us/job): prep_gu 9.2 | gemv_gu 122.0 | act+prep_d 4.9 | gemv_d 61.3 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (48640 jobs, us/job): prep_gu 9.1 | gemv_gu 121.8 | act+prep_d 4.9 | gemv_d 61.3 | tf_d/finish 3.8 | accum 0.2
+ -- moe_cpu prof (49152 jobs, us/job): prep_gu 9.2 | gemv_gu 121.8 | act+prep_d 4.9 | gemv_d 61.2 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (49664 jobs, us/job): prep_gu 9.2 | gemv_gu 121.6 | act+prep_d 4.9 | gemv_d 61.1 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (50176 jobs, us/job): prep_gu 9.2 | gemv_gu 121.4 | act+prep_d 4.9 | gemv_d 61.0 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (50688 jobs, us/job): prep_gu 9.2 | gemv_gu 121.1 | act+prep_d 4.9 | gemv_d 60.9 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (51200 jobs, us/job): prep_gu 9.1 | gemv_gu 121.0 | act+prep_d 4.9 | gemv_d 60.8 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (51712 jobs, us/job): prep_gu 9.1 | gemv_gu 120.7 | act+prep_d 4.9 | gemv_d 60.7 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (52224 jobs, us/job): prep_gu 9.1 | gemv_gu 120.6 | act+prep_d 4.9 | gemv_d 60.6 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (52736 jobs, us/job): prep_gu 9.1 | gemv_gu 120.5 | act+prep_d 4.9 | gemv_d 60.6 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (53248 jobs, us/job): prep_gu 9.0 | gemv_gu 120.4 | act+prep_d 4.9 | gemv_d 60.5 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (53760 jobs, us/job): prep_gu 9.0 | gemv_gu 120.2 | act+prep_d 4.9 | gemv_d 60.5 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (54272 jobs, us/job): prep_gu 9.0 | gemv_gu 120.1 | act+prep_d 4.9 | gemv_d 60.4 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (54784 jobs, us/job): prep_gu 9.0 | gemv_gu 120.0 | act+prep_d 4.9 | gemv_d 60.4 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (55296 jobs, us/job): prep_gu 9.0 | gemv_gu 119.8 | act+prep_d 4.9 | gemv_d 60.3 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (55808 jobs, us/job): prep_gu 9.0 | gemv_gu 119.7 | act+prep_d 4.9 | gemv_d 60.2 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (56320 jobs, us/job): prep_gu 9.0 | gemv_gu 119.5 | act+prep_d 4.9 | gemv_d 60.2 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (56832 jobs, us/job): prep_gu 8.9 | gemv_gu 119.4 | act+prep_d 4.9 | gemv_d 60.1 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (57344 jobs, us/job): prep_gu 8.9 | gemv_gu 119.3 | act+prep_d 4.9 | gemv_d 60.0 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (57856 jobs, us/job): prep_gu 8.9 | gemv_gu 119.2 | act+prep_d 4.8 | gemv_d 60.0 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (58368 jobs, us/job): prep_gu 8.9 | gemv_gu 119.1 | act+prep_d 4.8 | gemv_d 59.9 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (58880 jobs, us/job): prep_gu 8.9 | gemv_gu 119.0 | act+prep_d 4.8 | gemv_d 59.9 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (59392 jobs, us/job): prep_gu 8.8 | gemv_gu 118.9 | act+prep_d 4.8 | gemv_d 59.9 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (59904 jobs, us/job): prep_gu 8.8 | gemv_gu 118.9 | act+prep_d 4.8 | gemv_d 59.8 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (60416 jobs, us/job): prep_gu 8.8 | gemv_gu 118.7 | act+prep_d 4.8 | gemv_d 59.8 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (60928 jobs, us/job): prep_gu 8.8 | gemv_gu 118.6 | act+prep_d 4.8 | gemv_d 59.7 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (61440 jobs, us/job): prep_gu 8.8 | gemv_gu 118.6 | act+prep_d 4.8 | gemv_d 59.7 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (61952 jobs, us/job): prep_gu 8.8 | gemv_gu 118.5 | act+prep_d 4.8 | gemv_d 59.7 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (62464 jobs, us/job): prep_gu 8.8 | gemv_gu 118.5 | act+prep_d 4.8 | gemv_d 59.6 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (62976 jobs, us/job): prep_gu 8.8 | gemv_gu 118.5 | act+prep_d 4.8 | gemv_d 59.6 | tf_d/finish 3.8 | accum 0.1
+ -- moe_cpu prof (63488 jobs, us/job): prep_gu 8.8 | gemv_gu 118.4 | act+prep_d 4.8 | gemv_d 59.6 | tf_d/finish 3.8 | accum 0.1
+19:47:21.493 INFO:     #2 chat/completions: 1,297 tokens generated at 42.5 T/s ·
+                       prompt 97 tokens, none cached, 97 new in 2.55 s · first
+                       token 2.55 s, total 33.1 s
+19:47:44.419 WARNING:  Shutdown signal called. Exiting gracefully.
+19:47:47.777 INFO:     Model unloaded.
+[Inferior 1 (process 2049146) exited normally]
+The program has no registers now.
+No stack.

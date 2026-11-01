@@ -1,0 +1,112 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.archlinux.org>
+  <https://debuginfod.cachyos.org>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+SIGINT is used by the debugger.
+Are you sure you want to change it? (y or n) [answered Y; input not from terminal]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+19:05:41.580 INFO:     Using config file config-deepseek-v4-flash.yml
+[92mSuccessfully preprocessed all matching files.[0m
+19:05:44.690 WARNING:  No sampler overrides are configured
+                       (sampling.override_preset or inline overrides in the
+                       sampling section), so sampling parameters have no
+                       fallback values. Requests that omit them run untruncated:
+                       temperature 1.0, top_k 0, top_p 1.0, min_p 0. Set
+                       override_preset to safe_defaults unless this is
+                       intentional.
+19:05:44.693 INFO:     exllamav3 version: 1.5.4
+19:05:45.335 INFO:     The provided model has vision capabilities, vision is
+                       disabled in config.
+19:05:45.342 INFO:     Using main model MTP component for drafting
+19:05:45.342 INFO:     Disabling GPU split because one GPU is in use.
+19:05:45.342 INFO:     Context: max_seq_len 262,144 tokens (configured),
+                       cache_size 262,144 tokens
+19:05:45.389 INFO:     Using template "chat_template" for chat completions.
+19:05:45.390 INFO:     Response parsing: tool format deepseek_v4 (template,
+                       tokenizer, architecture), reasoning tags <think> </think>
+                       (template)
+[92mSuccessfully preprocessed all matching files.[0m
+ -- CPU split experts (worker, dynamic): mtp.0.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): mtp.1.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): mtp.2.ffn [56..256) of 256
+19:05:50.761 INFO:     Loading model
+                       /home/brian/models-nvme/DeepSeek-V4-Flash-Vision-Exp-exl3
+                       -2.52bpw (manual GPU split)
+[92mSuccessfully preprocessed all matching files.[0m
+ -- CPU split experts (worker, static): layers.0.ffn [56..256) of 256
+ -- CPU split experts (worker, static): layers.1.ffn [56..256) of 256
+ -- CPU split experts (worker, static): layers.2.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.3.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.4.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.5.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.6.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.7.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.8.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.9.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.10.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.11.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.12.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.13.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.14.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.15.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.16.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.17.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.18.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.19.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.20.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.21.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.22.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.23.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.24.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.25.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.26.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.27.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.28.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.29.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.30.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.31.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.32.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.33.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.34.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.35.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.36.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.37.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.38.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.39.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.40.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.41.ffn [56..256) of 256
+ -- CPU split experts (worker, dynamic): layers.42.ffn [56..256) of 256
+Loading draft modules ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 9/9   0:00:00
+Loading model modules ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 48/48 0:00:00
+19:06:55.774 INFO:     Model loaded in 70.4 s
+
+19:06:55.775 WARNING:  Disabling authentication makes your instance vulnerable.
+                       Set the `disable_auth` flag to False in config.yml if you
+                       want to share this instance with others.
+19:06:55.776 WARNING:  With authentication disabled and `allowed_origins` left
+                       at ["*"], any website open in a browser on this machine
+                       can send requests to this instance and read the
+                       responses, including admin endpoints. Set
+                       `network.allowed_origins` to your own frontends (or [])
+                       unless you use a browser-based frontend that needs it.
+19:06:55.777 INFO:     Serving OAI API on http://127.0.0.1:5000 (docs at
+                       http://127.0.0.1:5000/redoc)
+19:07:14.420 ERROR:    Sent to request: TemplateError: reasoning_effort must be
+                       "low", "high", or "max"
+19:07:25.064 INFO:     #11 chat/completions (stream): 8,203 prompt tokens ·
+                       max_tokens: 253941 (req)
+ -- CPU MoE worker started: 3 layers, avx512-vbmi, 16 threads
+ -- CPU MoE worker started: 43 layers, avx512-vbmi, 16 threads
+19:08:43.490 INFO:     #11 chat/completions (stream): 1,276 tokens generated at
+                       21.3 T/s · prompt 8,203 tokens, none cached, 8,203 new in
+                       18.6 s (442 T/s) · first token 18.6 s, total 78.4 s ·
+                       draft 739/1113 accepted (66%)
+19:10:24.797 WARNING:  Shutdown signal called. Exiting gracefully.
+19:10:32.264 INFO:     Model unloaded.
+[Inferior 1 (process 2005855) exited normally]
+The program has no registers now.
+No stack.

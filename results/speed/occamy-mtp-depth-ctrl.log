@@ -1,0 +1,18 @@
+[92mSuccessfully preprocessed all matching files.[0m
+ -- Loading /opt/models/occamy-1.0-exl3-4.5bpw-mtp
+
+ -- Loading /opt/models/occamy-1.0-exl3-4.5bpw-mtp
+
+ -- Warming up...
+
+ -- Loading tokenizer...
+loaded
+{"tail": 100000, "depth": 0, "accept": 0.806, "acc": 158, "rej": 38, "tg_tps": 148.0}
+{"tail": 100000, "depth": 8192, "accept": 0.623, "acc": 142, "rej": 86, "tg_tps": 131.6}
+{"tail": 100000, "depth": 32768, "accept": 0.613, "acc": 141, "rej": 89, "tg_tps": 122.4}
+{"tail": 200000, "depth": 0, "accept": 0.755, "acc": 154, "rej": 50, "tg_tps": 149.3}
+{"tail": 200000, "depth": 8192, "accept": 0.674, "acc": 147, "rej": 71, "tg_tps": 137.7}
+{"tail": 200000, "depth": 32768, "accept": 0.643, "acc": 144, "rej": 80, "tg_tps": 125.9}
+{"tail": 300000, "depth": 0, "accept": 0.613, "acc": 141, "rej": 89, "tg_tps": 134.6}
+{"tail": 300000, "depth": 8192, "accept": 0.585, "acc": 138, "rej": 98, "tg_tps": 127.8}
+{"tail": 300000, "depth": 32768, "accept": 0.492, "acc": 127, "rej": 131, "tg_tps": 109.6}

@@ -1,0 +1,138 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.archlinux.org>
+  <https://debuginfod.cachyos.org>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+SIGINT is used by the debugger.
+Are you sure you want to change it? (y or n) [answered Y; input not from terminal]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+19:25:58.356 INFO:     Using config file config-glm-5.3-flash.yml
+[92mSuccessfully preprocessed all matching files.[0m
+19:26:01.755 WARNING:  No sampler overrides are configured
+                       (sampling.override_preset or inline overrides in the
+                       sampling section), so sampling parameters have no
+                       fallback values. Requests that omit them run untruncated:
+                       temperature 1.0, top_k 0, top_p 1.0, min_p 0. Set
+                       override_preset to safe_defaults unless this is
+                       intentional.
+19:26:01.758 INFO:     exllamav3 version: 1.5.4
+19:26:02.605 INFO:     The provided model has vision capabilities, vision is
+                       disabled in config.
+19:26:02.608 INFO:     Using main model MTP component for drafting
+19:26:02.608 INFO:     Disabling GPU split because one GPU is in use.
+19:26:02.608 INFO:     Context: max_seq_len 262,144 tokens (configured),
+                       cache_size 262,144 tokens
+19:26:02.653 INFO:     Using template "chat_template" for chat completions.
+19:26:02.653 INFO:     Response parsing: tool format glm4_5 (template,
+                       tokenizer, architecture), reasoning tags <think> </think>
+                       (template)
+[92mSuccessfully preprocessed all matching files.[0m
+ -- CPU split experts (worker, dynamic): model.language_model.layers.45.mlp [74..288) of 288
+19:26:05.446 INFO:     Loading model
+                       /home/brian/models-nvme/GLM-5.3-Flash-exl3-2.05bpw
+                       (manual GPU split)
+[92mSuccessfully preprocessed all matching files.[0m
+ -- CPU split experts (worker, dynamic): model.language_model.layers.3.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.4.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.5.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.6.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.7.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.8.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.9.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.10.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.11.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.12.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.13.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.14.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.15.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.16.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.17.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.18.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.19.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.20.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.21.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.22.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.23.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.24.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.25.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.26.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.27.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.28.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.29.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.30.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.31.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.32.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.33.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.34.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.35.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.36.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.37.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.38.mlp [74..288) of 288
+ -- CPU split experts (worker, dynamic): model.language_model.layers.39.mlp [74..288) of 288
+Loading draft modules ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 3/3   0:00:00
+Loading model modules ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸         82% 41/50 0:00:10
+Traceback (most recent call last):
+  File "/home/brian/dev/tabbyAPI/main.py", line 245, in <module>
+    entrypoint()
+    ~~~~~~~~~~^^
+  File "/home/brian/dev/tabbyAPI/main.py", line 241, in entrypoint
+    asyncio.run(entrypoint_async())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/runners.py", line 205, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.14/asyncio/runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "uvloop/loop.pyx", line 1515, in uvloop.loop.Loop.run_until_complete
+  File "/home/brian/dev/tabbyAPI/main.py", line 96, in entrypoint_async
+    await model.load_model(
+    ...<3 lines>...
+    )
+  File "/home/brian/dev/tabbyAPI/common/model.py", line 265, in load_model
+    async for _ in load_model_gen(model_path, **kwargs):
+        pass
+  File "/home/brian/dev/tabbyAPI/common/model.py", line 233, in load_model_gen
+    async for module, modules in load_status:
+    ...<17 lines>...
+                progress.stop()
+  File "/home/brian/dev/tabbyAPI/backends/exllamav3/model.py", line 908, in load_gen
+    async for value in iterate_in_threadpool(generator):
+        yield value
+  File "/home/brian/dev/tabbyAPI/common/concurrency.py", line 30, in iterate_in_threadpool
+    yield await asyncio.to_thread(gen_next, generator)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/threads.py", line 26, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "/usr/lib/python3.14/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "/home/brian/dev/tabbyAPI/common/concurrency.py", line 20, in gen_next
+    return next(generator)
+  File "/home/brian/dev/exllamav3/.venv/lib/python3.14/site-packages/torch/utils/_contextlib.py", line 61, in generator_context
+    response = gen.send(request)
+  File "/home/brian/dev/tabbyAPI/backends/exllamav3/model.py", line 1037, in load_model_sync
+    for value in self.model.load_gen(
+                 ~~~~~~~~~~~~~~~~~~~^
+        tensor_p=self.use_tp,
+        ^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        max_batch_size=self.max_batch_size,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+  File "/home/brian/dev/exllamav3/exllamav3/model/model.py", line 639, in load_gen
+    yield from self._load_autosplit(
+    ...<15 lines>...
+    )
+  File "/home/brian/dev/exllamav3/exllamav3/model/model_ls.py", line 301, in _load_autosplit
+    raise RuntimeError("Insufficient VRAM in split for model and cache")
+RuntimeError: Insufficient VRAM in split for model and cache
+[Inferior 1 (process 2022032) exited with code 01]
+The program has no registers now.
+No stack.

@@ -1,0 +1,18 @@
+[92mSuccessfully preprocessed all matching files.[0m
+ -- Loading /home/brian/models-nvme/Cyber-Tiel-Coder-35B-A3B-exl3-4.54bpw
+
+ -- Loading /home/brian/models-nvme/Cyber-Tiel-Coder-35B-A3B-exl3-4.54bpw
+
+ -- Warming up...
+
+ -- Loading tokenizer...
+loaded
+{"tail": 100000, "depth": 0, "accept": 0.891, "acc": 164, "rej": 20, "tg_tps": 156.7}
+{"tail": 100000, "depth": 8192, "accept": 0.955, "acc": 168, "rej": 8, "tg_tps": 170.7}
+{"tail": 100000, "depth": 32768, "accept": 0.907, "acc": 165, "rej": 17, "tg_tps": 152.8}
+{"tail": 200000, "depth": 0, "accept": 0.653, "acc": 145, "rej": 77, "tg_tps": 137.3}
+{"tail": 200000, "depth": 8192, "accept": 0.558, "acc": 135, "rej": 107, "tg_tps": 124.2}
+{"tail": 200000, "depth": 32768, "accept": 0.743, "acc": 153, "rej": 53, "tg_tps": 135.1}
+{"tail": 300000, "depth": 0, "accept": 0.731, "acc": 152, "rej": 56, "tg_tps": 147.2}
+{"tail": 300000, "depth": 8192, "accept": 0.532, "acc": 132, "rej": 116, "tg_tps": 121.3}
+{"tail": 300000, "depth": 32768, "accept": 0.576, "acc": 137, "rej": 101, "tg_tps": 118.2}
