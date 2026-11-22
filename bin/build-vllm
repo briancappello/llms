@@ -24,6 +24,8 @@ source "$CONFIG"
 
 REF="$VLLM_REF"
 ARCH="$VLLM_GPU_ARCH"
+INSTALL="${VLLM_INSTALL:-source}"
+[[ "$INSTALL" == wheel || "$INSTALL" == source ]] || die "VLLM_INSTALL must be wheel or source, not: $INSTALL"
 JOBS="$(getconf _NPROCESSORS_ONLN)"
 DRY_RUN=0
 PRINT_CONFIG=0
@@ -56,6 +58,7 @@ print_config() {
 config=$CONFIG
 repo=$VLLM_REPO
 ref=$REF
+install=$INSTALL
 source=$VLLM_SOURCE_DIR
 prefix=$VLLM_PREFIX
 python=$VLLM_PYTHON
@@ -90,11 +93,15 @@ run() {
 if ((DRY_RUN)); then
     print_config
 else
-    for command in curl git make ninja rocminfo sha256sum tar uv; do
-        command -v "$command" >/dev/null || die "required command not found: $command"
-    done
-    [[ -x /opt/rocm/bin/hipcc ]] || die "ROCm compiler not found at /opt/rocm/bin/hipcc"
-    [[ -e /opt/rocm/lib/libhipsparselt.so.0 ]] || die "hipSPARSELt is missing; install the hipsparselt package"
+    if [[ "$INSTALL" == wheel ]]; then
+        command -v uv >/dev/null || die "required command not found: uv"
+    else
+        for command in curl git make ninja rocminfo sha256sum tar uv; do
+            command -v "$command" >/dev/null || die "required command not found: $command"
+        done
+        [[ -x /opt/rocm/bin/hipcc ]] || die "ROCm compiler not found at /opt/rocm/bin/hipcc"
+        [[ -e /opt/rocm/lib/libhipsparselt.so.0 ]] || die "hipSPARSELt is missing; install the hipsparselt package"
+    fi
 fi
 
 build_openmpi() {
@@ -156,8 +163,31 @@ prepare_python() {
         "$VLLM_BOOTSTRAP_WHEEL" \
         --extra-index-url "$VLLM_WHEEL_INDEX" \
         --index-strategy unsafe-best-match
+    [[ "$INSTALL" == wheel ]] && return
     run uv pip install --python "$VENV/bin/python" \
         'cmake<4' ninja wheel 'setuptools<80' 'pybind11<3.1.0' Cython
+}
+
+# The wheel's torch loads ROCm from its rocm-sdk wheels; /opt/rocm on the
+# library path would mix a second HIP runtime into the process. Run from /
+# so no rocm_sdk/ in the working directory shadows the venv's package.
+check_wheel() {
+    if ((DRY_RUN)); then
+        printf '+ validate ROCm PyTorch and vLLM without LD_LIBRARY_PATH\n'
+        return
+    fi
+    (cd / && env -u LD_LIBRARY_PATH HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}" "$VENV/bin/python" - <<'PY'
+import torch
+import vllm
+
+assert torch.version.hip, f"expected ROCm PyTorch, got {torch.__version__}"
+assert torch.cuda.is_available(), "ROCm PyTorch cannot access a GPU"
+assert (torch.ones(4, device="cuda") + 1).sum().item() == 8.0, "GPU kernel check failed"
+hip = {line.split()[-1] for line in open("/proc/self/maps") if "libamdhip64" in line}
+assert all(not path.startswith("/opt/rocm") for path in hip), f"system HIP runtime loaded: {hip}"
+print(f"vLLM {vllm.__version__}, PyTorch {torch.__version__}, HIP {torch.version.hip}, {torch.cuda.get_device_name(0)}")
+PY
+    )
 }
 
 build_vllm() {
@@ -199,13 +229,21 @@ PY
 
 write_build_info() {
     ((DRY_RUN)) && return
-    local commit
-    commit="$(git -C "$VLLM_SOURCE_DIR" rev-parse HEAD)"
+    local commit rocm
+    if [[ "$INSTALL" == wheel ]]; then
+        commit="$REF"
+        rocm="$("$VENV/bin/python" -c 'import importlib.metadata as m; print(m.version("rocm-sdk-core"))') (rocm-sdk wheels)"
+    else
+        commit="$(git -C "$VLLM_SOURCE_DIR" rev-parse HEAD)"
+        rocm="$(</opt/rocm/.info/version)"
+    fi
     cat >"$VLLM_PREFIX/BUILD-INFO" <<EOF
 vllm_repo=$VLLM_REPO
 vllm_ref=$REF
+vllm_install=$INSTALL
+vllm_wheel=$VLLM_BOOTSTRAP_WHEEL
 vllm_commit=$commit
-rocm=$(</opt/rocm/.info/version)
+rocm=$rocm
 rocm_variant=$VLLM_ROCM_VARIANT
 gpu_arch=$ARCH
 openmpi=$OPENMPI_VERSION
@@ -214,9 +252,14 @@ built_at=$(date -Is)
 EOF
 }
 
-build_openmpi
-prepare_source
-prepare_python
-build_vllm
+if [[ "$INSTALL" == wheel ]]; then
+    prepare_python
+    check_wheel
+else
+    build_openmpi
+    prepare_source
+    prepare_python
+    build_vllm
+fi
 write_build_info
 log "vLLM build complete: $VENV/bin/vllm"
