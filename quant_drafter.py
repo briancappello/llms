@@ -75,7 +75,7 @@ print(f"quantized {len(stats)} matrices in {time.time() - t0:.0f}s; mean rel err
 os.makedirs(D, exist_ok=True)
 save_file(out, D + "model.safetensors", metadata=meta or {"format": "pt"})
 for f in os.listdir(S):
-    if f not in ("model.safetensors", "config.json") and not f.startswith(".") and os.path.isfile(S + f):
+    if f not in ("model.safetensors", "config.json") and not f.startswith(".") and not f.endswith(".pt") and os.path.isfile(S + f):
         shutil.copy(S + f, D + f)
 ignore = ["re:.*kernel_projection$", "re:.*candidate_selector.*", "re:.*hidden_projection$"]
 if FC_BITS >= 16:

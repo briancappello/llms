@@ -32,9 +32,11 @@ def gptq_quantize(W, H, bits=4, group=128, blocksize=128, percdamp=0.01):
     W[:, dead] = 0
     damp = percdamp * torch.mean(torch.diag(H))
     H += torch.eye(K, device=dev) * damp
-    L = torch.linalg.cholesky(H)
+    # factorize on the CPU: hipsolver potrs fails (HIPSOLVER_STATUS_INTERNAL_ERROR) in the vllm-sly-radiance image
+    Hc = H.cpu()
+    L = torch.linalg.cholesky(Hc)
     Hinv = torch.cholesky_inverse(L)
-    Hinv = torch.linalg.cholesky(Hinv, upper=True)
+    Hinv = torch.linalg.cholesky(Hinv, upper=True).to(dev)
     Q = torch.zeros_like(W)
     scales = torch.zeros(N, K // group, device=dev)
     for i1 in range(0, K, blocksize):

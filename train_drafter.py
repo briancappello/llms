@@ -39,6 +39,8 @@ p.add_argument("--hessians", default="", help="write GPTQ Hessians of the drafte
 p.add_argument("--prompt-anchor-frac", type=float, default=0.0, help="share of anchors drawn from the prompt part")
 args = p.parse_args()
 torch.manual_seed(args.seed); random.seed(args.seed)
+if args.device.startswith("cuda"):   # vllm-sly-radiance ships no flash / mem-efficient SDPA kernels for gfx1201 (hipErrorInvalidImage)
+    torch.backends.cuda.enable_flash_sdp(False); torch.backends.cuda.enable_mem_efficient_sdp(False)
 dev = torch.device(args.device)
 cfg = json.load(open(os.path.join(args.drafter, "config.json")))
 dc = cfg["dflash_config"]; H = cfg["hidden_size"]; NH = cfg["num_attention_heads"]; NKV = cfg["num_key_value_heads"]
@@ -159,6 +161,15 @@ def load_drafter(m, path):
         keys = list(f.keys())
         for k in keys:
             if k.endswith("weight_scale_inv"): continue
+            if k.endswith((".weight_scale", ".weight_shape")): continue
+            if k.endswith(".weight_packed"):                      # compressed-tensors pack-quantized int4 g128 (syvai layout)
+                from compressed_tensors.compressors.pack_quantized.helpers import unpack_from_int32
+                base = k[: -len(".weight_packed")]
+                shape = tuple(f.get_tensor(base + ".weight_shape").tolist())
+                q = unpack_from_int32(f.get_tensor(k), 4, torch.Size(shape), packed_dim=1).float()
+                sc = f.get_tensor(base + ".weight_scale").float()
+                sd[base + ".weight"] = (q * sc.repeat_interleave(shape[1] // sc.shape[1], 1)).to(torch.bfloat16)
+                continue
             t = f.get_tensor(k)
             if t.dtype == torch.float8_e4m3fn:
                 s = f.get_tensor(k.replace(".weight", ".weight_scale_inv")).float()   # [N/128, K/128]
