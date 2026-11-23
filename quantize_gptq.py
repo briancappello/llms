@@ -68,7 +68,7 @@ processor = AutoProcessor.from_pretrained(args.src)
 print(f"loaded in {time.time() - t0:.0f}s: {type(model).__name__}", flush=True)
 recipe = GPTQModifier(targets=["Linear"], scheme="MXFP4A16", actorder="static", ignore=IGNORE)
 oneshot(model=model, dataset=ds, recipe=recipe, max_seq_length=args.max_len, num_calibration_samples=len(enc),
-        pipeline="sequential")
+        pipeline="sequential", layerwise_compression=True)   # pack each layer after use: bf16 copy freed, peak RAM ~model size
 print(f"quantized at {time.time() - t0:.0f}s", flush=True)
 out = Path(args.out)
 model.save_pretrained(out, save_compressed=True, max_shard_size="2400MB")

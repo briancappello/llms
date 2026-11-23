@@ -252,13 +252,41 @@ def seq_loss(model, embed, head, tokens, aux, anchors, pos0, want_acc=False):
     loss = (ce * WEIGHTS[None, :]).sum(1).mean() / WEIGHTS.sum()
     acc = None
     if want_acc:
-        acc = (logits.argmax(-1).view(-1, NDRAFT) == targets).float().mean(0)   # per position
+        am = logits.argmax(-1).view(-1, NDRAFT)
+        acc = {"pos": (am == targets).float().mean(0),                            # per position
+               "len_argmax": prefix_len(am, targets), "len_walk": prefix_len(selector_walk(hs, logits, q_ids.view(-1, NQ)[:, 0]), targets)}
     return loss, ce.mean(0).detach(), acc
+
+
+def prefix_len(draft, targets):
+    """mean number of leading draft tokens equal to the target's tokens (= accepted tokens per block)."""
+    return (draft == targets).long().cumprod(1).sum(1).float().mean()
+
+
+@torch.no_grad()
+def selector_walk(hs, logits, anchor_ids):
+    """DFlash2's served draft: top-K candidates per position, pairwise scores from the frozen candidate
+    selector (vLLM qwen3_dflash2 _score_edges_reference), greedy walk (draft_sample_method greedy)."""
+    if SEL is None:
+        return logits.argmax(-1).view(-1, NDRAFT)
+    K = SEL_TOPK
+    A = hs.shape[0]
+    unary, cand = logits.view(A, NDRAFT, -1).topk(K, dim=-1)                        # [A, L, K]
+    hidden = F.linear(hs, SEL["hidden_projection"]).float()                          # [A, L, r]
+    succ = SEL["successor_codebook"][cand].float()                                   # [A, L, K, r]
+    prev_ids = torch.cat([anchor_ids[:, None, None].expand(-1, 1, K), cand[:, :-1]], 1)
+    pred = SEL["predecessor_codebook"][prev_ids].float()                             # [A, L, K, r]
+    scores = unary.float()[:, :, None] + torch.einsum("blpr,blcr->blpc", pred * hidden[:, :, None], succ)
+    prev = torch.zeros(A, dtype=torch.long, device=hs.device); out = []
+    for l in range(NDRAFT):
+        idx = scores[torch.arange(A, device=hs.device), l, prev].argmax(-1)
+        out.append(cand[torch.arange(A, device=hs.device), l, idx]); prev = idx
+    return torch.stack(out, 1)
 
 
 @torch.no_grad()
 def evaluate(model, embed, head, files, tag):
-    model.eval(); tot = 0.0; cnt = 0; ce_pos = torch.zeros(NDRAFT, device=dev); acc_pos = torch.zeros(NDRAFT, device=dev)
+    model.eval(); tot = 0.0; cnt = 0; ce_pos = torch.zeros(NDRAFT, device=dev); acc_pos = torch.zeros(NDRAFT, device=dev); la = 0.0; lw = 0.0
     g = torch.Generator(device="cpu").manual_seed(1234)
     for fn in files:
         s = load_seq(fn)
@@ -266,14 +294,14 @@ def evaluate(model, embed, head, files, tag):
         tokens, hid, sc, pos, lo, hi, lo_p = s; tokens = tokens.to(dev)
         anchors = draw_anchors(lo, hi, lo_p, min(args.anchors, 48), generator=g)
         loss, cep, acc = seq_loss(model, embed, head, tokens, dequant(hid, sc), anchors, int(pos[0]), want_acc=True)
-        tot += loss.item(); ce_pos += cep; acc_pos += acc; cnt += 1
+        tot += loss.item(); ce_pos += cep; acc_pos += acc["pos"]; la += acc["len_argmax"].item(); lw += acc["len_walk"].item(); cnt += 1
     model.train()
     acc_pos /= max(cnt, 1); ce_pos /= max(cnt, 1)
     # expected accepted tokens per block if acceptance were exactly position-wise top-1 hits with prefix semantics
     exp_acc = 0.0; prob = 1.0
     for k in range(NDRAFT): prob *= acc_pos[k].item(); exp_acc += prob
     log(f"[eval {tag}] weighted CE {tot / max(cnt, 1):.4f} | top1 by position " + " ".join(f"{a:.3f}" for a in acc_pos.tolist())
-        + f" | prefix-expected accepted/block {exp_acc:.3f} | {cnt} seqs")
+        + f" | prefix-expected accepted/block {exp_acc:.3f} | measured accepted/block argmax {la / max(cnt, 1):.3f} walk {lw / max(cnt, 1):.3f} | {cnt} seqs")
     return tot / max(cnt, 1), exp_acc
 
 
@@ -289,6 +317,8 @@ else:
 log(f"{len(files)} capture files: {len(train_files)} train / {len(val_files)} val")
 model = Drafter().to(dev)
 selector_sd = load_drafter(model, args.drafter)
+SEL = {k.split(".")[-2] if k.endswith(".weight") else k.split(".")[-1]: v.to(dev) for k, v in selector_sd.items()} or None
+SEL_TOPK = int(dc.get("selector_top_k", 16))
 embed, head = load_target_embed_head(args.target); embed = embed.to(dev); head = head.to(dev)
 log(f"target embed {tuple(embed.shape)} / head {tuple(head.shape)} on {dev}")
 if args.freeze_mlp:

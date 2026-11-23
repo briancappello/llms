@@ -3,13 +3,14 @@
 # (capture/dflash_capture.py), prefix caching OFF, production sampling and template.
 #
 # Usage: serve_capture.sh TARGET_DIR CAPTURE_DIR [DRAFTER (HF id or dir)] [PORT]
-# Env: IMAGE, NAME (container name, default dflash-capture), GPU_UTIL (0.91), MAX_LEN (262144),
+# Env: MAX_SEQS (8), IMAGE, NAME (container name, default dflash-capture), GPU_UTIL (0.91), MAX_LEN (262144),
 #      CHAT_TEMPLATE (default TARGET_DIR/chat_template.jinja), SERVED (served model name, default "target")
 set -euo pipefail
 TARGET=$(readlink -f "$1"); CAP=$2; DRAFTER=${3:-syvai/Qwen3.8-27B-DFlash2-W4A16}; PORT=${4:-18090}
 IMAGE=${IMAGE:-ghcr.io/slybase/vllm-sly-radiance:1.13.4-rocm10.1}; NAME=${NAME:-dflash-capture}
 HERE=$(cd "$(dirname "$0")" && pwd); SP=/opt/vllm/lib/python3.12/site-packages
 mkdir -p "$CAP"
+MAX_SEQS=${MAX_SEQS:-8}; CG="[$(seq -s, 8 8 $((8 * MAX_SEQS)))]"   # one decode graph per batch size (k+1 = 8 tokens/request)
 DMOUNT=(); DARG=$DRAFTER
 if [ -d "$DRAFTER" ]; then DMOUNT=(-v "$(readlink -f "$DRAFTER"):/drafter:ro"); DARG=/drafter; fi
 exec podman run --rm --replace --name "$NAME" --network host --device=/dev/kfd --device=/dev/dri \
@@ -28,9 +29,9 @@ exec podman run --rm --replace --name "$NAME" --network host --device=/dev/kfd -
   --max-model-len "${MAX_LEN:-262144}" --gpu-memory-utilization "${GPU_UTIL:-0.91}" --kv-cache-dtype fp8 \
   --mamba-ssm-cache-dtype bfloat16 --speculative-config.method dflash --speculative-config.model "$DARG" \
   --speculative-config.num_speculative_tokens 7 --speculative-config.draft_sample_method greedy \
-  --speculative-config.attention_backend TRITON_ATTN --attention-backend R4D_HYBRID --max-num-seqs 8 \
+  --speculative-config.attention_backend TRITON_ATTN --attention-backend R4D_HYBRID --max-num-seqs "$MAX_SEQS" \
   --max-num-batched-tokens 2048 --compilation-config.cudagraph_mode FULL_DECODE_ONLY \
-  --compilation-config.cudagraph_capture_sizes '[8,16,24,32,40,48,56,64]' --no-enable-prefix-caching \
+  --compilation-config.cudagraph_capture_sizes "$CG" --no-enable-prefix-caching \
   --skip-mm-profiling --enable-mm-embeds --limit-mm-per-prompt.image 0 --limit-mm-per-prompt.video 0 \
   --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 \
   --chat-template "${CHAT_TEMPLATE:-/models/target/chat_template.jinja}" \
