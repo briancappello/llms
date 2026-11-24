@@ -1,0 +1,5 @@
+'    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for '
+' with the founding of Rome in 753 BC and ends with the fall of the Western Roman Empire in'
+'\n\nTo find the average speed, we use the formula:\n\nAverage Speed = Total Distance / Total T'
+before: vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="ultimate-gptq-mtp"}=35 vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="ultimate-gptq-mtp"}=56 drafts=14
+after:  vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="ultimate-gptq-mtp"}=725 vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="ultimate-gptq-mtp"}=1084 drafts=271
