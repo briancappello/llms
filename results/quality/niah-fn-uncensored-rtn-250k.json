@@ -1,0 +1,115 @@
+{
+  "summary": {
+    "model": "fn-uncensored-rtn",
+    "total": 9,
+    "found": 9,
+    "recall_pct": 100.0,
+    "recall_by_depth": {
+      "32768": "3/3",
+      "131072": "3/3",
+      "250000": "3/3"
+    },
+    "elapsed_s": 546.8
+  },
+  "results": [
+    {
+      "depth": 32768,
+      "position": 0.1,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 32875,
+      "answer": "7429-XKQ",
+      "latency_s": 18.8
+    },
+    {
+      "depth": 32768,
+      "position": 0.5,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 32875,
+      "answer": "7429-XKQ",
+      "latency_s": 17.1
+    },
+    {
+      "depth": 32768,
+      "position": 0.9,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 16491,
+      "answer": "7429-XKQ",
+      "latency_s": 9.5
+    },
+    {
+      "depth": 131072,
+      "position": 0.1,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 127084,
+      "answer": "7429-XKQ",
+      "latency_s": 63.8
+    },
+    {
+      "depth": 131072,
+      "position": 0.5,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 102511,
+      "answer": "7429-XKQ",
+      "latency_s": 51.8
+    },
+    {
+      "depth": 131072,
+      "position": 0.9,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 127085,
+      "answer": "7429-XKQ",
+      "latency_s": 63.8
+    },
+    {
+      "depth": 250000,
+      "position": 0.1,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 246015,
+      "answer": "7429-XKQ",
+      "latency_s": 122.5
+    },
+    {
+      "depth": 250000,
+      "position": 0.5,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 246013,
+      "answer": "7429-XKQ",
+      "latency_s": 122.9
+    },
+    {
+      "depth": 250000,
+      "position": 0.9,
+      "found": true,
+      "in_content": true,
+      "in_reasoning_only": false,
+      "finish_reason": "stop",
+      "prompt_tokens": 151807,
+      "answer": "7429-XKQ",
+      "latency_s": 75.8
+    }
+  ]
+}
