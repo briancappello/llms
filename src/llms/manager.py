@@ -28,6 +28,9 @@ from .settings import Settings
 
 SHARD_RE = re.compile(r"^(?P<base>.+)-(?P<idx>\d{4,5})-of-(?P<tot>\d{4,5})\.gguf$", re.I)
 QUANT_RE = re.compile(r"(UD-)?(I?Q\d[_A-Z0-9]*|BF16|F16|F32|MXFP4[_A-Z0-9]*)", re.I)
+# Capabilities rendered into llama-swap. Only "chat" models are offered to clients (pi) and
+# pre-warmed; a "video" model (e.g. LTX-2.5 on Radiance's /v1/videos) is served but not listed.
+SERVED_CAPABILITIES = ("chat", "video")
 QUANT_PREFERENCE = (
     "UD-Q4_K_XL", "Q4_K_XL", "UD-Q4_K_M", "Q4_K_M", "IQ4_NL", "IQ4_XS",
     "UD-Q5_K_XL", "Q5_K_XL", "UD-Q5_K_M", "Q5_K_M", "UD-Q5_K_L",
@@ -339,7 +342,7 @@ def render_config(registry, header, settings):
         raise ManagerError("header hooks/on_startup must be mappings")
     models = {}
     for name, entry in sorted(registry.items()):
-        if entry.get("capability") != "chat":
+        if entry.get("capability") not in SERVED_CAPABILITIES:
             continue
         model = {"name": entry.get("display", name), "description": entry.get("description", ""), "ttl": 0}
         macros = base.get("macros", {})
