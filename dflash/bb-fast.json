@@ -1,0 +1,7 @@
+{
+  "prefill_depths": [2000, 16000, 64000, 128000],
+  "prefill_runs": 2,
+  "prefill_warmup": 1,
+  "concurrency_levels": [1, 4, 8],
+  "concurrency_requests": 16
+}

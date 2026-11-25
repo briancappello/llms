@@ -1,0 +1,21 @@
+20/240 15476 tok, 78.2 tok/s, tok/update 3.489
+40/240 31045 tok, 82.5 tok/s, tok/update 3.631
+60/240 48185 tok, 79.6 tok/s, tok/update 3.680
+80/240 62911 tok, 79.0 tok/s, tok/update 3.679
+100/240 78964 tok, 79.4 tok/s, tok/update 3.712
+120/240 95110 tok, 77.9 tok/s, tok/update 3.687
+140/240 110472 tok, 77.0 tok/s, tok/update 3.663
+160/240 126626 tok, 76.2 tok/s, tok/update 3.648
+180/240 143709 tok, 76.0 tok/s, tok/update 3.645
+200/240 157427 tok, 76.8 tok/s, tok/update 3.634
+220/240 176719 tok, 77.1 tok/s, tok/update 3.611
+240/240 191688 tok, 77.2 tok/s, tok/update 3.625
+RESULT {"prompts": 240, "tokens": 191688, "tok_s": 77.24, "acc_per_draft": 2.6252, "tok_per_update": 3.6252}
+  chat           {"prompts": 57, "tokens": 43175, "tok_s": 68.0, "acc_per_draft": 2.1741, "tok_per_update": 3.1741}
+  code           {"prompts": 71, "tokens": 67186, "tok_s": 84.6, "acc_per_draft": 2.9387, "tok_per_update": 3.9387}
+  file_edit      {"prompts": 21, "tokens": 16711, "tok_s": 82.27, "acc_per_draft": 2.9852, "tok_per_update": 3.9852}
+  json           {"prompts": 13, "tokens": 10654, "tok_s": 83.96, "acc_per_draft": 3.0617, "tok_per_update": 4.0617}
+  math           {"prompts": 14, "tokens": 4854, "tok_s": 95.93, "acc_per_draft": 3.2092, "tok_per_update": 4.2092}
+  prose          {"prompts": 13, "tokens": 13181, "tok_s": 58.84, "acc_per_draft": 1.6842, "tok_per_update": 2.6842}
+  reasoning      {"prompts": 24, "tokens": 18906, "tok_s": 85.88, "acc_per_draft": 2.9247, "tok_per_update": 3.9247}
+  summarization  {"prompts": 27, "tokens": 17021, "tok_s": 74.68, "acc_per_draft": 2.7654, "tok_per_update": 3.7654}

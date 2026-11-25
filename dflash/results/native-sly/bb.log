@@ -1,0 +1,93 @@
+BetterBench 0.6.1 · corpus v1.0 · 29 prompts in 8 categories
+phases: decode, prefill, concurrency
+1 warmup + 5 measured passes per category  (quick mode — smoke check, not a publishable result)
+model max context: 262144 tokens
+output: results/native-sly/bb.json
+[single] chat: warmup 1 + 5 runs
+[single] code: warmup 1 + 5 runs
+[single] file_edit: warmup 1 + 5 runs
+[single] json: warmup 1 + 5 runs
+[single] math: warmup 1 + 5 runs
+[single] prose: warmup 1 + 5 runs
+[single] reasoning: warmup 1 + 5 runs
+[single] summarization: warmup 1 + 5 runs
+[prefill] depth ~2000 tok: warmup 1 + 2
+[prefill] depth ~16000 tok: warmup 1 + 2
+[prefill] depth ~64000 tok: warmup 1 + 2
+[prefill] depth ~128000 tok: warmup 1 + 2
+[concurrency] level 1: 16 requests
+[concurrency] level 4: 16 requests
+[concurrency] level 8: 16 requests
+
+wrote results/native-sly/bb.json
+# BetterBench report
+
+- **endpoint**: `http://127.0.0.1:18080/v1`  ·  **model**: `ultimate-heretic-sly`  ·  **host**: taichi
+- **corpus**: v1.0  ·  **sampling**: temp 0.7  ·  **passes/cat**: 5  ·  prefix-cache: cold (nonce)
+- **notes**: `image=native-1.14.0`
+- **gpu**: amd ['device,Card Series,Card Model,Card Vendor,Card SKU,Subsystem ID,Device Rev,Node ID,GUID,GFX Version', 'card0,AMD Radeon AI PRO R9700,0x7551,Advanced Micro Devices Inc. [AMD/ATI],APM107573,0x5413,0xc0,1,23334,gfx1201', 'card1,AMD Ryzen 9 9950X3D 16-Core Processor,0x13c0,Advanced Micro Devices Inc. [AMD/ATI],RAPHAEL,0x364e,0xc9,2,13208,gfx1036']
+
+## Single-stream (batch = 1)
+
+This server packs several tokens into one stream update (speculative decoding), so there is no per-token latency to report — the tokens in an update arrive together. **update p50/p99** is the measured wall-clock gap between updates (p99 is the stutter); **tok/update** is how many tokens land per update. TTFT in ms; decode = per-run tok/s.
+
+| category | passes | TTFT p50 | TTFT p99 | update p50 (ms) | update p99 (ms) | tok/update | decode t/s (med) | ±IQR | CV |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| chat | 5 | 68.0 | 94.5† | 35.6 | 37.3† | 3.75 | 106.1 | 33.4 | 31.9% |
+| code | 5 | 89.0 | 90.8† | 35.8 | 36.8 | 5.20 | 152.2 | 20.7 | 11.8% |
+| file_edit | 5 | 108.9 | 315.0† | 47.9 | 52.1† | 5.70 | 124.2 | 9.5 | 5.5% |
+| json | 5 | 110.2 | 111.4† | 47.1 | 49.0† | 5.25 | 121.4 | 21.0 | 15.1% |
+| math | 5 | 109.9 | 116.5† | 47.3 | 48.6† | 5.78 | 127.1 | 6.0 | 10.8% |
+| prose | 5 | 104.6 | 108.8† | 47.5 | 49.1 | 2.97 | 62.5 | 8.8 | 9.2% |
+| reasoning | 5 | 107.4 | 112.4† | 47.5 | 49.1 | 3.74 | 105.7 | 40.0 | 30.8% |
+| summarization | 5 | 109.6 | 120.7† | 47.3 | 49.1† | 4.98 | 104.8 | 19.6 | 14.7% |
+
+**Combined (weighted code:0.3, reasoning:0.2, prose:0.15, json:0.15, file_edit:0.1, summarization:0.1)** — decode t/s median ≈ **117.3**, update p99 ≈ **45.7 ms**, TTFT p50 ≈ **102 ms**
+
+*40 of 40 runs streamed several tokens per update (`chunk_token_mismatch`). Per-token ITL is not reported for them — see METHODOLOGY.md §chunk-token.*
+
+## Reasoning / answer split
+
+A per-token rate cannot see how much of a run was spent thinking. Two configs with identical decode t/s can take very different times to reach an answer. **TTFA** is time to the first *answer* token — the wait a reader actually feels.
+
+| category | runs w/ split | reasoning share (est) | TTFA p50 (ms) | never reached answer |
+|---|--:|--:|--:|--:|
+| chat | 5/5 | 87% | — | 3/5 |
+| code | 5/5 | 95% | — | 2/5 |
+| file_edit | 5/5 | 97% | — | 3/5 |
+| json | 5/5 | 62% | — | 1/5 |
+| math | 5/5 | 69% | — | 2/5 |
+| prose | 5/5 | 86% | — | 3/5 |
+| reasoning | 5/5 | 79% | — | 2/5 |
+| summarization | 5/5 | 60% | 1058.0 | 0/5 |
+
+*A `—` means too few runs reached an answer to say (fewer than 5, or under half the passes). Runs cut off before any answer began are counted, not folded in: crediting their output as an answer would flatter the result. Token counts are apportioned by character count, so the share is an estimate — punctuation-dense answers (json, code) are under-counted.*
+
+*Stopped at `max_tokens`: **34/40** runs (85%). On a thinking model a truncated run measures the thinking phase, not a complete answer.*
+
+## Concurrency sweep
+
+| level | ok/req | aggregate t/s | TTFT p50 | TTFT p99 | per-req decode t/s (med) |
+|--:|--:|--:|--:|--:|--:|
+| 1 | 16/16 | 136.8 | 91.8 | 581.4† | 156.9 |
+| 4 | 16/16 | 352.6 | 166.2 | 1017.0† | 110.9 |
+| 8 | 16/16 | 516.3 | 246.4 | 253.3† | 88.1 |
+
+## Prompt processing (prefill) sweep
+
+Prefill throughput = prompt tokens ÷ TTFT, at increasing input depth (tiny decode, cold prefix cache). PP t/s columns: 1% low / median / 99% high.
+
+| target depth | prompt tokens (med) | TTFT p50 (ms) | PP t/s 1% low | PP t/s median | PP t/s 99% high |
+|--:|--:|--:|--:|--:|--:|
+| 2000 | 1530 | 473.2 | 3226.2† | 3233.1 | 3240.0† |
+| 16000 | 11764 | 3445.1 | 3406.2† | 3414.8 | 3423.2† |
+| 64000 | 47090 | 15561.2 | 3025.8† | 3026.1 | 3026.5† |
+| 128000 | 94146 | 35982.5 | 2615.0† | 2616.4 | 2617.9† |
+
+---
+*† this percentile rests on fewer samples than `n · tail ≥ 5` requires — a p99 needs 500 observations, and 20 passes give 20. Read it as "roughly the worst observed", not as a percentile. The full list is under `sample_gate` in `results.json`.*
+
+*Generated by BetterBench. See METHODOLOGY.md §sample-size.*
+
+wrote results/native-sly/bb.html  —  open it in a browser for the charted report:
+    file:///home/brian/dev/dflash-scripts/results/native-sly/bb.html

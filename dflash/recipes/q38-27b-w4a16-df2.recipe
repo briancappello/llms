@@ -1,0 +1,21 @@
+# q38-27b-w4a16-df2.recipe -- an int4 W4A16 Qwen3.8-27B (GPTQ by quantize_gptq.py --scheme W4A16, the
+# delta net's a/b projections left bf16) with a DFlash2 drafter merged, for native Radiance (qwen35_fp8).
+# Trunk: Radiance's data/recipes/q38-27b-w4a16.recipe unchanged (the shipped int4 grid imported, head
+# int8). Drafter: qwen35_fp8 reads the drafter's linears as block fp8 or rotated int8 only, so they take
+# sage-a1.5-fp8-df2.recipe's 128x128 block fp8; its draft head is the target's lm_head as the 2-bit copy.
+#
+#   rad-convert W4A16_DIR --draft-model DRAFTER_BF16_DIR \
+#       --recipe recipes/q38-27b-w4a16-df2.recipe -o OUT.rad
+
+dflash.fc.weight                     rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.attn_q.weight           rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.attn_k.weight           rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.attn_v.weight           rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.attn_output.weight      rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.ffn_gate_up.weight      rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.blk.*.ffn_down.weight         rtn  codes=i8 group=128 scale=bf16 transform=fwht128 clamp=sym rule=search
+dflash.draft_head.weight             rtn  codes=u2 zero=u8 group=128 scale=f16
+
+blk.*.weight                         import  codes=u4 zero=u4 scale=f16
+
+output.weight                        rtn  codes=i8 group=128 scale=bf16 clamp=sym
