@@ -110,8 +110,9 @@ Use `--no-restart` to change the registry without a service restart. Use
 `--no-load` to omit the explicit warm-up request after a restart.
 
 ```bash
-llms ls
+llms ls                       # table: name, state, quant, size, ctx, engine
 llms ls --unregistered        # complete cached GGUF/MLX models no entry references
+llms ls --json                # full registry + running state as raw JSON
 llms status
 llms use short-name
 llms use short-name --sync-clients   # also make it pi's default model

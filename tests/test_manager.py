@@ -1086,6 +1086,25 @@ class CLITests(IsolatedTest):
         self.assertIn("systemctl --user daemon-reload", output.getvalue())
         self.runner.assert_not_called()
 
+    def test_cli_ls_prints_brief_table_and_json_on_request(self):
+        self.registry({"big": entry(quant="Q4_K_M", size_bytes=3 * 2**30, ctx=262144, engine="strata-hip"),
+                       "small": entry(size_bytes=5 * 2**20)})
+        code, output, _ = self.invoke("ls", "--offline")
+        self.assertEqual(code, 0)
+        lines = output.splitlines()
+        self.assertEqual(lines[0].split(), ["NAME", "QUANT", "SIZE", "CTX", "ENGINE"])
+        self.assertEqual(lines[1].split(), ["big", "Q4_K_M", "3.0G", "256K", "strata-hip"])
+        self.assertEqual(lines[2].split(), ["small", "-", "5M", "1K", "llama.cpp"])
+        self.opener.side_effect = None
+        self.opener.return_value = io.BytesIO(json.dumps({"running": [{"model": "big", "state": "ready"}]}).encode())
+        code, output, _ = self.invoke("ls")
+        self.assertEqual(code, 0)
+        self.assertEqual(output.splitlines()[1].split()[:2], ["big", "ready"])
+        self.assertEqual(output.splitlines()[2].split()[:2], ["small", "-"])
+        code, output, _ = self.invoke("ls", "--offline", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(set(json.loads(output)["registry"]), {"big", "small"})
+
     def test_cli_api_failures_nonzero(self):
         self.opener.side_effect = urllib.error.URLError("offline")
         for command in ("status", "ls"):

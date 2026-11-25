@@ -36,6 +36,7 @@ def parser():
     inventory.add_argument("--offline", action="store_true", help="registry only; do not query API")
     inventory.add_argument("--unregistered", action="store_true",
                            help="list complete cached GGUF/MLX models no registry entry references (offline)")
+    inventory.add_argument("--json", action="store_true", help="print full raw JSON instead of a table")
     use = sub.add_parser("use", aliases=["load"], help="pre-warm using the real registry model ID")
     use.add_argument("name")
     use.add_argument("--sync-clients", action="store_true",
@@ -67,6 +68,51 @@ def parser():
     }.items():
         sub.add_parser(name, help=help_text)
     return ap
+
+
+def _size(n):
+    if not isinstance(n, (int, float)):
+        return "-"
+    return f"{n / 2**30:.1f}G" if n >= 2**30 else f"{n / 2**20:.0f}M"
+
+
+def _ctx(n):
+    if not isinstance(n, int):
+        return "-"
+    return f"{n // 1024}K" if n % 1024 == 0 else str(n)
+
+
+def _table(headers, rows):
+    widths = [max(len(str(c)) for c in col) for col in zip(headers, *rows)]
+    lines = ["  ".join(str(c).ljust(w) for c, w in zip(row, widths)).rstrip() for row in (headers, *rows)]
+    return "\n".join(lines)
+
+
+def registry_table(registry, running):
+    """One row per registered model; running=None means offline (no STATE column)."""
+    states = {r["model"]: r["state"] for r in running or []}
+    headers = ["NAME", "QUANT", "SIZE", "CTX", "ENGINE"]
+    rows = []
+    for name, entry in registry.items():
+        rows.append([name, entry.get("quant") or "-", _size(entry.get("size_bytes")), _ctx(entry.get("ctx")),
+                     entry.get("engine") or "llama.cpp"])
+    for name in states.keys() - registry.keys():
+        rows.append([name, "-", "-", "-", "-"])
+    if running is not None:
+        headers.insert(1, "STATE")
+        for row in rows:
+            row.insert(1, states.get(row[0], "-"))
+    if not rows:
+        return "no registered models"
+    return _table(headers, rows)
+
+
+def unregistered_table(found):
+    if not found:
+        return "no unregistered cached models"
+    rows = [[item["kind"], _size(item.get("size_bytes")), item.get("repo") or "-",
+             Path(item["path"]).name if item["kind"] == "gguf" else "-"] for item in found]
+    return _table(["KIND", "SIZE", "REPO", "FILE"], rows)
 
 
 def main(argv=None, *, manager_factory=ModelManager):
@@ -106,11 +152,18 @@ def main(argv=None, *, manager_factory=ModelManager):
                     print(f"note: this GGUF embeds sampling defaults that llama.cpp applies unless "
                           f"overridden: {values}", file=sys.stderr)
         elif args.command == "ls" and args.unregistered:
-            print(json.dumps({"hf_cache": str(settings.hf_cache), "unregistered": manager.unregistered()}, indent=2))
+            found = manager.unregistered()
+            if args.json:
+                print(json.dumps({"hf_cache": str(settings.hf_cache), "unregistered": found}, indent=2))
+            else:
+                print(unregistered_table(found))
         elif args.command == "ls":
             registry = manager.load_registry()
             running = None if args.offline else manager.running()
-            print(json.dumps({"registry": registry, "running": running}, indent=2))
+            if args.json:
+                print(json.dumps({"registry": registry, "running": running}, indent=2))
+            else:
+                print(registry_table(registry, running))
         elif args.command in ("use", "load"):
             if args.sync_clients:
                 manager.use_and_sync(args.name)
