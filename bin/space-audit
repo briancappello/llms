@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""List the big directories on this host with what may be deleted, read from KEEP.md notes.
+
+Read-only: it deletes nothing. It is the first step of any disk cleanup (the agent-rules rule
+"freeing disk space"): show the table, then ask the user about everything that is not plainly
+re-downloadable, rebuildable or scratch.
+
+    space-audit                 every candidate >= 1 GiB
+    space-audit --min 5         >= 5 GiB
+    space-audit --root DIR ...  other roots instead of the defaults
+
+A note is found as DIR/KEEP.md, as FILE.KEEP.md next to a file, or in the nearest parent
+directory's KEEP.md. Its "Delete policy:" line is reported: never-without-asking, ok-if-<condition>,
+or scratch. Hugging Face repos come from `hf cache ls`; they are re-downloadable unless
+~/.cache/huggingface/KEEP.md lists them ("- <repo id>: <policy> -- <why>").
+
+Classes:
+  PROTECTED      never delete (marketstore data)
+  KEEP-NOTE      has a note: follow its policy (scratch = may be deleted)
+  REDOWNLOAD     a Hub repo with no note: `hf cache rm <id>`
+  REBUILDABLE    caches, venvs, build trees: rebuilt in minutes
+  UNKNOWN        no note: ask the user before deleting
+"""
+import argparse
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+DEFAULT_ROOTS = [HOME / "models-nvme", Path("/opt/models"), HOME / "opt", HOME / "dev",
+                 HOME / ".cache", HOME / ".local/share", Path("/tmp/opencode")]
+PROTECTED = [HOME / ".local/share/marketstore/data", HOME / ".local/share/marketstore"]
+HF = HOME / ".cache/huggingface"
+# cheap to rebuild: compile caches, package caches, virtualenvs, build output
+# Only caches known to be rebuilt on demand; anything else without a note stays UNKNOWN.
+REBUILDABLE = re.compile(r"(^|/)(\.venv[^/]*|venv|__pycache__|build|\.dryrun|ccache|\.ccache|"
+                         r"\.cache/(uv|pip|vllm[^/]*|triton|torch_extensions|aiter|comgr|go-build)|"
+                         r"\.triton|\.aiter)$")
+POLICY = re.compile(r"^\s*Delete policy:\s*(.+?)\s*$", re.I | re.M)
+
+
+def du(path):
+    try:
+        # allocated blocks, not apparent size: VM images and databases are sparse
+        out = subprocess.run(["du", "-sxk", str(path)], capture_output=True, text=True, timeout=600)
+        return int(out.stdout.split()[0]) * 1024 if out.stdout else 0
+    except (subprocess.TimeoutExpired, ValueError, IndexError):
+        return -1
+
+
+def note_for(path):
+    """(note path, policy) of the note that covers `path`, nearest first."""
+    cands = [path / "KEEP.md"] if path.is_dir() else []
+    cands.append(path.with_name(path.name + ".KEEP.md"))
+    cands += [p / "KEEP.md" for p in path.parents]
+    for c in cands:
+        if c.is_file():
+            m = POLICY.search(c.read_text(errors="replace"))
+            return c, (m.group(1) if m else "note has no 'Delete policy:' line")
+    return None, None
+
+
+def covered_by_children(path):
+    try:
+        kids = [k for k in path.iterdir() if not k.name.endswith(".KEEP.md") and k.name != "lost+found"]
+    except PermissionError:
+        return False
+    return bool(kids) and all((k / "KEEP.md").is_file() or k.with_name(k.name + ".KEEP.md").is_file() for k in kids)
+
+
+def is_protected(path):
+    r = path.resolve()
+    return any(r == p or p in r.parents for p in PROTECTED if p.name == "data") or \
+        r == (HOME / ".local/share/marketstore").resolve()
+
+
+def hf_rows(min_bytes):
+    notes = {}
+    keep = HF / "KEEP.md"
+    if keep.is_file():
+        for line in keep.read_text().splitlines():
+            m = re.match(r"^- ([\w.\-]+/[\w.\-]+): (\S+) -- (.*)$", line)
+            if m:
+                notes[m.group(1)] = (m.group(2), m.group(3))
+    try:
+        out = subprocess.run(["hf", "cache", "ls"], capture_output=True, text=True, timeout=300).stdout
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return [], "hf cache ls failed: Hugging Face cache not audited"
+    units = {"": 1, "K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40}
+    rows = []
+    for line in out.splitlines():
+        f = line.split("\t")
+        if len(f) < 2 or "/" not in f[0]:
+            continue
+        m = re.match(r"^([\d.]+)([KMGT]?)", f[1])
+        if not m:
+            continue
+        size = int(float(m.group(1)) * units[m.group(2)])
+        if size < min_bytes:
+            continue
+        repo = f[0].split("/", 1)[1]
+        if repo in notes:
+            pol, why = notes[repo]
+            rows.append((size, "KEEP-NOTE", pol, f"hf:{f[0]}", why[:110]))
+        else:
+            rows.append((size, "REDOWNLOAD", "hf cache rm", f"hf:{f[0]}", f"accessed {f[2]}" if len(f) > 2 else ""))
+    return rows, None
+
+
+def scan(roots, min_bytes):
+    rows, seen = [], set()
+
+    def add(path):
+        rp = path.resolve()
+        if rp in seen or rp == HF.resolve() or HF.resolve() in rp.parents:
+            return
+        seen.add(rp)
+        size = du(path)
+        if 0 <= size < min_bytes:
+            return
+        if is_protected(path):
+            rows.append((size, "PROTECTED", "never delete", str(path), "marketstore data"))
+            return
+        note, pol = note_for(path)
+        if not note and path.is_dir() and covered_by_children(path):
+            return  # a plain folder of noted items: the items are their own rows
+        if note:
+            rows.append((size, "KEEP-NOTE", pol, str(path), f"note: {note}"))
+        elif REBUILDABLE.search(str(path)):
+            rows.append((size, "REBUILDABLE", "-", str(path), ""))
+        else:
+            rows.append((size, "UNKNOWN", "ask", str(path), "git repo: check git status" if (path / ".git").exists() else ""))
+
+    for root in roots:
+        if not root.exists():
+            continue
+        # every directory or file that carries its own note, at any depth up to 4
+        for dirpath, dirnames, filenames in os.walk(root):
+            depth = Path(dirpath).relative_to(root).parts
+            dirnames[:] = [d for d in dirnames if not (Path(dirpath, d).resolve() == HF.resolve())
+                           and d not in (".git", "node_modules")]
+            if len(depth) >= 4:
+                dirnames[:] = []
+            if "KEEP.md" in filenames and Path(dirpath) != root:
+                add(Path(dirpath))
+            for fn in filenames:
+                if fn.endswith(".KEEP.md"):
+                    target = Path(dirpath, fn[:-len(".KEEP.md")])
+                    if target.exists():
+                        add(target)
+        for child in sorted(root.iterdir()):
+            if child.is_symlink():
+                continue
+            add(child)
+    return rows
+
+
+def human(n):
+    if n < 0:
+        return "?"
+    for u in ("B", "K", "M", "G", "T"):
+        if n < 1024 or u == "T":
+            return f"{n:.1f}{u}" if u != "B" else f"{n}B"
+        n /= 1024
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--min", type=float, default=1.0, help="minimum size in GiB (default 1)")
+    ap.add_argument("--root", action="append", type=Path, help="root to scan (repeatable)")
+    ap.add_argument("--no-hf", action="store_true", help="skip the Hugging Face cache")
+    a = ap.parse_args()
+    min_bytes = int(a.min * (1 << 30))
+    rows = scan(a.root or DEFAULT_ROOTS, min_bytes)
+    warn = None
+    if not a.no_hf and not a.root:
+        hrows, warn = hf_rows(min_bytes)
+        rows += hrows
+    order = {"UNKNOWN": 0, "KEEP-NOTE": 1, "REDOWNLOAD": 2, "REBUILDABLE": 3, "PROTECTED": 4}
+    rows.sort(key=lambda r: (order[r[1]], -r[0]))
+    print(f"| size | class | policy | path | detail |\n|--:|---|---|---|---|")
+    for size, cls, pol, path, detail in rows:
+        print(f"| {human(size)} | {cls} | {pol} | {path} | {detail} |")
+    if warn:
+        print(f"\nWARNING: {warn}", file=sys.stderr)
+    n_unknown = sum(1 for r in rows if r[1] == "UNKNOWN")
+    print(f"\n{len(rows)} entries >= {a.min:g} GiB; {n_unknown} UNKNOWN (no KEEP.md: ask before deleting). "
+          "Nested notes are listed as their own rows: a parent row's size includes them.")
+
+
+if __name__ == "__main__":
+    main()
