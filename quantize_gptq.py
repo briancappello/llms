@@ -26,6 +26,9 @@ ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("out")
 ap.add_argument("--calib", required=True); ap.add_argument("--prompts", required=True)
 ap.add_argument("--samples", type=int, default=89); ap.add_argument("--max-len", type=int, default=2048)
+ap.add_argument("--scheme", default="MXFP4A16", help="llm-compressor preset; W4A16 = int4 sym group 128 (Radiance's q38-27b-w4a16.recipe)")
+ap.add_argument("--ignore", action="append", default=[], help="extra ignore pattern; Radiance serves the delta net's a/b "
+                "projections bf16: --ignore 're:.*linear_attn.in_proj_[ab]$'")
 ap.add_argument("--dry-run", action="store_true")
 args = ap.parse_args()
 
@@ -66,7 +69,7 @@ t0 = time.time()
 model = AutoModelForImageTextToText.from_pretrained(args.src, dtype=torch.bfloat16, device_map=None)
 processor = AutoProcessor.from_pretrained(args.src)
 print(f"loaded in {time.time() - t0:.0f}s: {type(model).__name__}", flush=True)
-recipe = GPTQModifier(targets=["Linear"], scheme="MXFP4A16", actorder="static", ignore=IGNORE)
+recipe = GPTQModifier(targets=["Linear"], scheme=args.scheme, actorder="static", ignore=IGNORE + args.ignore)
 oneshot(model=model, dataset=ds, recipe=recipe, max_seq_length=args.max_len, num_calibration_samples=len(enc),
         pipeline="sequential", layerwise_compression=True)   # pack each layer after use: bf16 copy freed, peak RAM ~model size
 print(f"quantized at {time.time() - t0:.0f}s", flush=True)
