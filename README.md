@@ -24,6 +24,26 @@ GPTQ runs on the host with the native vLLM build's ROCm torch:
 | export | `quant_drafter.py BF16_DIR OUT H.pt` | W4A16 pack-quantized g128 GPTQ, layout identical to syvai/Qwen3.8-27B-DFlash2-W4A16 (1.19 GiB) |
 | served eval | `eval_served.py heldout.jsonl out.json --model NAME` | single stream, prod sampling, spec counters per prompt -> per-category acceptance |
 
+## Prose targets, all native (Hemmingway-1.5, 2026-11-25)
+
+For a prose model the prompts, lengths and the measure change, and the vLLM image is gone:
+
+| step | script | notes |
+|---|---|---|
+| prompt pool | `build_prose_pool.py data/prose_pool.jsonl` | fiction (WritingPrompts at 300 to 2,000 words and styles, continuations, dolly creative), non-fiction (essays, articles, op-eds, blog posts, speeches, product copy, emails), rewrites; `reasoning_effort` rotated over none/low/medium/xhigh per prompt |
+| answers | `generate.py` against the served Radiance container itself (16 seqs, 32K ctx config) | 1.26M tokens in 36 min; `none` is sent as `enable_thinking: false` to vLLM |
+| capture target | `quantize_gptq.py ... --scheme W4A16` | text-only `ForCausalLM` releases load as such; samples rendered at each prompt's own effort |
+| captures | `serve_capture_native.sh` (host vLLM, `sitecustomize` loads the hook in the workers, fp8 KV, PROMPT_KEEP/CAP_MAX 16384) + `tf_capture.py` | teacher-forced: one prefill per answer (~0.85 s each) instead of decoding it (~20 t/s a sequence on vLLM's W4A16 path); `prompt_len` set to the answer's start |
+| merge | `rad-convert VHEAD --arch qwen35 --recipe drafter rules --recipe <the trunk container's own recorded recipe> --draft-model DRAFTER --reuse TRUNK.rad` | keeps a calibrated IQR trunk byte for byte (699 of 776 weights copied); VHEAD from radiance `tools/vhead.py --keep-lm-head`; needs radiance e9c13753 for text-only checkpoints |
+| A/B | `ab_prose.sh NAME:CFG:RAD ...` | standalone servers, held-out prose at its own thinking levels (`eval_served.py` reads Radiance's counters too) + BetterBench quick decode |
+
+Result (results/ab-prose): on held-out prose the model's own MTP head (76.3 t/s, 2.43 tokens/step;
+fiction 72.7, non-fiction 78.7) beat the stock DFlash2 drafter (62.7) and the self-distilled one
+(58.8, 300 steps; val acceptance flat from stock 1.71 to 1.66). BetterBench's mixed set favours
+DFlash2 (113 vs 92), but its prose rows never leave the thinking phase. Hemmingway sits close to base
+Qwen and writes deliberately high-entropy text at temperature 1.0, so a drafter has little to learn;
+the captures also came from a W4A16 copy, not the served IQR trunk. Keep MTP for this model.
+
 ## Gotchas (vllm-sly-radiance 1.13.4 image)
 
 - `python3 -m venv` is unavailable in the image: llm-compressor 0.15.0 / compressed-tensors 0.20.1 /

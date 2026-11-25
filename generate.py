@@ -33,7 +33,12 @@ print(f"{len(todo)} prompts to run ({len(done)} done), conc {args.conc}, max_tok
 
 def one(r):
     msgs = r.get("messages") or [{"role": "user", "content": r["prompt"]}]
-    body = json.dumps({"model": args.model, "messages": msgs, "max_tokens": args.max_tokens}).encode()
+    payload = {"model": args.model, "messages": msgs, "max_tokens": args.max_tokens}
+    if r.get("reasoning_effort"):  # per-prompt thinking level (build_prose_pool.py rotates it)
+        payload["reasoning_effort"] = r["reasoning_effort"]
+        off = r["reasoning_effort"] in ("none", "minimal")   # Qwen templates: thinking off is enable_thinking
+        payload["chat_template_kwargs"] = {"enable_thinking": False} if off else {"reasoning_effort": r["reasoning_effort"]}
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(f"{args.url}/chat/completions", body,
                                  {"Content-Type": "application/json", "X-Request-Id": f"gen{r['id']}"})
     t0 = time.time()

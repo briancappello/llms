@@ -22,8 +22,13 @@ metrics = args.metrics or f"{args.url.rsplit('/v1', 1)[0]}/upstream/{args.model}
 def counters():
     raw = urllib.request.urlopen(metrics, timeout=30).read().decode(); o = {"n": 0.0, "d": 0.0, "a": 0.0}
     for line in raw.splitlines():
+        # vLLM's counters, or Radiance's: a drafting step is one that reached draft position 0
         for k, m in (("n", "vllm:spec_decode_num_drafts_total"), ("d", "vllm:spec_decode_num_draft_tokens_total"),
-                     ("a", "vllm:spec_decode_num_accepted_tokens_total")):
+                     ("a", "vllm:spec_decode_num_accepted_tokens_total"),
+                     ("n", 'radiance:draft_position_reached_total{'), ("d", "radiance:draft_tokens_total{"),
+                     ("a", "radiance:draft_accepted_total{")):
+            if m.startswith("radiance:draft_position_reached") and 'position="0"' not in line:
+                continue
             if line.startswith(m):
                 o[k] += float(line.rsplit(" ", 1)[1])
     return o
@@ -33,8 +38,11 @@ rows = [json.loads(line) for line in open(args.prompts)]
 per = []; t0 = time.time()
 c_prev = counters()
 for i, r in enumerate(rows):
-    body = json.dumps({"model": args.model, "messages": r.get("messages") or [{"role": "user", "content": r["prompt"]}],
-                       "max_tokens": args.max_tokens, "seed": int(r["id"])}).encode()
+    req = {"model": args.model, "messages": r.get("messages") or [{"role": "user", "content": r["prompt"]}],
+           "max_tokens": args.max_tokens, "seed": int(r["id"])}
+    if r.get("reasoning_effort"):   # the prompt's own thinking level (build_prose_pool.py)
+        req["reasoning_effort"] = r["reasoning_effort"]
+    body = json.dumps(req).encode()
     a = time.time()
     try:
         d = json.load(urllib.request.urlopen(urllib.request.Request(f"{args.url}/chat/completions", body, {"Content-Type": "application/json"}), timeout=1800))

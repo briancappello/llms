@@ -1,0 +1,636 @@
+{
+ "model": "hemmingway-1.5",
+ "all": {
+  "prompts": 60,
+  "tokens": 51925,
+  "tok_s": 62.65,
+  "acc_per_draft": 1.0473,
+  "tok_per_update": 2.0473
+ },
+ "by_category": {
+  "fiction": {
+   "prompts": 27,
+   "tokens": 29962,
+   "tok_s": 58.53,
+   "acc_per_draft": 0.908,
+   "tok_per_update": 1.908
+  },
+  "nonfiction": {
+   "prompts": 24,
+   "tokens": 16836,
+   "tok_s": 63.72,
+   "acc_per_draft": 1.0825,
+   "tok_per_update": 2.0825
+  },
+  "rewrite": {
+   "prompts": 9,
+   "tokens": 5127,
+   "tok_s": 97.3,
+   "acc_per_draft": 2.2578,
+   "tok_per_update": 3.2578
+  }
+ },
+ "wall_s": 858.9,
+ "per": [
+  {
+   "id": 503787,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 2048,
+   "secs": 18.81,
+   "drafts": 576.0,
+   "draft_tokens": 4032.0,
+   "accepted": 1471.0
+  },
+  {
+   "id": 504103,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 651,
+   "secs": 11.03,
+   "drafts": 337.0,
+   "draft_tokens": 2359.0,
+   "accepted": 313.0
+  },
+  {
+   "id": 500424,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 576,
+   "secs": 11.15,
+   "drafts": 341.0,
+   "draft_tokens": 2387.0,
+   "accepted": 234.0
+  },
+  {
+   "id": 503683,
+   "source": "everyday",
+   "category": "nonfiction",
+   "tokens": 524,
+   "secs": 7.54,
+   "drafts": 229.0,
+   "draft_tokens": 1603.0,
+   "accepted": 294.0
+  },
+  {
+   "id": 503886,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1170,
+   "secs": 19.45,
+   "drafts": 596.0,
+   "draft_tokens": 4172.0,
+   "accepted": 573.0
+  },
+  {
+   "id": 503933,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 756,
+   "secs": 6.56,
+   "drafts": 197.0,
+   "draft_tokens": 1379.0,
+   "accepted": 558.0
+  },
+  {
+   "id": 503591,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 981,
+   "secs": 17.92,
+   "drafts": 549.0,
+   "draft_tokens": 3843.0,
+   "accepted": 431.0
+  },
+  {
+   "id": 501448,
+   "source": "everyday",
+   "category": "nonfiction",
+   "tokens": 163,
+   "secs": 3.2,
+   "drafts": 98.0,
+   "draft_tokens": 686.0,
+   "accepted": 64.0
+  },
+  {
+   "id": 503991,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 400,
+   "secs": 6.7,
+   "drafts": 203.0,
+   "draft_tokens": 1421.0,
+   "accepted": 196.0
+  },
+  {
+   "id": 501327,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 2048,
+   "secs": 42.44,
+   "drafts": 1303.0,
+   "draft_tokens": 9121.0,
+   "accepted": 744.0
+  },
+  {
+   "id": 500773,
+   "source": "no_robots_gen",
+   "category": "nonfiction",
+   "tokens": 267,
+   "secs": 4.65,
+   "drafts": 140.0,
+   "draft_tokens": 980.0,
+   "accepted": 126.0
+  },
+  {
+   "id": 500867,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 2048,
+   "secs": 32.19,
+   "drafts": 987.0,
+   "draft_tokens": 6909.0,
+   "accepted": 1060.0
+  },
+  {
+   "id": 503376,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 639,
+   "secs": 11.91,
+   "drafts": 364.0,
+   "draft_tokens": 2548.0,
+   "accepted": 274.0
+  },
+  {
+   "id": 502709,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1589,
+   "secs": 28.3,
+   "drafts": 868.0,
+   "draft_tokens": 6076.0,
+   "accepted": 720.0
+  },
+  {
+   "id": 502840,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 614,
+   "secs": 12.52,
+   "drafts": 383.0,
+   "draft_tokens": 2681.0,
+   "accepted": 230.0
+  },
+  {
+   "id": 501693,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 1029,
+   "secs": 9.62,
+   "drafts": 287.0,
+   "draft_tokens": 2009.0,
+   "accepted": 741.0
+  },
+  {
+   "id": 501260,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 111,
+   "secs": 1.71,
+   "drafts": 49.0,
+   "draft_tokens": 343.0,
+   "accepted": 61.0
+  },
+  {
+   "id": 504025,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 980,
+   "secs": 19.11,
+   "drafts": 586.0,
+   "draft_tokens": 4102.0,
+   "accepted": 393.0
+  },
+  {
+   "id": 501318,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 1054,
+   "secs": 16.89,
+   "drafts": 517.0,
+   "draft_tokens": 3619.0,
+   "accepted": 536.0
+  },
+  {
+   "id": 500141,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 385,
+   "secs": 4.9,
+   "drafts": 146.0,
+   "draft_tokens": 1022.0,
+   "accepted": 238.0
+  },
+  {
+   "id": 501444,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 791,
+   "secs": 16.66,
+   "drafts": 513.0,
+   "draft_tokens": 3591.0,
+   "accepted": 277.0
+  },
+  {
+   "id": 500723,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 2048,
+   "secs": 27.84,
+   "drafts": 853.0,
+   "draft_tokens": 5971.0,
+   "accepted": 1196.0
+  },
+  {
+   "id": 501948,
+   "source": "no_robots_rewrite",
+   "category": "rewrite",
+   "tokens": 38,
+   "secs": 0.51,
+   "drafts": 12.0,
+   "draft_tokens": 84.0,
+   "accepted": 25.0
+  },
+  {
+   "id": 501090,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 1366,
+   "secs": 23.34,
+   "drafts": 716.0,
+   "draft_tokens": 5012.0,
+   "accepted": 649.0
+  },
+  {
+   "id": 502721,
+   "source": "no_robots_gen",
+   "category": "nonfiction",
+   "tokens": 389,
+   "secs": 4.18,
+   "drafts": 125.0,
+   "draft_tokens": 875.0,
+   "accepted": 263.0
+  },
+  {
+   "id": 503049,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 647,
+   "secs": 11.65,
+   "drafts": 356.0,
+   "draft_tokens": 2492.0,
+   "accepted": 290.0
+  },
+  {
+   "id": 502546,
+   "source": "no_robots_gen",
+   "category": "nonfiction",
+   "tokens": 458,
+   "secs": 6.92,
+   "drafts": 210.0,
+   "draft_tokens": 1470.0,
+   "accepted": 247.0
+  },
+  {
+   "id": 503740,
+   "source": "wp_continue",
+   "category": "fiction",
+   "tokens": 226,
+   "secs": 4.86,
+   "drafts": 145.0,
+   "draft_tokens": 1015.0,
+   "accepted": 80.0
+  },
+  {
+   "id": 500853,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1204,
+   "secs": 20.82,
+   "drafts": 638.0,
+   "draft_tokens": 4466.0,
+   "accepted": 565.0
+  },
+  {
+   "id": 500834,
+   "source": "wp_continue",
+   "category": "fiction",
+   "tokens": 1130,
+   "secs": 18.48,
+   "drafts": 563.0,
+   "draft_tokens": 3941.0,
+   "accepted": 566.0
+  },
+  {
+   "id": 500374,
+   "source": "wp_continue",
+   "category": "fiction",
+   "tokens": 645,
+   "secs": 10.81,
+   "drafts": 328.0,
+   "draft_tokens": 2296.0,
+   "accepted": 316.0
+  },
+  {
+   "id": 503259,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 740,
+   "secs": 10.89,
+   "drafts": 332.0,
+   "draft_tokens": 2324.0,
+   "accepted": 407.0
+  },
+  {
+   "id": 503852,
+   "source": "dolly_creative",
+   "category": "fiction",
+   "tokens": 251,
+   "secs": 4.43,
+   "drafts": 136.0,
+   "draft_tokens": 952.0,
+   "accepted": 114.0
+  },
+  {
+   "id": 502788,
+   "source": "news",
+   "category": "nonfiction",
+   "tokens": 893,
+   "secs": 17.94,
+   "drafts": 550.0,
+   "draft_tokens": 3850.0,
+   "accepted": 342.0
+  },
+  {
+   "id": 502116,
+   "source": "no_robots_gen",
+   "category": "nonfiction",
+   "tokens": 501,
+   "secs": 10.14,
+   "drafts": 312.0,
+   "draft_tokens": 2184.0,
+   "accepted": 188.0
+  },
+  {
+   "id": 501134,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 516,
+   "secs": 9.08,
+   "drafts": 279.0,
+   "draft_tokens": 1953.0,
+   "accepted": 236.0
+  },
+  {
+   "id": 500920,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 662,
+   "secs": 14.81,
+   "drafts": 456.0,
+   "draft_tokens": 3192.0,
+   "accepted": 205.0
+  },
+  {
+   "id": 501594,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 898,
+   "secs": 14.65,
+   "drafts": 448.0,
+   "draft_tokens": 3136.0,
+   "accepted": 449.0
+  },
+  {
+   "id": 503214,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 903,
+   "secs": 15.9,
+   "drafts": 487.0,
+   "draft_tokens": 3409.0,
+   "accepted": 415.0
+  },
+  {
+   "id": 501323,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1747,
+   "secs": 27.92,
+   "drafts": 856.0,
+   "draft_tokens": 5992.0,
+   "accepted": 890.0
+  },
+  {
+   "id": 501064,
+   "source": "no_robots_gen",
+   "category": "nonfiction",
+   "tokens": 149,
+   "secs": 2.08,
+   "drafts": 63.0,
+   "draft_tokens": 441.0,
+   "accepted": 85.0
+  },
+  {
+   "id": 501203,
+   "source": "dolly_creative",
+   "category": "fiction",
+   "tokens": 389,
+   "secs": 6.81,
+   "drafts": 209.0,
+   "draft_tokens": 1463.0,
+   "accepted": 179.0
+  },
+  {
+   "id": 500139,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 310,
+   "secs": 3.99,
+   "drafts": 119.0,
+   "draft_tokens": 833.0,
+   "accepted": 190.0
+  },
+  {
+   "id": 500223,
+   "source": "no_robots_rewrite",
+   "category": "rewrite",
+   "tokens": 634,
+   "secs": 5.33,
+   "drafts": 158.0,
+   "draft_tokens": 1106.0,
+   "accepted": 475.0
+  },
+  {
+   "id": 503666,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 1218,
+   "secs": 18.94,
+   "drafts": 580.0,
+   "draft_tokens": 4060.0,
+   "accepted": 637.0
+  },
+  {
+   "id": 502893,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 699,
+   "secs": 12.85,
+   "drafts": 393.0,
+   "draft_tokens": 2751.0,
+   "accepted": 305.0
+  },
+  {
+   "id": 503399,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 2048,
+   "secs": 29.44,
+   "drafts": 902.0,
+   "draft_tokens": 6314.0,
+   "accepted": 1146.0
+  },
+  {
+   "id": 503073,
+   "source": "dolly_creative",
+   "category": "fiction",
+   "tokens": 351,
+   "secs": 4.01,
+   "drafts": 120.0,
+   "draft_tokens": 840.0,
+   "accepted": 230.0
+  },
+  {
+   "id": 503998,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 393,
+   "secs": 5.85,
+   "drafts": 177.0,
+   "draft_tokens": 1239.0,
+   "accepted": 215.0
+  },
+  {
+   "id": 503901,
+   "source": "dolly_creative",
+   "category": "fiction",
+   "tokens": 1131,
+   "secs": 16.23,
+   "drafts": 499.0,
+   "draft_tokens": 3493.0,
+   "accepted": 631.0
+  },
+  {
+   "id": 501641,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1778,
+   "secs": 35.23,
+   "drafts": 1081.0,
+   "draft_tokens": 7567.0,
+   "accepted": 696.0
+  },
+  {
+   "id": 500710,
+   "source": "wp_continue",
+   "category": "fiction",
+   "tokens": 715,
+   "secs": 14.01,
+   "drafts": 427.0,
+   "draft_tokens": 2989.0,
+   "accepted": 287.0
+  },
+  {
+   "id": 502586,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1445,
+   "secs": 23.48,
+   "drafts": 722.0,
+   "draft_tokens": 5054.0,
+   "accepted": 722.0
+  },
+  {
+   "id": 503523,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 688,
+   "secs": 6.39,
+   "drafts": 189.0,
+   "draft_tokens": 1323.0,
+   "accepted": 498.0
+  },
+  {
+   "id": 502461,
+   "source": "essays",
+   "category": "nonfiction",
+   "tokens": 1416,
+   "secs": 19.72,
+   "drafts": 604.0,
+   "draft_tokens": 4228.0,
+   "accepted": 811.0
+  },
+  {
+   "id": 500304,
+   "source": "everyday",
+   "category": "nonfiction",
+   "tokens": 98,
+   "secs": 2.17,
+   "drafts": 66.0,
+   "draft_tokens": 462.0,
+   "accepted": 31.0
+  },
+  {
+   "id": 502324,
+   "source": "wp_prompt",
+   "category": "fiction",
+   "tokens": 1042,
+   "secs": 21.69,
+   "drafts": 668.0,
+   "draft_tokens": 4676.0,
+   "accepted": 373.0
+  },
+  {
+   "id": 500084,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 708,
+   "secs": 9.05,
+   "drafts": 274.0,
+   "draft_tokens": 1918.0,
+   "accepted": 433.0
+  },
+  {
+   "id": 502811,
+   "source": "fineweb_rewrite",
+   "category": "rewrite",
+   "tokens": 579,
+   "secs": 6.34,
+   "drafts": 189.0,
+   "draft_tokens": 1323.0,
+   "accepted": 389.0
+  },
+  {
+   "id": 504024,
+   "source": "dolly_creative",
+   "category": "fiction",
+   "tokens": 2048,
+   "secs": 26.83,
+   "drafts": 825.0,
+   "draft_tokens": 5775.0,
+   "accepted": 1225.0
+  }
+ ]
+}

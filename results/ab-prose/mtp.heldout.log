@@ -1,0 +1,7 @@
+20/60 19023 tok, 76.3 tok/s, tok/update 2.432
+40/60 38055 tok, 75.3 tok/s, tok/update 2.399
+60/60 55960 tok, 76.3 tok/s, tok/update 2.433
+RESULT {"prompts": 60, "tokens": 55960, "tok_s": 76.31, "acc_per_draft": 1.4334, "tok_per_update": 2.4334}
+  fiction        {"prompts": 27, "tokens": 32626, "tok_s": 72.71, "acc_per_draft": 1.3115, "tok_per_update": 2.3115}
+  nonfiction     {"prompts": 24, "tokens": 17891, "tok_s": 78.67, "acc_per_draft": 1.5106, "tok_per_update": 2.5106}
+  rewrite        {"prompts": 9, "tokens": 5443, "tok_s": 95.24, "acc_per_draft": 2.1016, "tok_per_update": 3.1016}

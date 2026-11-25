@@ -193,11 +193,13 @@ def load_drafter(m, path):
 
 def load_target_embed_head(path):
     idx = json.load(open(os.path.join(path, "model.safetensors.index.json")))["weight_map"]
+    # A text-only release (Qwen3_5ForCausalLM) names the embedding model.embed_tokens.
+    emb = next(n for n in ("model.language_model.embed_tokens.weight", "model.embed_tokens.weight") if n in idx)
     out = {}
-    for name in ("model.language_model.embed_tokens.weight", "lm_head.weight"):
+    for name in (emb, "lm_head.weight"):
         with safe_open(os.path.join(path, idx[name]), "pt") as f:
             out[name] = f.get_tensor(name).to(torch.bfloat16)
-    return out["model.language_model.embed_tokens.weight"], out["lm_head.weight"]
+    return out[emb], out["lm_head.weight"]
 
 
 # ------------------------------------------------------------------ data

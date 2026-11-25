@@ -1,0 +1,435 @@
+I device: AQL backend, 1 device(s) [0:gfx1201]
+I fleet: 1 model(s) on card(s) 0; each card keeps 8 hardware queue(s) ready (328.00 MiB of a card), an offload leaves 4; 1 load now, the rest on demand
+I model hemmingway-1.5: loading on card(s) 0
+I model: qwen35  arch=qwen35  quant=w8a8_fwht128  64 layers  262144 ctx
+I kernel libraries on the search path that --kernels (or RADIANCE_KERNELS) does not name, and so not loaded: glm, libavx, libref
+I vocab: end-of-generation also on <|endoftext|>=248044 (a control token the container declares neither as eos nor eot; without this a turn ending on it runs on)
+I vocab: 248077 tokens, bos=-1 eos=248046
+I gbnf: vocabulary index built in 37 ms, 26.11 MiB
+I chained launches: on -- the model's plugin measured a gain with them; their packets take no acquire from the packet processor
+I control vectors: not loaded (no --control-vector); a request that asks for one is refused
+I sampler: 248320-token vocabulary (248320 this rank), 32 rows, 7760 mask words (30.31 KiB per row)
+I host-site execution: 45 of 1275 declared ops have no host kernel (cast, embed_lookup, rope_table, rmsnorm_had_quant_i8g, gemm_nt_q, gemm_nt, gdn_conv_prep, gdn_kkt_solve, gdn_chunk_scan, gdn_gated_rmsnorm, gdn_conv_update, gdn_recurrent_update, gdn_conv_recurrent_update_had, had_quant_act_i8g, gated_had_quant_i8g, gemm_nt_q_gated, and 29 more). Their weights may still be tiered to host or SSD -- only the arithmetic is pinned to the device. --debug-graph lists the bands.
+I declare: 1275 ops, 1100 weights, 83 buffers, 5 KV groups
+I speculation: 'dflash2' proposes 7 token(s) in ONE block pass over 8 row(s) (mask id 248070, window 2048); prompt lookup fills in for any sequence it declines
+I activation arena: not lent -- the 'qwen35_w8a8' plugin does not declare at a smaller step size (RadArchProbe::shape_probe_ok)
+I placement: token embedding (615.73 MiB a rank) ram (default): pinned in host memory and read over the link in place, so its VRAM goes to the KV cache and the experts
+I kv: the pool backs 35% of the worst case (4 sequences all at 262144 tokens), 1.4 full-length sessions; a larger --host-pool-mib gives the cache more
+I VRAM budget, per card:
+  card total          31.86 GiB
+  already held         2.86 GiB   measured: driver context, code objects, anything else resident
+  driver drift        16.00 MiB   what that moves by after it is read: kept free
+  activation arena   1001.50 MiB   computed from the buffer plan
+  step staging         4.35 MiB   the step batch's block tables and media staging, and the
+                                  KV tiers' copy staging
+  hardware queues    266.04 MiB   3 a card at 35.35 MiB each, measured: the engine's streams
+  expert prefetch           0 B   the next-layer prefetch's ring of expert units and buffers
+  --gpu-headroom-mib 512.00 MiB   left unclaimed on purpose
+  ------------------------------
+  claimable           27.25 GiB
+  static weights      14.68 GiB   off the top: every rank's own shard, and not a share of anything
+  ------------------------------
+  elastic             12.56 GiB   no lender: the experts first, the cache at least one full-length sequence
+    experts                 0 B   0% of it -- a dense model, so there is no expert plane for this share to fill and the
+                                  cache took everything it could address
+    kv cache          12.56 GiB   100% of it -- 35% backing of the 4 x 262144 worst case: 1.4 full-length
+                                  sessions. With prefix caching a finished sequence's blocks stay held
+                                  for reuse, so the demand is live sessions, not running requests
+  ==============================
+  vram_weights        14.68 GiB   static + experts
+  vram_kv             12.56 GiB   the cache's share
+  unclaimed          512.36 MiB   the headroom, the unusable above, and what MiB rounding
+                                  could not place
+
+W device: the pinned range 0x7f8425a00000 (616.00 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+I pools:
+vram_weights    14.68 GiB budget,        0 B used,  14.68 GiB free
+vram_kv         12.56 GiB budget,        0 B used,  12.56 GiB free
+host_pool      616.00 MiB budget,        0 B used, 616.00 MiB free
+
+I placement: 'token_embd.weight' (615.73 MiB) in the pinned host pool, read in place (--embedding-placement ram, the default)
+I mover: 0 slab slots (0 shadow, up to 0 more kept free out of a loan as swaps ask for them), 1 pinned pool slots, 14.68 GiB static vram
+I load: rank 0, mover took 14.68 GiB, weights pool 788.00 KiB free of 14.68 GiB
+W device: the pinned range 0x7f82e4600000 (1.00 GiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82d7c00000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82cbe00000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82bfe00000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82bbc00000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82b7a00000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82b3800000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82af600000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+W device: the pinned range 0x7f82ab400000 (64.01 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+I load: 8.02 GiB of 15.29 GiB read, 3.6 GB/s, at container offset 8617287680
+I load: one pass over the container, 15.29 GiB read in 4.6 s (3.6 GB/s) for 1 rank(s); 4.5 s of that was the disk (3.6 GB/s)
+I load: 976 weight(s), 14.88 GiB of planes, rearranged for their kernels by 16 worker(s) behind the read, 778.91 MiB held at most; done 4.6 s after the read began
+I load: 1100 weights, 15.29 GiB placed from 15.29 GiB of container read
+I chunk geometry: quantum 64 (attn block 16, state chunk 64), checkpoint interval 2048, max_tok 2048 -> prefill chunks of at most 2048
+I prefix resume: exact -- a hit resumes only where an idle server's cold prefill of the same prompt starts a chunk (every 2048 tokens) and a prompt's tail snapshot is taken where its last chunk starts, so the hit recomputes the cold run's own chunks and answers bit-identically; a turn re-prefills up to one chunk more than --prefix-resume nearest
+I checkpoint slots: auto: 40 linear-state snapshot(s) of 153.38 MiB in pinned host memory (5.99 GiB), none of it on the card; 10 a sequence for --max-num-seqs 4: geometric-backoff keeps 9 for a 262144-token session at a 2048-token interval, and one more for a running turn
+W device: the pinned range 0x7f80e4800000 (5.99 GiB) could not be locked against swap (mlock2: Cannot allocate memory)
+I kv tiers: off (no --prefix-cache-mib); a finished conversation's KV stays in VRAM until the cache evicts it
+I kv: KV layer bundles 16/48/48/5 (117 real layers)
+    vLLM stock    size  5 -> 25 groups, 125 slots (8 padding)
+    least-waste   size  8 -> 15 groups, 120 slots (3 padding)
+    radiance      per state kind, own pool ->  4 groups, 117 slots (0 padding)
+    (none)         ?        0 layers  state      0 B        0 slots =       0 B
+    kv_attn        full    16 layers  block   16 tok  page 516.00 KiB    22961 blocks = 11.30 GiB  (367376 tokens)
+    kv_gdn_state   linear  48 layers  state 144.00 MiB        8 slots =  1.12 GiB
+    kv_gdn_conv    conv    48 layers  state 9.38 MiB        4 slots = 37.50 MiB
+    kv_draft       window   5 layers  block   16 tok  page 162.50 KiB      648 blocks = 102.83 MiB  (10368 tokens)
+    pool at 0x7f844c400000, 12.56 GiB; groups at +0..+13487333376
+
+I prefix cache: 1 paged group(s) in 16-token entries; checkpoints every 2048 tokens (40 slots of 153.38 MiB a rank, pinned host memory), retention 'geometric-backoff'
+  group 'kv_draft' is windowed (129 blocks): not cached
+
+I arena: 828.85 MiB device + 172.66 MiB scratch + 0 B for the second lane = 1001.50 MiB, charged to the VRAM budget before it was split
+I kv: the cache can grow to 12.56 GiB a card -- 367376 tokens of context, 1.4 sessions at 262144 -- with every block it lends the experts taken back; 1.16 GiB of that is per-sequence state, and nothing is lent: it is all the cache's
+I device allocations: 2 totalling 15.66 GiB, of which 27.25 GiB is the two pools -- the rest is the activation arena and the step staging. Anything on the card past this is the driver or a kernel plugin's own hipMalloc, which this cannot see.
+I card 0 settled at 759.65 MiB free, against 551.70 MiB (the 512.00 MiB --gpu-headroom-mib and 39.70 MiB kept for the step staging and for what is built on first use)
+I draft floor: 2 paged group(s), 1 prefix-cached, 0 in the window snapshot -> a hit leaves a hole in a drafter's own KV
+I scheduler: --prefill-interleave auto: after a prefill chunk that leaves its prompt unfinished while other sequences decode, decode-only steps follow for up to 1.00 of the chunk step's measured time (at most 64 steps)
+I draft refill: a prefix hit ends 2048 tokens before the prompt's end, so the drafter's window is recomputed
+W device: the pinned range 0x7f83a2400000 (69.68 MiB) could not be locked against swap (mlock2: Cannot allocate memory)
+I step batch: 69.67 MiB pinned staging ring + 4.35 MiB device slab a rank (4.26 MiB of it block tables), 5 KV group(s), 0 derived buffer(s)
+I scheduler: --busy-prefill-chunk auto: a prefill chunk sharing a step leaves decode rows and waiting requests their room and keeps at least 64 tokens
+I chat: template loaded (8952 bytes); tools=1 tool_calls=1 system=1 thinking=1
+I chat: reply format template: reasoning "<think>\n".."\n</think>\n\n"; calls "<tool_call>\n""<function="NAME">\n" "<parameter="ARG">\n"""VALUE"</parameter>\n" "</function>\n""</tool_call>"; grammar on "<tool_call>\n"
+I sampling defaults for requests that send none: temperature 1.00, top_k 20, top_p 0.95, min_p 0.00 (from the container, overridden by --temp --top-p --min-p --top-k)
+I chat: the template takes reasoning_effort low, medium, xhigh, and none or minimal turn thinking off
+I chat: a request naming no reasoning_effort renders as 'xhigh', the template's own default (--reasoning-effort sets another)
+I STARTUP REPORT -- radiance 2.2.0
+I CONFIGURATION -- every option not at its default, the value in force, and where it came from
+I   --model                            /home/brian/models-nvme/hemmingway-df2/hemmingway-1.5-iq4r-s-df2-stock.rad  [models.hemmingway-1.5.model]
+I   --kernels                          libr4d@0.5.0,spechub@0.1.0                  [server.kernels]
+I                                        the libraries named, in that order; architecture plugin qwen35_w8a8@0.1.0
+I   --tp                               1                                           [models.hemmingway-1.5.tp]
+I   --p2p                              n/a                                         [auto]
+I                                        one rank: no collective crosses a card
+I   --prefill-interleave               auto:1                                      [auto]
+I                                        decode-only steps for as long as a chunk step took while prompts prefill beside decoding sequences
+I   --max-num-seqs                     4                                           [models.hemmingway-1.5.max-num-seqs]
+I   --max-model-len                    262144                                      [models.hemmingway-1.5.max-model-len]
+I   --gpu-headroom-mib                 512                                         [memory.gpu-headroom-mib]
+I   --kv-cache-dtype                   i8                                          [models.hemmingway-1.5.kv-cache-dtype]
+I   --embedding-placement              ram                                         [auto]
+I                                        the table is 615.73 MiB a rank: pinned in host memory and read over the link in place, so its VRAM goes to the KV cache and the experts
+I   --vision-tower-placement           n/a                                         [auto]
+I                                        this server declares no encoder tower
+I   --ngram-placement                  n/a                                         [auto]
+I                                        this model has no n-gram table
+I   --placement                        all_vram                                    [models.hemmingway-1.5.placement]
+I                                        as asked
+I   --checkpoint-slots                 40                                          [auto]
+I                                        10 a sequence for --max-num-seqs 4: geometric-backoff keeps 9 for a 262144-token session at a 2048-token interval, and one more for a running turn
+I   --num-speculative-tokens           7                                           [models.hemmingway-1.5.num-speculative-tokens]
+I   --host                             127.0.0.1                                   [server.host]
+I   --port                             18198                                       [server.port]
+I   --served-model-name                hemmingway-1.5                              [models.hemmingway-1.5]
+I   --mm-max-patches                   0                                           [auto]
+I                                        the model carries no vision tower
+I   --temp                             1                                           [models.hemmingway-1.5.temp]
+I   --top-k                            20                                          [models.hemmingway-1.5.top-k]
+I   --top-p                            0.95                                        [models.hemmingway-1.5.top-p]
+I   --min-p                            0                                           [models.hemmingway-1.5.min-p]
+I   --max-n                            8                                           [auto]
+I                                        the larger of 8 and --max-num-seqs
+I   --max-queued-requests              32                                          [auto]
+I                                        8 x --max-num-seqs
+I   --http-threads                     32                                          [auto]
+I                                        one a hardware thread, at least 4
+I   141 options at their default (-v lists every option; /diagnostics carries them all)
+I ENVIRONMENT -- the RADIANCE_* variables set, by name; their values are not shown
+I   none
+I DERIVED -- what startup worked out that no single option states
+I   chained launches                   on
+I                                        the model's plugin measured a gain with them
+I   kernel selection                   libr4d 2722 op bands
+I                                        attention:
+I                                        attn_paged -> attn_decode_h128_gqa4_i8
+I                                        attn_paged -> attn_decode_h256_gqa6_i8
+I                                        attn_paged -> attn_prefill_h256_gqa6_i8
+I                                        kv_store -> kv_store_i8
+I                                        qk_norm_rope_gate -> qk_norm_rope_gate
+I                                        qk_norm_rope_gate_kv_store -> qk_norm_rope_gate_kv_store_i8
+I                                        rope -> rope_bf16
+I                                        rope_table -> rope_table_f32
+I   vram split                         weights 14.68 GiB (experts 0 B of it), KV cache 12.56 GiB, a card
+I                                        VRAM budget, per card:
+I                                          card total          31.86 GiB
+I                                          already held         2.86 GiB   measured: driver context, code objects, anything else resident
+I                                          driver drift        16.00 MiB   what that moves by after it is read: kept free
+I                                          activation arena   1001.50 MiB   computed from the buffer plan
+I                                          step staging         4.35 MiB   the step batch's block tables and media staging, and the
+I                                                                          KV tiers' copy staging
+I                                          hardware queues    266.04 MiB   3 a card at 35.35 MiB each, measured: the engine's streams
+I                                          expert prefetch           0 B   the next-layer prefetch's ring of expert units and buffers
+I                                          --gpu-headroom-mib 512.00 MiB   left unclaimed on purpose
+I                                          ------------------------------
+I                                          claimable           27.25 GiB
+I                                          static weights      14.68 GiB   off the top: every rank's own shard, and not a share of anything
+I                                          ------------------------------
+I                                          elastic             12.56 GiB   no lender: the experts first, the cache at least one full-length sequence
+I                                            experts                 0 B   0% of it -- a dense model, so there is no expert plane for this share to fill and the
+I                                                                          cache took everything it could address
+I                                            kv cache          12.56 GiB   100% of it -- 35% backing of the 4 x 262144 worst case: 1.4 full-length
+I                                                                          sessions. With prefix caching a finished sequence's blocks stay held
+I                                                                          for reuse, so the demand is live sessions, not running requests
+I                                          ==============================
+I                                          vram_weights        14.68 GiB   static + experts
+I                                          vram_kv             12.56 GiB   the cache's share
+I                                          unclaimed          512.36 MiB   the headroom, the unusable above, and what MiB rounding
+I                                                                          could not place
+I   weights by tier                    VRAM 14.68 GiB, host pool 615.73 MiB, container on disk 0 B, mapped 0 B (rank 0)
+I                                        the host pool holds the 615.73 MiB the placement flags put there (the token embedding, the encoder towers, the drafter's experts) beside the weights placed in it
+I   kv cache                           12.56 GiB a card: 367376 tokens, 1.4 sessions at 262144
+I                                        1.16 GiB of it is per-sequence state; nothing is lent: it is all the cache's
+I HARDWARE
+I   host      AMD Ryzen 9 9950X3D 16-Core Processor | 16 cores, 32 threads | RAM 91.83 GiB, 75.45 GiB available | swap 91.83 GiB, 822.66 MiB used
+I   system    kernel 7.3.5-2-cachyos | Arches Linux | no container seen | cgroup memory unlimited | memlock 8.00 MiB
+I   memory    huge pages madvise (defrag defer+madvise, shmem advise) | ttm.pages_limit 45.92 GiB | pinned by this process 6.66 GiB
+I   iommu     passthrough (the display devices' IOMMU groups are of type identity)
+I   amdgpu    cwsr_enable 1 | boot parameters: transparent_hugepage=madvise amd_iommu=on iommu=pt amdgpu.noretry=0 amdgpu.cwsr_enable=1 amdgpu.gpu_recovery=1 amdgpu.halt_if_hws_hang=0
+I   cpu       governor powersave, energy preference balance_performance (amd-pstate-epp) | io_uring available
+I   runtime   HIP 7.16.0 | backend device
+I   media     decoders libavformat 63.16.100
+I   card 0000:03:00.0  rank 0 (device 0)  gfx1201 "AMD Radeon AI PRO R9700"  31.86 GiB VRAM  NUMA -1  driver amdgpu card0
+I       link   00:01.1 32.0 GT/s x16 (max 32.0 GT/s x16) -> 01:00.0 32.0 GT/s x16 (max 32.0 GT/s x16) -> 02:00.0 32.0 GT/s x16 (max 32.0 GT/s x16) -> 03:00.0 32.0 GT/s x16 (max 32.0 GT/s x16)  [read at 13% busy: a link at rest parks below its maximum]
+I       pcie   0: 2.5GT/s, x16 250Mhz | 1: 16.0GT/s, x16 616Mhz | *2: 32.0GT/s, x16 1143Mhz
+I       dma    copy lists not used: nothing streams weights onto this card
+I       power  cap 300 W (default 300 W, max 300 W) | voltage offset unknown | sclk 500-2350 MHz | mclk 96-1258 MHz | runtime pm active (control auto) | iommu group identity
+I   card 0000:74:00.0  not serving  gfx1036  2.00 GiB VRAM  NUMA -1  driver amdgpu card1
+I       link   00:08.1 16.0 GT/s x16 (max 16.0 GT/s x16) -> 74:00.0 16.0 GT/s x16 (max 16.0 GT/s x16)  [read at 0% busy: a link at rest parks below its maximum]
+I       power  cap unknown (default unknown, max unknown) | voltage offset unknown | sclk 600-2200 MHz | mclk 3100-3100 MHz | runtime pm active (control on) | iommu group identity
+I FINDINGS -- 0 warnings, 2 notes
+I   note swap-in-use: 822.66 MiB of swap is in use
+I        why: a host thread that faults on a swapped page stalls the step it is part of
+I        fix: free memory, or turn swap off on a machine that only serves
+I   note cpu-governor: the CPU governor is powersave with energy preference balance_performance
+I        why: the host side of a step -- scheduling, sampling, the n-gram gather, launch bookkeeping -- is single-threaded per rank, and a core that ramps slowly shows as host gap between steps
+I        fix: cpupower frequency-set -g performance, or echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference
+I model hemmingway-1.5 serves  (/v1/completions; /v1/chat/completions with tools and reasoning)
+I model hemmingway-1.5: ready
+I model hemmingway-1.5: loaded on card(s) 0 in 5.1 s, holding 28.23 GiB a card (paging owner 1)
+I server: listening on http://127.0.0.1:18198 (32 threads, up to 96)
+I req chatcmpl-0b5bb8c8e614d03d6010f35a chat from 127.0.0.1:36056 model=hemmingway-1.5 msgs=1 tools=0 prompt=55 tok n=1 max_tokens=64
+I recorded pass: draft pass -1 at 55 token(s) -- 30 records, 6 of the 30 dispatches unordered behind the one before; 0 host op(s), 0 table refresh point(s) and 0 routing report(s) between the played stretches
+I recorded pass: draft pass 1 at 8 token(s) -- 140 records, 21 of the 140 dispatches unordered behind the one before; 0 host op(s), 0 table refresh point(s) and 0 routing report(s) between the played stretches
+I recorded pass: draft pass 0 at 8 token(s) -- 594 records, 86 of the 594 dispatches unordered behind the one before; 0 host op(s), 0 table refresh point(s) and 0 routing report(s) between the played stretches
+I req chatcmpl-0b5bb8c8e614d03d6010f35a done from 127.0.0.1:36056 finish=stop prompt=55 (cache 0) gen=37 reason=25 ttft=0.06s 159.3 tok/s 0.29s
+I req chatcmpl-a33e144646b2c04956f50748 chat from 127.0.0.1:36072 model=hemmingway-1.5 msgs=1 tools=0 prompt=147 tok n=1 max_tokens=2048
+I req chatcmpl-a33e144646b2c04956f50748 done from 127.0.0.1:36072 finish=length prompt=147 (cache 0) gen=2048 reason=2048 ttft=0.12s 109.5 tok/s 18.81s
+I req chatcmpl-025dc382e5c8b43965c47b31 chat from 127.0.0.1:48572 model=hemmingway-1.5 msgs=1 tools=0 prompt=117 tok n=1 max_tokens=2048
+I req chatcmpl-025dc382e5c8b43965c47b31 done from 127.0.0.1:48572 finish=stop prompt=117 (cache 0) gen=651 reason=188 ttft=0.12s 59.6 tok/s 11.03s
+I req chatcmpl-def05753acf0097ce60abb77 chat from 127.0.0.1:34298 model=hemmingway-1.5 msgs=1 tools=0 prompt=84 tok n=1 max_tokens=2048
+I req chatcmpl-def05753acf0097ce60abb77 done from 127.0.0.1:34298 finish=stop prompt=84 (cache 0) gen=576 reason=0 ttft=0.12s 52.1 tok/s 11.15s
+I req chatcmpl-77c3dcba79157df2fd2307e2 chat from 127.0.0.1:34028 model=hemmingway-1.5 msgs=1 tools=0 prompt=74 tok n=1 max_tokens=2048
+I req chatcmpl-77c3dcba79157df2fd2307e2 done from 127.0.0.1:34028 finish=stop prompt=74 (cache 0) gen=524 reason=303 ttft=0.12s 70.6 tok/s 7.53s
+I req chatcmpl-864946ecf47a902e8c22b894 chat from 127.0.0.1:34048 model=hemmingway-1.5 msgs=1 tools=0 prompt=85 tok n=1 max_tokens=2048
+I req chatcmpl-864946ecf47a902e8c22b894 done from 127.0.0.1:34048 finish=stop prompt=85 (cache 0) gen=1170 reason=594 ttft=0.12s 60.5 tok/s 19.45s
+I req chatcmpl-1c16275ae689833e5fa56caf chat from 127.0.0.1:59712 model=hemmingway-1.5 msgs=1 tools=0 prompt=366 tok n=1 max_tokens=2048
+I req chatcmpl-1c16275ae689833e5fa56caf done from 127.0.0.1:59712 finish=stop prompt=366 (cache 0) gen=756 reason=439 ttft=0.16s 117.9 tok/s 6.56s
+I req chatcmpl-7b178bdb6b048422cb4aa5a7 chat from 127.0.0.1:42936 model=hemmingway-1.5 msgs=1 tools=0 prompt=103 tok n=1 max_tokens=2048
+I req chatcmpl-7b178bdb6b048422cb4aa5a7 done from 127.0.0.1:42936 finish=stop prompt=103 (cache 0) gen=981 reason=145 ttft=0.12s 55.1 tok/s 17.91s
+I req chatcmpl-853e3c39df83362fc8a15089 chat from 127.0.0.1:56368 model=hemmingway-1.5 msgs=1 tools=0 prompt=23 tok n=1 max_tokens=2048
+I req chatcmpl-853e3c39df83362fc8a15089 done from 127.0.0.1:56368 finish=stop prompt=23 (cache 0) gen=163 reason=0 ttft=0.04s 51.2 tok/s 3.20s
+I req chatcmpl-221e81b2bea2484f5973629c chat from 127.0.0.1:56394 model=hemmingway-1.5 msgs=1 tools=0 prompt=140 tok n=1 max_tokens=2048
+I req chatcmpl-221e81b2bea2484f5973629c done from 127.0.0.1:56394 finish=stop prompt=140 (cache 0) gen=400 reason=151 ttft=0.13s 60.7 tok/s 6.70s
+I req chatcmpl-692c9cb0b5b0af6d259d8e66 chat from 127.0.0.1:46568 model=hemmingway-1.5 msgs=1 tools=0 prompt=108 tok n=1 max_tokens=2048
+I req chatcmpl-692c9cb0b5b0af6d259d8e66 done from 127.0.0.1:46568 finish=length prompt=108 (cache 0) gen=2048 reason=2048 ttft=0.12s 48.4 tok/s 42.43s
+I req chatcmpl-61b1d6c685e9c202e4e4e3e5 chat from 127.0.0.1:51838 model=hemmingway-1.5 msgs=1 tools=0 prompt=65 tok n=1 max_tokens=2048
+I req chatcmpl-61b1d6c685e9c202e4e4e3e5 done from 127.0.0.1:51838 finish=stop prompt=65 (cache 0) gen=267 reason=122 ttft=0.12s 58.8 tok/s 4.65s
+I req chatcmpl-891abccca99a95ecf97fc7f7 chat from 127.0.0.1:53254 model=hemmingway-1.5 msgs=1 tools=0 prompt=87 tok n=1 max_tokens=2048
+I req chatcmpl-891abccca99a95ecf97fc7f7 done from 127.0.0.1:53254 finish=length prompt=87 (cache 0) gen=2048 reason=2048 ttft=0.12s 63.8 tok/s 32.18s
+I req chatcmpl-014f2b66b9e735cc1bbc206f chat from 127.0.0.1:50826 model=hemmingway-1.5 msgs=1 tools=0 prompt=115 tok n=1 max_tokens=2048
+I req chatcmpl-014f2b66b9e735cc1bbc206f done from 127.0.0.1:50826 finish=stop prompt=115 (cache 0) gen=639 reason=0 ttft=0.12s 54.1 tok/s 11.91s
+I req chatcmpl-ead9f741014b59e4c71f72c7 chat from 127.0.0.1:57732 model=hemmingway-1.5 msgs=1 tools=0 prompt=108 tok n=1 max_tokens=2048
+I req chatcmpl-ead9f741014b59e4c71f72c7 done from 127.0.0.1:57732 finish=stop prompt=108 (cache 0) gen=1589 reason=442 ttft=0.12s 56.4 tok/s 28.30s
+I req chatcmpl-aa61b4fc3651535d455e5ee0 chat from 127.0.0.1:52974 model=hemmingway-1.5 msgs=1 tools=0 prompt=70 tok n=1 max_tokens=2048
+I req chatcmpl-aa61b4fc3651535d455e5ee0 done from 127.0.0.1:52974 finish=stop prompt=70 (cache 0) gen=614 reason=0 ttft=0.12s 49.4 tok/s 12.52s
+I req chatcmpl-81c4a7a5d8d41d17d4e84ecf chat from 127.0.0.1:53348 model=hemmingway-1.5 msgs=1 tools=0 prompt=764 tok n=1 max_tokens=2048
+I req chatcmpl-81c4a7a5d8d41d17d4e84ecf done from 127.0.0.1:53348 finish=stop prompt=764 (cache 0) gen=1029 reason=281 ttft=0.28s 110.1 tok/s 9.62s
+I req chatcmpl-63b028e6e45101db9b2a54e7 chat from 127.0.0.1:35638 model=hemmingway-1.5 msgs=1 tools=0 prompt=111 tok n=1 max_tokens=2048
+I req chatcmpl-63b028e6e45101db9b2a54e7 done from 127.0.0.1:35638 finish=stop prompt=111 (cache 0) gen=111 reason=0 ttft=0.12s 69.4 tok/s 1.71s
+I req chatcmpl-1d73fefcc1905940931d3ec7 chat from 127.0.0.1:35660 model=hemmingway-1.5 msgs=1 tools=0 prompt=77 tok n=1 max_tokens=2048
+I req chatcmpl-1d73fefcc1905940931d3ec7 done from 127.0.0.1:35660 finish=stop prompt=77 (cache 0) gen=980 reason=177 ttft=0.12s 51.6 tok/s 19.11s
+I req chatcmpl-971a416ebd0615b719e5ee54 chat from 127.0.0.1:42950 model=hemmingway-1.5 msgs=1 tools=0 prompt=80 tok n=1 max_tokens=2048
+I req chatcmpl-971a416ebd0615b719e5ee54 done from 127.0.0.1:42950 finish=stop prompt=80 (cache 0) gen=1054 reason=305 ttft=0.12s 62.8 tok/s 16.88s
+I req chatcmpl-ab52802a8a549ccedd080727 chat from 127.0.0.1:50544 model=hemmingway-1.5 msgs=1 tools=0 prompt=352 tok n=1 max_tokens=2048
+I req chatcmpl-ab52802a8a549ccedd080727 done from 127.0.0.1:50544 finish=stop prompt=352 (cache 0) gen=385 reason=56 ttft=0.16s 81.1 tok/s 4.90s
+I req chatcmpl-7a328893aaa65056953f2a23 chat from 127.0.0.1:35508 model=hemmingway-1.5 msgs=1 tools=0 prompt=50 tok n=1 max_tokens=2048
+I req chatcmpl-7a328893aaa65056953f2a23 done from 127.0.0.1:35508 finish=stop prompt=50 (cache 0) gen=791 reason=0 ttft=0.05s 47.6 tok/s 16.66s
+I req chatcmpl-4b578508c7898eb261d660f7 chat from 127.0.0.1:47632 model=hemmingway-1.5 msgs=1 tools=0 prompt=98 tok n=1 max_tokens=2048
+I req chatcmpl-4b578508c7898eb261d660f7 done from 127.0.0.1:47632 finish=length prompt=98 (cache 0) gen=2048 reason=2048 ttft=0.12s 73.9 tok/s 27.84s
+I req chatcmpl-6156a48e9801495f8907ab98 chat from 127.0.0.1:45446 model=hemmingway-1.5 msgs=1 tools=0 prompt=69 tok n=1 max_tokens=2048
+I req chatcmpl-6156a48e9801495f8907ab98 done from 127.0.0.1:45446 finish=stop prompt=69 (cache 0) gen=38 reason=0 ttft=0.12s 95.5 tok/s 0.51s
+I req chatcmpl-56308dd176bd922025da84cb chat from 127.0.0.1:45474 model=hemmingway-1.5 msgs=1 tools=0 prompt=94 tok n=1 max_tokens=2048
+I req chatcmpl-56308dd176bd922025da84cb done from 127.0.0.1:45474 finish=stop prompt=94 (cache 0) gen=1366 reason=145 ttft=0.12s 58.8 tok/s 23.34s
+I req chatcmpl-1f5f6649caf0114bb8f2a601 chat from 127.0.0.1:60208 model=hemmingway-1.5 msgs=1 tools=0 prompt=176 tok n=1 max_tokens=2048
+I req chatcmpl-1f5f6649caf0114bb8f2a601 done from 127.0.0.1:60208 finish=stop prompt=176 (cache 0) gen=389 reason=323 ttft=0.13s 95.8 tok/s 4.18s
+I req chatcmpl-d71d0247f542438d42839318 chat from 127.0.0.1:60230 model=hemmingway-1.5 msgs=1 tools=0 prompt=87 tok n=1 max_tokens=2048
+I req chatcmpl-d71d0247f542438d42839318 done from 127.0.0.1:60230 finish=stop prompt=87 (cache 0) gen=647 reason=253 ttft=0.12s 56.0 tok/s 11.65s
+I req chatcmpl-5d2a0e64f440f1948456b1d6 chat from 127.0.0.1:33334 model=hemmingway-1.5 msgs=1 tools=0 prompt=86 tok n=1 max_tokens=2048
+I req chatcmpl-5d2a0e64f440f1948456b1d6 done from 127.0.0.1:33334 finish=stop prompt=86 (cache 0) gen=458 reason=92 ttft=0.12s 67.2 tok/s 6.92s
+I req chatcmpl-956a9d1e95e418f5f43493c8 chat from 127.0.0.1:33350 model=hemmingway-1.5 msgs=1 tools=0 prompt=356 tok n=1 max_tokens=2048
+I req chatcmpl-956a9d1e95e418f5f43493c8 done from 127.0.0.1:33350 finish=stop prompt=356 (cache 0) gen=226 reason=0 ttft=0.16s 47.9 tok/s 4.86s
+I req chatcmpl-266de2a3912683fe71b3a4c3 chat from 127.0.0.1:51450 model=hemmingway-1.5 msgs=1 tools=0 prompt=97 tok n=1 max_tokens=2048
+I req chatcmpl-266de2a3912683fe71b3a4c3 done from 127.0.0.1:51450 finish=stop prompt=97 (cache 0) gen=1204 reason=257 ttft=0.12s 58.1 tok/s 20.82s
+I req chatcmpl-5dde1de2e09bb55def316b13 chat from 127.0.0.1:59134 model=hemmingway-1.5 msgs=1 tools=0 prompt=418 tok n=1 max_tokens=2048
+I req chatcmpl-5dde1de2e09bb55def316b13 done from 127.0.0.1:59134 finish=stop prompt=418 (cache 0) gen=1130 reason=488 ttft=0.19s 61.7 tok/s 18.48s
+I req chatcmpl-2d2eb05e95a451d2dbe33de8 chat from 127.0.0.1:50404 model=hemmingway-1.5 msgs=1 tools=0 prompt=378 tok n=1 max_tokens=2048
+I req chatcmpl-2d2eb05e95a451d2dbe33de8 done from 127.0.0.1:50404 finish=stop prompt=378 (cache 0) gen=645 reason=274 ttft=0.16s 60.5 tok/s 10.81s
+I req chatcmpl-42a0b4658a3759e9613f972f chat from 127.0.0.1:45438 model=hemmingway-1.5 msgs=1 tools=0 prompt=153 tok n=1 max_tokens=2048
+I req chatcmpl-42a0b4658a3759e9613f972f done from 127.0.0.1:45438 finish=stop prompt=153 (cache 0) gen=740 reason=334 ttft=0.13s 68.6 tok/s 10.89s
+I req chatcmpl-4beeef2c9757a4791778839e chat from 127.0.0.1:46974 model=hemmingway-1.5 msgs=1 tools=0 prompt=28 tok n=1 max_tokens=2048
+I req chatcmpl-4beeef2c9757a4791778839e done from 127.0.0.1:46974 finish=stop prompt=28 (cache 0) gen=251 reason=0 ttft=0.04s 56.9 tok/s 4.43s
+I req chatcmpl-9679405f36052579165ff84b chat from 127.0.0.1:38870 model=hemmingway-1.5 msgs=1 tools=0 prompt=101 tok n=1 max_tokens=2048
+I req chatcmpl-9679405f36052579165ff84b done from 127.0.0.1:38870 finish=stop prompt=101 (cache 0) gen=893 reason=0 ttft=0.12s 50.1 tok/s 17.94s
+I req chatcmpl-8706ceae515075387c5e60d4 chat from 127.0.0.1:59470 model=hemmingway-1.5 msgs=1 tools=0 prompt=36 tok n=1 max_tokens=2048
+I req chatcmpl-8706ceae515075387c5e60d4 done from 127.0.0.1:59470 finish=stop prompt=36 (cache 0) gen=501 reason=0 ttft=0.04s 49.5 tok/s 10.14s
+I req chatcmpl-dd1c7407e7696f2cb9e02d4c chat from 127.0.0.1:59442 model=hemmingway-1.5 msgs=1 tools=0 prompt=51 tok n=1 max_tokens=2048
+I req chatcmpl-dd1c7407e7696f2cb9e02d4c done from 127.0.0.1:59442 finish=stop prompt=51 (cache 0) gen=516 reason=220 ttft=0.05s 57.0 tok/s 9.08s
+I req chatcmpl-db50a41236e804686d78e648 chat from 127.0.0.1:50466 model=hemmingway-1.5 msgs=1 tools=0 prompt=64 tok n=1 max_tokens=2048
+I req chatcmpl-db50a41236e804686d78e648 done from 127.0.0.1:50466 finish=stop prompt=64 (cache 0) gen=662 reason=0 ttft=0.05s 44.8 tok/s 14.81s
+I req chatcmpl-d1699351e37bc971868b115b chat from 127.0.0.1:42428 model=hemmingway-1.5 msgs=1 tools=0 prompt=110 tok n=1 max_tokens=2048
+I req chatcmpl-d1699351e37bc971868b115b done from 127.0.0.1:42428 finish=stop prompt=110 (cache 0) gen=898 reason=235 ttft=0.12s 61.8 tok/s 14.65s
+I req chatcmpl-10e432ed37d966ec090ac543 chat from 127.0.0.1:36704 model=hemmingway-1.5 msgs=1 tools=0 prompt=66 tok n=1 max_tokens=2048
+I req chatcmpl-10e432ed37d966ec090ac543 done from 127.0.0.1:36704 finish=stop prompt=66 (cache 0) gen=903 reason=181 ttft=0.12s 57.2 tok/s 15.90s
+I req chatcmpl-2c4009b318a8079445187fee chat from 127.0.0.1:44666 model=hemmingway-1.5 msgs=1 tools=0 prompt=81 tok n=1 max_tokens=2048
+I req chatcmpl-2c4009b318a8079445187fee done from 127.0.0.1:44666 finish=stop prompt=81 (cache 0) gen=1747 reason=1420 ttft=0.12s 62.8 tok/s 27.92s
+I req chatcmpl-e03d71cbad624eb2541e40aa chat from 127.0.0.1:40194 model=hemmingway-1.5 msgs=1 tools=0 prompt=51 tok n=1 max_tokens=2048
+I req chatcmpl-e03d71cbad624eb2541e40aa done from 127.0.0.1:40194 finish=stop prompt=51 (cache 0) gen=149 reason=0 ttft=0.05s 72.7 tok/s 2.08s
+I req chatcmpl-02a2dc8401fd04336c5e1e38 chat from 127.0.0.1:40220 model=hemmingway-1.5 msgs=1 tools=0 prompt=62 tok n=1 max_tokens=2048
+I req chatcmpl-02a2dc8401fd04336c5e1e38 done from 127.0.0.1:40220 finish=stop prompt=62 (cache 0) gen=389 reason=164 ttft=0.05s 57.4 tok/s 6.81s
+I req chatcmpl-2f8837934fda21efe5aef88d chat from 127.0.0.1:59088 model=hemmingway-1.5 msgs=1 tools=0 prompt=229 tok n=1 max_tokens=2048
+I req chatcmpl-2f8837934fda21efe5aef88d done from 127.0.0.1:59088 finish=stop prompt=229 (cache 0) gen=310 reason=195 ttft=0.13s 80.1 tok/s 3.99s
+I req chatcmpl-7637e70759ccaec6e20c9993 chat from 127.0.0.1:35240 model=hemmingway-1.5 msgs=1 tools=0 prompt=471 tok n=1 max_tokens=2048
+I req chatcmpl-7637e70759ccaec6e20c9993 done from 127.0.0.1:35240 finish=stop prompt=471 (cache 0) gen=634 reason=245 ttft=0.20s 123.3 tok/s 5.33s
+I req chatcmpl-1c9382dd9ab3892c370ff126 chat from 127.0.0.1:35256 model=hemmingway-1.5 msgs=1 tools=0 prompt=104 tok n=1 max_tokens=2048
+I req chatcmpl-1c9382dd9ab3892c370ff126 done from 127.0.0.1:35256 finish=stop prompt=104 (cache 0) gen=1218 reason=111 ttft=0.12s 64.7 tok/s 18.93s
+I req chatcmpl-576469399e1225952db24346 chat from 127.0.0.1:58884 model=hemmingway-1.5 msgs=1 tools=0 prompt=80 tok n=1 max_tokens=2048
+I req chatcmpl-576469399e1225952db24346 done from 127.0.0.1:58884 finish=stop prompt=80 (cache 0) gen=699 reason=209 ttft=0.12s 54.8 tok/s 12.85s
+I req chatcmpl-961bba3e1d975cca12b8832e chat from 127.0.0.1:52024 model=hemmingway-1.5 msgs=1 tools=0 prompt=119 tok n=1 max_tokens=2048
+I req chatcmpl-961bba3e1d975cca12b8832e done from 127.0.0.1:52024 finish=length prompt=119 (cache 0) gen=2048 reason=2048 ttft=0.12s 69.8 tok/s 29.44s
+I req chatcmpl-97e0c6a6f697710f779cde67 chat from 127.0.0.1:37054 model=hemmingway-1.5 msgs=1 tools=0 prompt=102 tok n=1 max_tokens=2048
+I req chatcmpl-97e0c6a6f697710f779cde67 done from 127.0.0.1:37054 finish=stop prompt=102 (cache 0) gen=351 reason=289 ttft=0.12s 90.1 tok/s 4.01s
+I req chatcmpl-d80b08b191e2a84fa4cb7f2b chat from 127.0.0.1:35964 model=hemmingway-1.5 msgs=1 tools=0 prompt=96 tok n=1 max_tokens=2048
+I req chatcmpl-d80b08b191e2a84fa4cb7f2b done from 127.0.0.1:35964 finish=stop prompt=96 (cache 0) gen=393 reason=119 ttft=0.12s 68.4 tok/s 5.85s
+I req chatcmpl-e490ca72dfa5a5213deede1b chat from 127.0.0.1:43790 model=hemmingway-1.5 msgs=1 tools=0 prompt=48 tok n=1 max_tokens=2048
+I req chatcmpl-e490ca72dfa5a5213deede1b done from 127.0.0.1:43790 finish=stop prompt=48 (cache 0) gen=1131 reason=52 ttft=0.04s 69.8 tok/s 16.23s
+I req chatcmpl-f85ac350d97c0ad88ff2740d chat from 127.0.0.1:34024 model=hemmingway-1.5 msgs=1 tools=0 prompt=97 tok n=1 max_tokens=2048
+I req chatcmpl-f85ac350d97c0ad88ff2740d done from 127.0.0.1:34024 finish=stop prompt=97 (cache 0) gen=1778 reason=714 ttft=0.12s 50.6 tok/s 35.23s
+I req chatcmpl-61d45353e0ffe5604c7b18fe chat from 127.0.0.1:39182 model=hemmingway-1.5 msgs=1 tools=0 prompt=351 tok n=1 max_tokens=2048
+I req chatcmpl-61d45353e0ffe5604c7b18fe done from 127.0.0.1:39182 finish=stop prompt=351 (cache 0) gen=715 reason=127 ttft=0.16s 51.5 tok/s 14.01s
+I req chatcmpl-379858a47d35d86370215977 chat from 127.0.0.1:37560 model=hemmingway-1.5 msgs=1 tools=0 prompt=54 tok n=1 max_tokens=2048
+I req chatcmpl-379858a47d35d86370215977 done from 127.0.0.1:37560 finish=stop prompt=54 (cache 0) gen=1445 reason=627 ttft=0.05s 61.6 tok/s 23.48s
+I req chatcmpl-4bc704d0b10a2b963062b368 chat from 127.0.0.1:42448 model=hemmingway-1.5 msgs=1 tools=0 prompt=622 tok n=1 max_tokens=2048
+I req chatcmpl-4bc704d0b10a2b963062b368 done from 127.0.0.1:42448 finish=stop prompt=622 (cache 0) gen=688 reason=154 ttft=0.24s 111.8 tok/s 6.39s
+I req chatcmpl-e4e5a385e32d31de6fc2d82b chat from 127.0.0.1:42472 model=hemmingway-1.5 msgs=1 tools=0 prompt=110 tok n=1 max_tokens=2048
+I req chatcmpl-e4e5a385e32d31de6fc2d82b done from 127.0.0.1:42472 finish=stop prompt=110 (cache 0) gen=1416 reason=717 ttft=0.12s 72.2 tok/s 19.72s
+I req chatcmpl-5b4cba89da2a7f7caa446247 chat from 127.0.0.1:37384 model=hemmingway-1.5 msgs=1 tools=0 prompt=27 tok n=1 max_tokens=2048
+I req chatcmpl-5b4cba89da2a7f7caa446247 done from 127.0.0.1:37384 finish=stop prompt=27 (cache 0) gen=98 reason=0 ttft=0.04s 45.5 tok/s 2.17s
+I req chatcmpl-01211ad3e42590005bdd5592 chat from 127.0.0.1:46944 model=hemmingway-1.5 msgs=1 tools=0 prompt=62 tok n=1 max_tokens=2048
+I req chatcmpl-01211ad3e42590005bdd5592 done from 127.0.0.1:46944 finish=stop prompt=62 (cache 0) gen=1042 reason=0 ttft=0.05s 48.1 tok/s 21.69s
+I req chatcmpl-fc3426c4358d38dd39b17fd4 chat from 127.0.0.1:48330 model=hemmingway-1.5 msgs=1 tools=0 prompt=323 tok n=1 max_tokens=2048
+I req chatcmpl-fc3426c4358d38dd39b17fd4 done from 127.0.0.1:48330 finish=stop prompt=323 (cache 0) gen=708 reason=0 ttft=0.16s 79.5 tok/s 9.05s
+I req chatcmpl-70d3395cca550541e836cbe0 chat from 127.0.0.1:50220 model=hemmingway-1.5 msgs=1 tools=0 prompt=474 tok n=1 max_tokens=2048
+I req chatcmpl-70d3395cca550541e836cbe0 done from 127.0.0.1:50220 finish=stop prompt=474 (cache 0) gen=579 reason=173 ttft=0.20s 94.2 tok/s 6.34s
+I req chatcmpl-16dd1a31beda556d37bb769d chat from 127.0.0.1:50236 model=hemmingway-1.5 msgs=1 tools=0 prompt=23 tok n=1 max_tokens=2048
+I req chatcmpl-16dd1a31beda556d37bb769d done from 127.0.0.1:50236 finish=length prompt=23 (cache 0) gen=2048 reason=0 ttft=0.04s 76.4 tok/s 26.83s
+I req chatcmpl-9a22223bac1284136bdf509d chat stream from 127.0.0.1:42868 model=hemmingway-1.5 msgs=3 tools=0 prompt=155 tok n=1 max_tokens=200
+I req chatcmpl-9a22223bac1284136bdf509d done from 127.0.0.1:42868 finish=length prompt=155 (cache 0) gen=200 reason=200 ttft=0.13s 86.5 tok/s 2.43s
+I req chatcmpl-b931859951838166a6b7ebbc chat stream from 127.0.0.1:42882 model=hemmingway-1.5 msgs=3 tools=0 prompt=156 tok n=1 max_tokens=200
+I req chatcmpl-b931859951838166a6b7ebbc done from 127.0.0.1:42882 finish=length prompt=156 (cache 0) gen=200 reason=200 ttft=0.12s 79.8 tok/s 2.62s
+I req chatcmpl-ce27c990b62d2c65d47d1332 chat stream from 127.0.0.1:55336 model=hemmingway-1.5 msgs=3 tools=0 prompt=138 tok n=1 max_tokens=160
+I req chatcmpl-ce27c990b62d2c65d47d1332 done from 127.0.0.1:55336 finish=length prompt=138 (cache 0) gen=160 reason=160 ttft=0.12s 109.0 tok/s 1.58s
+I req chatcmpl-475ca600b45068f6af4206c4 chat stream from 127.0.0.1:55340 model=hemmingway-1.5 msgs=3 tools=0 prompt=143 tok n=1 max_tokens=400
+I req chatcmpl-475ca600b45068f6af4206c4 done from 127.0.0.1:55340 finish=length prompt=143 (cache 0) gen=400 reason=400 ttft=0.12s 138.1 tok/s 3.01s
+I req chatcmpl-2371b373b1446a3299da9198 chat stream from 127.0.0.1:55346 model=hemmingway-1.5 msgs=3 tools=0 prompt=155 tok n=1 max_tokens=200
+I req chatcmpl-2371b373b1446a3299da9198 done from 127.0.0.1:55346 finish=length prompt=155 (cache 0) gen=200 reason=200 ttft=0.12s 84.1 tok/s 2.49s
+I req chatcmpl-b626796c447228b2276fb296 chat stream from 127.0.0.1:55358 model=hemmingway-1.5 msgs=3 tools=0 prompt=138 tok n=1 max_tokens=160
+I req chatcmpl-b626796c447228b2276fb296 done from 127.0.0.1:55358 finish=length prompt=138 (cache 0) gen=160 reason=160 ttft=0.12s 94.3 tok/s 1.81s
+I req chatcmpl-e9a69226f0dc5fe56118ece7 chat stream from 127.0.0.1:40866 model=hemmingway-1.5 msgs=1 tools=0 prompt=109 tok n=1 max_tokens=600
+I req chatcmpl-e9a69226f0dc5fe56118ece7 done from 127.0.0.1:40866 finish=length prompt=109 (cache 0) gen=600 reason=600 ttft=0.12s 118.3 tok/s 5.19s
+I req chatcmpl-a650fc6468dc20e407a3eb15 chat stream from 127.0.0.1:40872 model=hemmingway-1.5 msgs=1 tools=0 prompt=109 tok n=1 max_tokens=600
+I req chatcmpl-a650fc6468dc20e407a3eb15 done from 127.0.0.1:40872 finish=length prompt=109 (cache 0) gen=600 reason=572 ttft=0.12s 107.3 tok/s 5.70s
+I req chatcmpl-28af12d547d430d56d48cb2e chat stream from 127.0.0.1:47730 model=hemmingway-1.5 msgs=1 tools=0 prompt=112 tok n=1 max_tokens=600
+I req chatcmpl-28af12d547d430d56d48cb2e done from 127.0.0.1:47730 finish=stop prompt=112 (cache 0) gen=562 reason=468 ttft=0.12s 101.7 tok/s 5.64s
+I req chatcmpl-b4452a04039d578c990ebe51 chat stream from 127.0.0.1:47746 model=hemmingway-1.5 msgs=1 tools=0 prompt=113 tok n=1 max_tokens=300
+I req chatcmpl-b4452a04039d578c990ebe51 done from 127.0.0.1:47746 finish=length prompt=113 (cache 0) gen=300 reason=251 ttft=0.12s 112.5 tok/s 2.78s
+I req chatcmpl-00efdde0152905aad1e5acfd chat stream from 127.0.0.1:51898 model=hemmingway-1.5 msgs=1 tools=0 prompt=122 tok n=1 max_tokens=800
+I req chatcmpl-00efdde0152905aad1e5acfd done from 127.0.0.1:51898 finish=length prompt=122 (cache 0) gen=800 reason=800 ttft=0.12s 96.5 tok/s 8.40s
+I req chatcmpl-e318083eb3e47387a1c88e9a chat stream from 127.0.0.1:51910 model=hemmingway-1.5 msgs=1 tools=0 prompt=110 tok n=1 max_tokens=600
+I req chatcmpl-e318083eb3e47387a1c88e9a done from 127.0.0.1:51910 finish=length prompt=110 (cache 0) gen=600 reason=600 ttft=0.12s 132.7 tok/s 4.64s
+I req chatcmpl-939256288d404e0ec797f321 chat stream from 127.0.0.1:40374 model=hemmingway-1.5 msgs=1 tools=0 prompt=148 tok n=1 max_tokens=500
+I req chatcmpl-939256288d404e0ec797f321 done from 127.0.0.1:40374 finish=length prompt=148 (cache 0) gen=500 reason=500 ttft=0.12s 166.8 tok/s 3.12s
+I req chatcmpl-4b8657cad4a41d7775ab71af chat stream from 127.0.0.1:40386 model=hemmingway-1.5 msgs=1 tools=0 prompt=146 tok n=1 max_tokens=500
+I req chatcmpl-4b8657cad4a41d7775ab71af done from 127.0.0.1:40386 finish=length prompt=146 (cache 0) gen=500 reason=500 ttft=0.12s 106.8 tok/s 4.80s
+I req chatcmpl-94cd95e4cdf455cb79cb7218 chat stream from 127.0.0.1:51758 model=hemmingway-1.5 msgs=1 tools=0 prompt=115 tok n=1 max_tokens=250
+I req chatcmpl-94cd95e4cdf455cb79cb7218 done from 127.0.0.1:51758 finish=stop prompt=115 (cache 0) gen=171 reason=134 ttft=0.12s 145.5 tok/s 1.29s
+I req chatcmpl-6996ff4cbc17735fb9020428 chat stream from 127.0.0.1:51774 model=hemmingway-1.5 msgs=1 tools=0 prompt=206 tok n=1 max_tokens=600
+I req chatcmpl-6996ff4cbc17735fb9020428 done from 127.0.0.1:51774 finish=length prompt=206 (cache 0) gen=600 reason=600 ttft=0.16s 134.5 tok/s 4.61s
+I req chatcmpl-7bbb5472fb5d914f4c489409 chat stream from 127.0.0.1:51790 model=hemmingway-1.5 msgs=1 tools=0 prompt=147 tok n=1 max_tokens=500
+I req chatcmpl-7bbb5472fb5d914f4c489409 done from 127.0.0.1:51790 finish=length prompt=147 (cache 0) gen=500 reason=473 ttft=0.12s 147.6 tok/s 3.50s
+I req chatcmpl-9a90170b01242cff46499fbd chat stream from 127.0.0.1:58084 model=hemmingway-1.5 msgs=1 tools=0 prompt=115 tok n=1 max_tokens=250
+I req chatcmpl-9a90170b01242cff46499fbd done from 127.0.0.1:58084 finish=stop prompt=115 (cache 0) gen=129 reason=94 ttft=0.12s 151.8 tok/s 0.97s
+I req chatcmpl-27676fe6337605d38f65b07d chat stream from 127.0.0.1:58096 model=hemmingway-1.5 msgs=1 tools=0 prompt=115 tok n=1 max_tokens=300
+I req chatcmpl-27676fe6337605d38f65b07d done from 127.0.0.1:58096 finish=stop prompt=115 (cache 0) gen=282 reason=250 ttft=0.12s 160.2 tok/s 1.88s
+I req chatcmpl-23574b15fff82bce3fb11106 chat stream from 127.0.0.1:58104 model=hemmingway-1.5 msgs=1 tools=0 prompt=116 tok n=1 max_tokens=300
+I req chatcmpl-23574b15fff82bce3fb11106 done from 127.0.0.1:58104 finish=stop prompt=116 (cache 0) gen=246 reason=203 ttft=0.12s 134.8 tok/s 1.94s
+I req chatcmpl-e6c13f55df3a1bb73a6055cd chat stream from 127.0.0.1:58114 model=hemmingway-1.5 msgs=1 tools=0 prompt=115 tok n=1 max_tokens=450
+I req chatcmpl-e6c13f55df3a1bb73a6055cd done from 127.0.0.1:58114 finish=length prompt=115 (cache 0) gen=450 reason=383 ttft=0.12s 157.0 tok/s 2.98s
+I req chatcmpl-4ad369dfd0af02c03501f9a0 chat stream from 127.0.0.1:58120 model=hemmingway-1.5 msgs=1 tools=0 prompt=119 tok n=1 max_tokens=400
+I req chatcmpl-4ad369dfd0af02c03501f9a0 done from 127.0.0.1:58120 finish=stop prompt=119 (cache 0) gen=206 reason=147 ttft=0.12s 162.0 tok/s 1.39s
+I req chatcmpl-320208bc4e68a56fa7ace2d6 chat stream from 127.0.0.1:42240 model=hemmingway-1.5 msgs=1 tools=0 prompt=131 tok n=1 max_tokens=200
+I req chatcmpl-320208bc4e68a56fa7ace2d6 done from 127.0.0.1:42240 finish=length prompt=131 (cache 0) gen=200 reason=200 ttft=0.15s 161.3 tok/s 1.39s
+I req chatcmpl-fcda9886e20cf60231f9af2d chat stream from 127.0.0.1:42256 model=hemmingway-1.5 msgs=1 tools=0 prompt=117 tok n=1 max_tokens=300
+I req chatcmpl-fcda9886e20cf60231f9af2d done from 127.0.0.1:42256 finish=stop prompt=117 (cache 0) gen=173 reason=141 ttft=0.12s 160.5 tok/s 1.19s
+I req chatcmpl-61b639ed868466814e6a1589 chat stream from 127.0.0.1:42266 model=hemmingway-1.5 msgs=1 tools=0 prompt=109 tok n=1 max_tokens=500
+I req chatcmpl-61b639ed868466814e6a1589 done from 127.0.0.1:42266 finish=stop prompt=109 (cache 0) gen=404 reason=158 ttft=0.12s 144.3 tok/s 2.92s
+I req chatcmpl-75fad8f08e088564cc9eb483 chat stream from 127.0.0.1:42278 model=hemmingway-1.5 msgs=1 tools=0 prompt=114 tok n=1 max_tokens=500
+I req chatcmpl-75fad8f08e088564cc9eb483 done from 127.0.0.1:42278 finish=length prompt=114 (cache 0) gen=500 reason=297 ttft=0.12s 150.6 tok/s 3.44s
+I req chatcmpl-555682544ebdf1a67e9a1c2b chat stream from 127.0.0.1:42280 model=hemmingway-1.5 msgs=1 tools=0 prompt=86 tok n=1 max_tokens=500
+I req chatcmpl-555682544ebdf1a67e9a1c2b done from 127.0.0.1:42280 finish=stop prompt=86 (cache 0) gen=447 reason=144 ttft=0.12s 161.5 tok/s 2.88s
+I req chatcmpl-08bb311dd07eeadc34f2b52e chat stream from 127.0.0.1:53100 model=hemmingway-1.5 msgs=1 tools=0 prompt=94 tok n=1 max_tokens=120
+I req chatcmpl-08bb311dd07eeadc34f2b52e done from 127.0.0.1:53100 finish=length prompt=94 (cache 0) gen=120 reason=119 ttft=0.12s 174.6 tok/s 0.80s
+I req chatcmpl-fd456d0d679cda54f6c55cdc chat stream from 127.0.0.1:53104 model=hemmingway-1.5 msgs=1 tools=0 prompt=144 tok n=1 max_tokens=800
+I req chatcmpl-fd456d0d679cda54f6c55cdc done from 127.0.0.1:53104 finish=length prompt=144 (cache 0) gen=800 reason=800 ttft=0.12s 170.5 tok/s 4.81s
+I req chatcmpl-662e354d8c56a229a876d3b1 chat stream from 127.0.0.1:53118 model=hemmingway-1.5 msgs=1 tools=0 prompt=113 tok n=1 max_tokens=500
+I req chatcmpl-662e354d8c56a229a876d3b1 done from 127.0.0.1:53118 finish=length prompt=113 (cache 0) gen=500 reason=193 ttft=0.12s 172.5 tok/s 3.02s
+I req chatcmpl-5d9d51e2e5e155788608c138 chat stream from 127.0.0.1:46656 model=hemmingway-1.5 msgs=1 tools=0 prompt=97 tok n=1 max_tokens=900
+I req chatcmpl-5d9d51e2e5e155788608c138 done from 127.0.0.1:46656 finish=length prompt=97 (cache 0) gen=900 reason=900 ttft=0.12s 70.5 tok/s 12.87s
+I req chatcmpl-d2bbf374fb79c0446cea407b chat stream from 127.0.0.1:42252 model=hemmingway-1.5 msgs=1 tools=0 prompt=98 tok n=1 max_tokens=900
+I req chatcmpl-d2bbf374fb79c0446cea407b done from 127.0.0.1:42252 finish=length prompt=98 (cache 0) gen=900 reason=900 ttft=0.12s 65.6 tok/s 13.82s
+I req chatcmpl-1e3fdfc3a60f70b59f0dabe5 chat stream from 127.0.0.1:57312 model=hemmingway-1.5 msgs=1 tools=0 prompt=119 tok n=1 max_tokens=500
+I req chatcmpl-1e3fdfc3a60f70b59f0dabe5 done from 127.0.0.1:57312 finish=length prompt=119 (cache 0) gen=500 reason=500 ttft=0.12s 86.4 tok/s 5.90s
+I req chatcmpl-88e8b7286e28bb8d94b46af1 chat stream from 127.0.0.1:38750 model=hemmingway-1.5 msgs=1 tools=0 prompt=123 tok n=1 max_tokens=400
+I req chatcmpl-88e8b7286e28bb8d94b46af1 done from 127.0.0.1:38750 finish=length prompt=123 (cache 0) gen=400 reason=400 ttft=0.12s 109.8 tok/s 3.76s
+I req chatcmpl-c11860c788668d91abe88b57 chat stream from 127.0.0.1:38766 model=hemmingway-1.5 msgs=1 tools=0 prompt=84 tok n=1 max_tokens=180
+I req chatcmpl-c11860c788668d91abe88b57 done from 127.0.0.1:38766 finish=length prompt=84 (cache 0) gen=180 reason=180 ttft=0.12s 80.1 tok/s 2.36s
+I req chatcmpl-e0b8fe93f84c5c0cf5fc8985 chat stream from 127.0.0.1:38782 model=hemmingway-1.5 msgs=1 tools=0 prompt=98 tok n=1 max_tokens=900
+I req chatcmpl-e0b8fe93f84c5c0cf5fc8985 done from 127.0.0.1:38782 finish=length prompt=98 (cache 0) gen=900 reason=900 ttft=0.12s 74.4 tok/s 12.20s
+I req chatcmpl-0f3cb8772d86670366583e63 chat stream from 127.0.0.1:35846 model=hemmingway-1.5 msgs=1 tools=0 prompt=134 tok n=1 max_tokens=600
+I req chatcmpl-0f3cb8772d86670366583e63 done from 127.0.0.1:35846 finish=length prompt=134 (cache 0) gen=600 reason=600 ttft=0.12s 119.7 tok/s 5.13s
+I req chatcmpl-d7411a8adf9b98f2bff66315 chat stream from 127.0.0.1:35862 model=hemmingway-1.5 msgs=1 tools=0 prompt=134 tok n=1 max_tokens=600
+I req chatcmpl-d7411a8adf9b98f2bff66315 done from 127.0.0.1:35862 finish=length prompt=134 (cache 0) gen=600 reason=600 ttft=0.12s 78.9 tok/s 7.72s
+I req chatcmpl-570f98a9fd891ebf164001a6 chat stream from 127.0.0.1:39136 model=hemmingway-1.5 msgs=1 tools=0 prompt=107 tok n=1 max_tokens=500
+I req chatcmpl-570f98a9fd891ebf164001a6 done from 127.0.0.1:39136 finish=length prompt=107 (cache 0) gen=500 reason=500 ttft=0.12s 78.5 tok/s 6.48s
+I req chatcmpl-e9ccb22d32432bac1ba7709c chat stream from 127.0.0.1:47098 model=hemmingway-1.5 msgs=1 tools=0 prompt=116 tok n=1 max_tokens=900
+I req chatcmpl-e9ccb22d32432bac1ba7709c done from 127.0.0.1:47098 finish=length prompt=116 (cache 0) gen=900 reason=900 ttft=0.12s 91.1 tok/s 9.99s
+I req chatcmpl-a016136bd637414b17842e7a chat stream from 127.0.0.1:56698 model=hemmingway-1.5 msgs=1 tools=0 prompt=99 tok n=1 max_tokens=150
+I req chatcmpl-a016136bd637414b17842e7a done from 127.0.0.1:56698 finish=length prompt=99 (cache 0) gen=150 reason=146 ttft=0.12s 124.2 tok/s 1.32s
+I req chatcmpl-a65fb9d71056aea59f3adca0 chat stream from 127.0.0.1:56706 model=hemmingway-1.5 msgs=1 tools=0 prompt=135 tok n=1 max_tokens=600
+I req chatcmpl-a65fb9d71056aea59f3adca0 done from 127.0.0.1:56706 finish=length prompt=135 (cache 0) gen=600 reason=600 ttft=0.12s 90.5 tok/s 6.75s
+I req chatcmpl-24cba94892a30b64af8931e6 chat stream from 127.0.0.1:56714 model=hemmingway-1.5 msgs=1 tools=0 prompt=153 tok n=1 max_tokens=180
+I req chatcmpl-24cba94892a30b64af8931e6 done from 127.0.0.1:56714 finish=length prompt=153 (cache 0) gen=180 reason=180 ttft=0.12s 149.0 tok/s 1.33s
+I req chatcmpl-be059df3fa7c3d2ad55d26e4 chat stream from 127.0.0.1:42542 model=hemmingway-1.5 msgs=1 tools=0 prompt=154 tok n=1 max_tokens=180
+I req chatcmpl-be059df3fa7c3d2ad55d26e4 done from 127.0.0.1:42542 finish=length prompt=154 (cache 0) gen=180 reason=180 ttft=0.12s 189.9 tok/s 1.07s
+I req chatcmpl-e3f065be0be8461726cf2543 chat stream from 127.0.0.1:42554 model=hemmingway-1.5 msgs=1 tools=0 prompt=123 tok n=1 max_tokens=120
+I req chatcmpl-e3f065be0be8461726cf2543 done from 127.0.0.1:42554 finish=length prompt=123 (cache 0) gen=120 reason=120 ttft=0.12s 94.2 tok/s 1.39s
+I req chatcmpl-149b2fb70f7bac9e0577a960 chat stream from 127.0.0.1:42568 model=hemmingway-1.5 msgs=1 tools=0 prompt=215 tok n=1 max_tokens=400
+I req chatcmpl-149b2fb70f7bac9e0577a960 done from 127.0.0.1:42568 finish=stop prompt=215 (cache 0) gen=383 reason=224 ttft=0.13s 121.3 tok/s 3.28s
+I req chatcmpl-ac2fbab29e48fc2cbb0af27c chat stream from 127.0.0.1:42570 model=hemmingway-1.5 msgs=1 tools=0 prompt=152 tok n=1 max_tokens=180
+I req chatcmpl-ac2fbab29e48fc2cbb0af27c done from 127.0.0.1:42570 finish=length prompt=152 (cache 0) gen=180 reason=180 ttft=0.12s 153.1 tok/s 1.29s
+I req chatcmpl-d42d7cca70d2670a3105f59a chat stream from 127.0.0.1:42582 model=hemmingway-1.5 msgs=1 tools=0 prompt=125 tok n=1 max_tokens=120
+I req chatcmpl-d42d7cca70d2670a3105f59a done from 127.0.0.1:42582 finish=length prompt=125 (cache 0) gen=120 reason=85 ttft=0.12s 104.9 tok/s 1.26s
+I stopping: draining in-flight requests

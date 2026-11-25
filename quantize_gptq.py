@@ -16,7 +16,7 @@ from pathlib import Path
 
 import torch
 from datasets import Dataset
-from transformers import AutoModelForImageTextToText, AutoProcessor, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForImageTextToText, AutoProcessor, AutoTokenizer
 
 IGNORE = ["lm_head", "re:.*visual.*", "re:.*mtp.*"]
 COPY = ["chat_template.jinja", "generation_config.json", "preprocessor_config.json", "processor_config.json",
@@ -42,8 +42,9 @@ for line in open(args.calib):
         continue
     p = prompts[g["id"]]
     msgs = p.get("messages") or [{"role": "user", "content": p["prompt"]}]
-    head = tok.apply_chat_template(msgs, chat_template=tmpl, add_generation_prompt=True, tokenize=False,
-                                 reasoning_effort="medium")   # the serve passes --default-chat-template-kwargs reasoning_effort=medium
+    eff = p.get("reasoning_effort", "medium")   # the prompt's own level, else the serve's default
+    kw = {"enable_thinking": False} if eff in ("none", "minimal") else {"reasoning_effort": eff}
+    head = tok.apply_chat_template(msgs, chat_template=tmpl, add_generation_prompt=True, tokenize=False, **kw)
     body = ""
     if g.get("reasoning"):
         body = ("" if head.rstrip().endswith("<think>") else "<think>\n") + g["reasoning"].strip()
@@ -66,8 +67,11 @@ from llmcompressor.modifiers.quantization import GPTQModifier  # noqa: E402
 torch.backends.cuda.enable_flash_sdp(False); torch.backends.cuda.enable_mem_efficient_sdp(False)
 ds = Dataset.from_dict({"input_ids": [e["input_ids"] for e in enc], "attention_mask": [e["attention_mask"] for e in enc]})
 t0 = time.time()
-model = AutoModelForImageTextToText.from_pretrained(args.src, dtype=torch.bfloat16, device_map=None)
-processor = AutoProcessor.from_pretrained(args.src)
+# A text-only release (Qwen3_5ForCausalLM, e.g. Hemmingway-1.5) has no processor and no vision tower.
+text_only = any(a.endswith("ForCausalLM") for a in (AutoConfig.from_pretrained(args.src).architectures or []))
+Model = AutoModelForCausalLM if text_only else AutoModelForImageTextToText
+model = Model.from_pretrained(args.src, dtype=torch.bfloat16, device_map=None)
+processor = tok if text_only else AutoProcessor.from_pretrained(args.src)
 print(f"loaded in {time.time() - t0:.0f}s: {type(model).__name__}", flush=True)
 recipe = GPTQModifier(targets=["Linear"], scheme=args.scheme, actorder="static", ignore=IGNORE + args.ignore)
 oneshot(model=model, dataset=ds, recipe=recipe, max_seq_length=args.max_len, num_calibration_samples=len(enc),
