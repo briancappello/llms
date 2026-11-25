@@ -413,6 +413,15 @@ first:
 bench/speed/kv-probe.py --model try-q8kv --tag standalone-check --server http://127.0.0.1:8080
 ```
 
+## DFlash2 drafters and GPTQ quants
+
+[`dflash/`](dflash/README.md) builds a matched DFlash2 drafter and a GPTQ target for a
+Qwen3.8-27B-class model on one R9700: prompt pools, self-generated calibration answers, GPTQ
+(MXFP4 or int4 W4A16), drafter captures, training and export, and served A/B evaluation. Its
+`data/` (calibration sets and generated answers) stays out of git; `data/KEEP.md` describes it.
+`bin/space-audit` lists the big directories on the host with the delete policy of their
+`KEEP.md` notes, as the first step of any disk cleanup.
+
 ## Development
 
 CI runs the checks on Ubuntu and macOS. Locally:

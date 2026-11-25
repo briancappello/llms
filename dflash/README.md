@@ -1,4 +1,4 @@
-# dflash-scripts
+# dflash (DFlash2 drafter + GPTQ tooling)
 
 Build a matched DFlash2 drafter (and a GPTQ target) for a Qwen3.8-27B-class model on one AMD R9700.
 The drafter was trained and the MXFP4 target served on the `vllm-sly-radiance` image (since removed);
